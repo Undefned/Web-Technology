@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Палитры для веб-разработки</title>
+    <!-- Подключаем интересные шрифты -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@400;500;600&family=Manrope:wght@700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Базовые сбросы */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #0f0f0f;
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 20px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Секция с логотипом/заголовком темы */
+        .theme-header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #0d1117 0%, #1a1a2a 100%);
+            border-radius: 16px;
+            border: 1px solid #30363d;
+        }
+        
+        .theme-header h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #2ea1ff, #3ddc84);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+        
+        .theme-header .subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.5rem;
+            color: #8b949e;
+            margin-bottom: 15px;
+        }
+        
+        .theme-header .tagline {
+            font-size: 1.1rem;
+            color: #a0a0c0;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+        
+        .net-badge {
+            display: inline-block;
+            background-color: #9b4dca;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 20px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Сетка палитр */
+        .palettes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+        
+        .palette-card {
+            background-color: #161616;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #2a2a2a;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .palette-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 180, 216, 0.15);
+        }
+        
+        .palette-header {
+            padding: 20px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .palette-header h3 {
+            font-family: 'Manrope', sans-serif;
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .palette-header h3 .emoji {
+            font-size: 1.5rem;
+        }
+        
+        .palette-desc {
+            font-size: 0.9rem;
+            color: #888;
+            line-height: 1.5;
+        }
+        
+        .palette-colors {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .color-info {
+            flex-grow: 1;
+        }
+        
+        .color-hex {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .color-name {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 2px;
+        }
+        
+        /* Секция шрифтов */
+        .fonts-section {
+            background-color: #161616;
+            border-radius: 16px;
+            padding: 40px;
+            margin-top: 40px;
+            border: 1px solid #2a2a2a;
+        }
+        
+        .fonts-section h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.2rem;
+            margin-bottom: 30px;
+            color: #f0f6fc;
+            text-align: center;
+        }
+        
+        .font-demo {
+            margin-bottom: 40px;
+        }
+        
+        .font-demo h3 {
+            font-size: 1.2rem;
+            color: #8b949e;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .font-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+        
+        .font-example {
+            padding: 20px;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            border-left: 4px solid;
+        }
+        
+        .font-title {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+        
+        .font-meta {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 15px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Цвета для палитр (задаём в HTML чтобы проще было) */
+        
+        /* Палитра 1 */
+        #palette1 .palette-header { background-color: #0d1117; color: #f0f6fc; }
+        #palette1 .color-swatch:nth-child(1) { background-color: #0d1117; }
+        #palette1 .color-swatch:nth-child(2) { background-color: #161b22; }
+        #palette1 .color-swatch:nth-child(3) { background-color: #238636; }
+        #palette1 .color-swatch:nth-child(4) { background-color: #1f6feb; }
+        #palette1 .color-swatch:nth-child(5) { background-color: #8b949e; }
+        #palette1 .color-swatch:nth-child(6) { background-color: #30363d; }
+        #palette1 .color-swatch:nth-child(7) { background-color: #f0f6fc; }
+        #palette1 .font-example { border-left-color: #238636; }
+        
+        /* Палитра 2 */
+        #palette2 .palette-header { background-color: #0a0a0f; color: #ffffff; }
+        #palette2 .color-swatch:nth-child(1) { background-color: #0a0a0f; }
+        #palette2 .color-swatch:nth-child(2) { background-color: #1a1a2a; }
+        #palette2 .color-swatch:nth-child(3) { background-color: #9b4dca; }
+        #palette2 .color-swatch:nth-child(4) { background-color: #00b4d8; }
+        #palette2 .color-swatch:nth-child(5) { background-color: #a0a0c0; }
+        #palette2 .color-swatch:nth-child(6) { background-color: #2d2d4a; }
+        #palette2 .color-swatch:nth-child(7) { background-color: #ffffff; }
+        #palette2 .font-example { border-left-color: #9b4dca; }
+        
+        /* Палитра 3 */
+        #palette3 .palette-header { background-color: #0c1b33; color: #e6edf3; }
+        #palette3 .color-swatch:nth-child(1) { background-color: #0c1b33; }
+        #palette3 .color-swatch:nth-child(2) { background-color: #152642; }
+        #palette3 .color-swatch:nth-child(3) { background-color: #2ea1ff; }
+        #palette3 .color-swatch:nth-child(4) { background-color: #3ddc84; }
+        #palette3 .color-swatch:nth-child(5) { background-color: #8899b6; }
+        #palette3 .color-swatch:nth-child(6) { background-color: #223655; }
+        #palette3 .color-swatch:nth-child(7) { background-color: #e6edf3; }
+        #palette3 .font-example { border-left-color: #2ea1ff; }
+        
+        /* Палитра 4 */
+        #palette4 .palette-header { background-color: #111111; color: #ffffff; }
+        #palette4 .color-swatch:nth-child(1) { background-color: #111111; }
+        #palette4 .color-swatch:nth-child(2) { background-color: #1e1e1e; }
+        #palette4 .color-swatch:nth-child(3) { background-color: #00d4aa; }
+        #palette4 .color-swatch:nth-child(4) { background-color: #7a5cff; }
+        #palette4 .color-swatch:nth-child(5) { background-color: #666666; }
+        #palette4 .color-swatch:nth-child(6) { background-color: #333333; }
+        #palette4 .color-swatch:nth-child(7) { background-color: #ffffff; }
+        #palette4 .font-example { border-left-color: #00d4aa; }
+        
+        /* Палитра 5 */
+        #palette5 .palette-header { background-color: #1e1e1e; color: #d4d4d4; }
+        #palette5 .color-swatch:nth-child(1) { background-color: #1e1e1e; }
+        #palette5 .color-swatch:nth-child(2) { background-color: #252526; }
+        #palette5 .color-swatch:nth-child(3) { background-color: #007acc; }
+        #palette5 .color-swatch:nth-child(4) { background-color: #ce9178; }
+        #palette5 .color-swatch:nth-child(5) { background-color: #858585; }
+        #palette5 .color-swatch:nth-child(6) { background-color: #3c3c3c; }
+        #palette5 .color-swatch:nth-child(7) { background-color: #d4d4d4; }
+        #palette5 .font-example { border-left-color: #007acc; }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .theme-header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .palettes-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .font-examples {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка с темой -->
+        <header class="theme-header">
+            <h1>Разработка веб‑приложений</h1>
+            <div class="subtitle">Создаем быстрые, надежные и масштабируемые решения</div>
+            <p class="tagline">От концепции до запуска — с фокусом на качестве и скорости. Полный цикл разработки на современных технологиях.</p>
+            <div class="net-badge">ASP.NET Core</div>
+        </header>
+        
+        <!-- Сетка палитр -->
+        <div class="palettes-grid">
+            <!-- Палитра 1 -->
+            <div class="palette-card" id="palette1">
+                <div class="palette-header">
+                    <h3><span class="emoji">🧠</span> Core Tech</h3>
+                    <p class="palette-desc">Баланс знакомого и современного, вдохновлено GitHub Dark</p>
+                </div>
+                <div class="palette-colors">
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#0d1117</div>
+                            <div class="color-name">Фон</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#161b22</div>
+                            <div class="color-name">Блоки</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#238636</div>
+                            <div class="color-name">Основной акцент</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#1f6feb</div>
+                            <div class="color-name">Второй акцент</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#8b949e</div>
+                            <div class="color-name">Серый текст</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#30363d</div>
+                            <div class="color-name">Разделители</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#f0f6fc</div>
+                            <div class="color-name">Основной текст</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Палитра 2 -->
+            <div class="palette-card" id="palette2">
+                <div class="palette-header">
+                    <h3><span class="emoji">⚡</span> ASP.NET Purple</h3>
+                    <p class="palette-desc">Брендовый стиль с фиолетовым из лого .NET и бирюзовым</p>
+                </div>
+                <div class="palette-colors">
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#0a0a0f</div>
+                            <div class="color-name">Фон</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#1a1a2a</div>
+                            <div class="color-name">Блоки</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#9b4dca</div>
+                            <div class="color-name">Фиолетовый акцент</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#00b4d8</div>
+                            <div class="color-name">Бирюзовый акцент</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#a0a0c0</div>
+                            <div class="color-name">Серо-фиолетовый</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#2d2d4a</div>
+                            <div class="color-name">Разделители</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#ffffff</div>
+                            <div class="color-name">Текст</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Палитра 3 -->
+            <div class="palette-card" id="palette3">
+                <div class="palette-header">
+                    <h3><span class="emoji">🧊</span> Arctic Code</h3>
+                    <p class="palette-desc">Холодный и минималистичный, цвета подсветки VS Code</p>
+                </div>
+                <div class="palette-colors">
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#0c1b33</div>
+                            <div class="color-name">Фон</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#152642</div>
+                            <div class="color-name">Блоки</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#2ea1ff</div>
+                            <div class="color-name">Голубой акцент</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#3ddc84</div>
+                            <div class="color-name">Зелёный акцент</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#8899b6</div>
+                            <div class="color-name">Серо-синий текст</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#223655</div>
+                            <div class="color-name">Рамки</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#e6edf3</div>
+                            <div class="color-name">Текст</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Палитра 4 -->
+            <div class="palette-card" id="palette4">
+                <div class="palette-header">
+                    <h3><span class="emoji">🚀</span> Jetpack Turbo</h3>
+                    <p class="palette-desc">Энергичный и быстрый, с неоновыми акцентами</p>
+                </div>
+                <div class="palette-colors">
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#111111</div>
+                            <div class="color-name">Фон</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#1e1e1e</div>
+                            <div class="color-name">Блоки</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#00d4aa</div>
+                            <div class="color-name">Бирюзовый акцент</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#7a5cff</div>
+                            <div class="color-name">Фиолетовый акцент</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#666666</div>
+                            <div class="color-name">Серый</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#333333</div>
+                            <div class="color-name">Разделители</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#ffffff</div>
+                            <div class="color-name">Текст</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Палитра 5 -->
+            <div class="palette-card" id="palette5">
+                <div class="palette-header">
+                    <h3><span class="emoji">🔧</span> Debug Mode</h3>
+                    <p class="palette-desc">Контрастный и чёткий, как тема Visual Studio</p>
+                </div>
+                <div class="palette-colors">
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#1e1e1e</div>
+                            <div class="color-name">Фон</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#252526</div>
+                            <div class="color-name">Блоки</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#007acc</div>
+                            <div class="color-name">Синий VS</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#ce9178</div>
+                            <div class="color-name">Оранжевый</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#858585</div>
+                            <div class="color-name">Серый</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#3c3c3c</div>
+                            <div class="color-name">Разделители</div>
+                        </div>
+                    </div>
+                    <div class="color-item">
+                        <div class="color-swatch"></div>
+                        <div class="color-info">
+                            <div class="color-hex">#d4d4d4</div>
+                            <div class="color-name">Текст</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Секция шрифтов -->
+        <section class="fonts-section">
+            <h2>Шрифтовые комбинации для IT‑проектов</h2>
+            
+            <div class="font-demo">
+                <h3>Для заголовков (Display)</h3>
+                <div class="font-examples">
+                    <div class="font-example" style="font-family: 'JetBrains Mono', monospace;">
+                        <div class="font-title">JetBrains Mono</div>
+                        <p>Моноширинный, но современный. Идеален для кода и IT-заголовков.</p>
+                        <div class="font-meta">font-family: 'JetBrains Mono', monospace;</div>
+                    </div>
+                    <div class="font-example" style="font-family: 'Manrope', sans-serif;">
+                        <div class="font-title">Manrope</div>
+                        <p>Минималистичный гротеск с отличной читаемостью на экранах.</p>
+                        <div class="font-meta">font-family: 'Manrope', sans-serif;</div>
+                    </div>
+                    <div class="font-example" style="font-family: 'Montserrat', sans-serif;">
+                        <div class="font-title">Montserrat</div>
+                        <p>Геометрический, чёткий, современный. Хорош для крупных заголовков.</p>
+                        <div class="font-meta">font-family: 'Montserrat', sans-serif;</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="font-demo">
+                <h3>Для основного текста (Body)</h3>
+                <div class="font-examples">
+                    <div class="font-example" style="font-family: 'Inter', sans-serif;">
+                        <div class="font-title">Inter</div>
+                        <p>Специально создан для экранов. Лучший выбор для основного текста в интерфейсах.</p>
+                        <div class="font-meta">font-family: 'Inter', sans-serif;</div>
+                    </div>
+                    <div class="font-example" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+                        <div class="font-title">System Stack</div>
+                        <p>Использует системные шрифты (Segoe UI / SF Pro). Быстрая загрузка, оптимизировано для ОС.</p>
+                        <div class="font-meta">font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="font-demo">
+                <h3>Рекомендованные пары</h3>
+                <div class="font-examples">
+                    <div class="font-example">
+                        <div class="font-title" style="font-family: 'JetBrains Mono', monospace;">JetBrains Mono</div>
+                        <p style="font-family: 'Inter', sans-serif;">+ Inter — современная моно-сэнс пара для IT-проектов.</p>
+                        <div class="font-meta">Заголовки: JetBrains Mono<br>Текст: Inter</div>
+                    </div>
+                    <div class="font-example">
+                        <div class="font-title" style="font-family: 'Manrope', sans-serif;">Manrope Bold</div>
+                        <p style="font-family: 'Inter', sans-serif;">+ Inter Regular — минималистично и технологично.</p>
+                        <div class="font-meta">Заголовки: Manrope (700)<br>Текст: Inter (400)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
