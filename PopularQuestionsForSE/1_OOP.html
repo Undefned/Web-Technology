@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 1-5 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 1 ===================== -->
+<section class="section c1">
+    <h2>🧱 1. ООП. Базовые принципы <span class="badge red">100%</span></h2>
+
+    <details>
+        <summary>Что такое инкапсуляция? Приведите пример.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>Инкапсуляция</strong> — это механизм, который объединяет данные (поля) и методы работы с ними в одном классе, скрывая внутреннюю реализацию от внешнего мира. Доступ к состоянию объекта предоставляется только через публичные методы и свойства.</p>
+            
+            <p><strong>Зачем нужна инкапсуляция:</strong></p>
+            <ul>
+                <li>Защита данных от некорректного использования</li>
+                <li>Сокрытие сложности реализации</li>
+                <li>Возможность изменять внутреннюю логику без влияния на внешний код</li>
+                <li>Контроль над изменениями состояния (валидация)</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public class BankAccount
+{
+    // Приватное поле — доступно только внутри класса
+    private decimal _balance;
+    
+    // Публичное свойство — доступно для чтения
+    public decimal Balance => _balance;
+    
+    // Контролируемое изменение состояния
+    public void Deposit(decimal amount)
+    {
+        if (amount <= 0)
+            throw new ArgumentException("Сумма должна быть положительной");
+        
+        _balance += amount;
+    }
+    
+    public bool Withdraw(decimal amount)
+    {
+        if (amount <= 0)
+            throw new ArgumentException("Сумма должна быть положительной");
+            
+        if (_balance >= amount)
+        {
+            _balance -= amount;
+            return true;
+        }
+        return false;  // Недостаточно средств
+    }
+}</pre>
+            <p>Клиентский код <strong>не может</strong> напрямую изменить <code>_balance</code>, обходятся валидацию и логику. Если мы решим добавить логирование или комиссию, изменим только методы класса — внешний код не пострадает.</p>
+            
+            <p><strong>Инкапсуляция vs Сокрытие:</strong></p>
+            <ul>
+                <li><strong>Инкапсуляция</strong> — объединение данных и методов в контейнере (классе)</li>
+                <li><strong>Сокрытие</strong> — ограничение доступа к данным через модификаторы (<code>private</code>, <code>protected</code>)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Что такое наследование? Приведите пример.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>Наследование</strong> — это механизм, позволяющий создать новый класс (производный) на основе существующего (базового). Производный класс автоматически получает все публичные и защищенные члены базового класса и может расширять или переопределять его функциональность.</p>
+            
+            <p><strong>Ключевые аспекты:</strong></p>
+            <ul>
+                <li><strong>Переиспользование кода</strong> — общая логика выносится в базовый класс</li>
+                <li><strong>Иерархия типов</strong> — отношение "является" (is-a)</li>
+                <li><strong>Полиморфизм</strong> — возможность работать с объектами производных классов через ссылки базового</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Базовый класс
+public class Animal
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    
+    // Виртуальный метод — можно переопределить
+    public virtual void Speak() 
+    { 
+        Console.WriteLine($"{Name} издаёт звук"); 
+    }
+    
+    public void Eat() 
+    { 
+        Console.WriteLine($"{Name} ест"); 
+    }
+}
+
+// Производный класс
+public class Dog : Animal
+{
+    public string Breed { get; set; }  // Новое свойство
+    
+    // Переопределение виртуального метода
+    public override void Speak() 
+    { 
+        Console.WriteLine($"{Name} говорит: Гав-гав!"); 
+    }
+    
+    // Новый метод
+    public void Fetch() 
+    { 
+        Console.WriteLine($"{Name} приносит мяч"); 
+    }
+}
+
+// Использование
+Dog dog = new Dog { Name = "Бобик", Age = 3, Breed = "Овчарка" };
+dog.Speak();    // "Бобик говорит: Гав-гав!"
+dog.Eat();      // "Бобик ест"
+dog.Fetch();    // "Бобик приносит мяч"</pre>
+
+            <p><strong>Важные ограничения:</strong></p>
+            <ul>
+                <li>Множественное наследование классов в C# <strong>запрещено</strong> (в отличие от C++)</li>
+                <li>Класс может наследовать только <strong>один</strong> базовый класс</li>
+                <li>Для множественного наследования поведения используются <strong>интерфейсы</strong></li>
+                <li>Все классы неявно наследуются от <code>System.Object</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Что такое полиморфизм? Виды полиморфизма.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>Полиморфизм</strong> — способность объектов с одинаковым интерфейсом иметь различную реализацию. Это позволяет писать код, работающий с объектами базового типа, который будет корректно выполнять действия в зависимости от реального типа объекта во время выполнения.</p>
+            
+            <p><strong>Три вида полиморфизма в C#:</strong></p>
+            
+            <p><strong>1. Ad-hoc полиморфизм (перегрузка)</strong></p>
+            <ul>
+                <li>Несколько методов с одним именем, но разными параметрами</li>
+                <li>Выбор метода происходит на этапе компиляции</li>
+            </ul>
+            <pre>
+public class Calculator
+{
+    public int Add(int a, int b) => a + b;
+    public double Add(double a, double b) => a + b;
+    public int Add(int a, int b, int c) => a + b + c;
+}</pre>
+
+            <p><strong>2. Параметрический полиморфизм (обобщения)</strong></p>
+            <ul>
+                <li>Один код работает с разными типами данных</li>
+                <li>Реализуется через <code>Generics</code></li>
+            </ul>
+            <pre>
+public class List&lt;T&gt;
+{
+    private T[] _items;
+    public void Add(T item) { /* ... */ }
+    public T Get(int index) { /* ... */ }
+}
+
+List&lt;int&gt; intList = new List&lt;int&gt;();
+List&lt;string&gt; stringList = new List&lt;string&gt;();</pre>
+
+            <p><strong>3. Полиморфизм включения (наследование)</strong></p>
+            <ul>
+                <li>Переопределение виртуальных методов в производных классах</li>
+                <li>Выбор метода происходит на этапе выполнения (runtime)</li>
+                <li>Реализуется через <code>virtual/override</code></li>
+            </ul>
+            <pre>
+public class Shape
+{
+    public virtual void Draw() => Console.WriteLine("Рисуем фигуру");
+}
+
+public class Circle : Shape
+{
+    public override void Draw() => Console.WriteLine("Рисуем круг");
+}
+
+public class Rectangle : Shape
+{
+    public override void Draw() => Console.WriteLine("Рисуем прямоугольник");
+}
+
+// Полиморфизм в действии
+Shape shape1 = new Circle();
+Shape shape2 = new Rectangle();
+shape1.Draw();  // "Рисуем круг"
+shape2.Draw();  // "Рисуем прямоугольник"
+
+List&lt;Shape&gt; shapes = new List&lt;Shape&gt; { new Circle(), new Rectangle() };
+foreach (var shape in shapes)
+    shape.Draw();  // Каждая фигура рисуется по-своему</pre>
+            
+            <p><strong>Преимущества полиморфизма:</strong></p>
+            <ul>
+                <li>Код становится более гибким и расширяемым</li>
+                <li>Упрощается добавление новых типов (принцип Open/Closed)</li>
+                <li>Снижается связанность (coupling) между компонентами</li>
+                <li>Облегчается тестирование (подмена зависимостей)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Что такое абстракция? Отличие от интерфейса.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>Абстракция</strong> — это процесс выделения существенных характеристик объекта и игнорирования несущественных для решения конкретной задачи. В ООП абстракция реализуется через <strong>абстрактные классы</strong> и <strong>интерфейсы</strong>.</p>
+            
+            <p><strong>Пример абстракции в реальной жизни:</strong></p>
+            <ul>
+                <li>Водитель автомобиля не должен знать, как работает двигатель — ему нужны только руль, педали и приборы (интерфейс управления)</li>
+                <li>Пользователь банкомата не должен знать внутреннее устройство банкомата — ему нужен экран, клавиатура и купюроприемник</li>
+            </ul>
+
+            <p><strong>Сравнение абстрактного класса и интерфейса:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Абстрактный класс</th>
+                    <th>Интерфейс</th>
+                </tr>
+                <tr>
+                    <td>Поля</td>
+                    <td>Может иметь (в т.ч. приватные)</td>
+                    <td>Нет (в C# 8+ можно static поля)</td>
+                </tr>
+                <tr>
+                    <td>Реализация методов</td>
+                    <td>Может быть (частичная/полная)</td>
+                    <td>До C# 8 — только сигнатуры; с C# 8 — default реализация</td>
+                </tr>
+                <tr>
+                    <td>Конструкторы</td>
+                    <td>Да</td>
+                    <td>Нет</td>
+                </tr>
+                <tr>
+                    <td>Наследование</td>
+                    <td>Только один класс</td>
+                    <td>Несколько интерфейсов</td>
+                </tr>
+                <tr>
+                    <td>Модификаторы доступа</td>
+                    <td>Все (public, protected, private)</td>
+                    <td>Все члены public (по умолчанию)</td>
+                </tr>
+                <tr>
+                    <td>Отношение</td>
+                    <td>"IS-A" (является)</td>
+                    <td>"CAN-DO" (умеет делать)</td>
+                </tr>
+            </table>
+
+            <p><strong>Пример абстрактного класса:</strong></p>
+            <pre>
+public abstract class Vehicle
+{
+    public string Brand { get; set; }
+    public int Speed { get; protected set; }
+    
+    // Абстрактный метод — без реализации
+    public abstract void StartEngine();
+    
+    // Виртуальный метод — с реализацией по умолчанию
+    public virtual void StopEngine()
+    {
+        Speed = 0;
+        Console.WriteLine("Двигатель остановлен");
+    }
+    
+    // Обычный метод
+    public void Honk()
+    {
+        Console.WriteLine("Бип-бип!");
+    }
+}
+
+public class Car : Vehicle
+{
+    public int DoorsCount { get; set; }
+    
+    public override void StartEngine()
+    {
+        Speed = 10;
+        Console.WriteLine("Двигатель автомобиля запущен");
+    }
+}</pre>
+
+            <p><strong>Пример интерфейса:</strong></p>
+            <pre>
+public interface IFlyable
+{
+    void Fly();  // только сигнатура
+}
+
+public interface ISwimmable
+{
+    void Swim();  // только сигнатура
+}
+
+// Класс может реализовать несколько интерфейсов
+public class Duck : IFlyable, ISwimmable
+{
+    public void Fly() => Console.WriteLine("Утка летит");
+    public void Swim() => Console.WriteLine("Утка плывет");
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>abstract class vs interface — когда что использовать?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>Когда использовать абстрактный класс:</strong></p>
+            <ul>
+                <li><strong>Общее состояние:</strong> нужно хранить поля, общие для всех наследников</li>
+                <li><strong>Общая реализация:</strong> часть методов уже реализована и может быть переиспользована</li>
+                <li><strong>Базовый функционал:</strong> наследники должны расширять, а не заменять полностью</li>
+                <li><strong>Иерархия:</strong> классы имеют явное отношение "является" (is-a)</li>
+                <li><strong>API-эволюция:</strong> можно добавлять новые методы с реализацией без поломки наследников</li>
+            </ul>
+            
+            <p><strong>Примеры абстрактных классов:</strong></p>
+            <ul>
+                <li><code>Stream</code> — базовый класс для всех потоков (FileStream, MemoryStream)</li>
+                <li><code>Animal</code> — общий функционал для всех животных</li>
+                <li><code>Vehicle</code> — общие свойства для транспорта</li>
+            </ul>
+
+            <p><strong>Когда использовать интерфейс:</strong></p>
+            <ul>
+                <li><strong>Контракт:</strong> нужно определить только поведение, без реализации</li>
+                <li><strong>Множественное наследование:</strong> класс должен реализовать несколько поведений</li>
+                <li><strong>Несвязанные классы:</strong> объекты разных иерархий могут реализовать один интерфейс</li>
+                <li><strong>Тестирование:</strong> легко подменять реализации (mocking, DI)</li>
+                <li><strong>Плагины:</strong> сторонние разработчики могут реализовать ваш интерфейс</li>
+            </ul>
+            
+            <p><strong>Примеры интерфейсов:</strong></p>
+            <ul>
+                <li><code>IDisposable</code> — освобождение ресурсов</li>
+                <li><code>IEnumerable</code> — итерация по коллекции</li>
+                <li><code>IComparable</code> — сравнение объектов</li>
+                <li><code>IRepository&lt;T&gt;</code> — паттерн репозиторий</li>
+            </ul>
+
+            <p><strong>Смешанный подход:</strong></p>
+            <pre>
+// Абстрактный класс для общей логики
+public abstract class Animal
+{
+    public string Name { get; set; }
+    public abstract void Speak();
+}
+
+// Интерфейсы для дополнительного поведения
+public interface IFlyable { void Fly(); }
+public interface ISwimmable { void Swim(); }
+
+// Класс-наследник с дополнительными интерфейсами
+public class Duck : Animal, IFlyable, ISwimmable
+{
+    public override void Speak() => Console.WriteLine("Кря!");
+    public void Fly() => Console.WriteLine("Лечу");
+    public void Swim() => Console.WriteLine("Плыву");
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Какие модификаторы доступа существуют в C#?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>Модификаторы доступа</strong> определяют, где можно использовать класс или его члены. Это основа инкапсуляции и сокрытия.</p>
+
+            <table>
+                <tr>
+                    <th>Модификатор</th>
+                    <th>Доступ</th>
+                    <th>Пример использования</th>
+                </tr>
+                <tr>
+                    <td><code>public</code></td>
+                    <td>Везде — внутри и вне сборки</td>
+                    <td>Публичное API библиотеки</td>
+                </tr>
+                <tr>
+                    <td><code>private</code></td>
+                    <td>Только внутри класса</td>
+                    <td>Внутреннее состояние, вспомогательные методы</td>
+                </tr>
+                <tr>
+                    <td><code>protected</code></td>
+                    <td>Внутри класса и в наследниках</td>
+                    <td>Методы, которые должны быть доступны для расширения</td>
+                </tr>
+                <tr>
+                    <td><code>internal</code></td>
+                    <td>Внутри текущей сборки (проекта)</td>
+                    <td>Внутренние API, которые не должны быть видны снаружи</td>
+                </tr>
+                <tr>
+                    <td><code>protected internal</code></td>
+                    <td>В сборке ИЛИ в наследниках (из других сборок)</td>
+                    <td>Редко используется</td>
+                </tr>
+                <tr>
+                    <td><code>private protected</code></td>
+                    <td>В сборке И в наследниках (только в той же сборке)</td>
+                    <td>Для фреймворков, где нужна защита внутри сборки</td>
+                </tr>
+            </table>
+
+            <p><strong>Правила по умолчанию:</strong></p>
+            <ul>
+                <li>Для классов верхнего уровня — <code>internal</code></li>
+                <li>Для членов класса (поля, методы) — <code>private</code></li>
+                <li>Для вложенных классов — <code>private</code></li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public class Person
+{
+    // private — только внутри класса
+    private string _passwordHash;
+    private void ValidatePassword(string password) { /* ... */ }
+    
+    // protected — доступно для наследников
+    protected string GetFullName() => $"{FirstName} {LastName}";
+    
+    // internal — внутри сборки
+    internal string InternalInfo { get; set; }
+    
+    // public — везде
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    
+    public void Save()
+    {
+        ValidatePassword(_passwordHash);  // Доступно
+    }
+}
+
+public class Employee : Person
+{
+    public void ShowName()
+    {
+        // GetFullName() доступен (protected)
+        Console.WriteLine(GetFullName());
+        
+        // _passwordHash не доступен (private)
+        // Console.WriteLine(_passwordHash);  // Ошибка
+    }
+}</pre>
+
+            <p><strong>Советы по использованию:</strong></p>
+            <ul>
+                <li>Всегда начинайте с <code>private</code> — давайте минимальный доступ</li>
+                <li>Открывайте доступ постепенно по мере необходимости</li>
+                <li><code>public</code> — только для того, что должно быть доступно снаружи</li>
+                <li><code>protected</code> — для методов расширения в наследниках</li>
+                <li><code>internal</code> — для API внутри проекта</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>virtual / override / new — в чем разница?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>1. virtual — метод может быть переопределен</strong></p>
+            <ul>
+                <li>Помечает метод в базовом классе как "переопределяемый"</li>
+                <li>Метод имеет реализацию, но наследник может её заменить</li>
+                <li>Выбор метода зависит от реального типа объекта (полиморфизм)</li>
+            </ul>
+
+            <p><strong>2. override — переопределение виртуального метода</strong></p>
+            <ul>
+                <li>Заменяет реализацию базового метода в наследнике</li>
+                <li>Метод должен иметь ту же сигнатуру (имя, параметры, возвращаемый тип)</li>
+                <li>Обеспечивает полиморфное поведение</li>
+                <li>Нельзя переопределить невиртуальный метод</li>
+            </ul>
+
+            <p><strong>3. new — сокрытие метода базового класса</strong></p>
+            <ul>
+                <li>Создает новый метод с тем же именем, но не связанный с базовым</li>
+                <li>Не является полиморфным — выбор метода зависит от типа переменной</li>
+                <li>Компилятор выдаёт предупреждение, если не использовать <code>new</code></li>
+                <li>Используется, когда метод базового класса нельзя изменить</li>
+            </ul>
+
+            <p><strong>Сравнение на примере:</strong></p>
+            <pre>
+public class BaseClass
+{
+    public virtual void VirtualMethod()
+    {
+        Console.WriteLine("Base.VirtualMethod");
+    }
+    
+    public void NonVirtualMethod()
+    {
+        Console.WriteLine("Base.NonVirtualMethod");
+    }
+}
+
+public class DerivedClass : BaseClass
+{
+    // override — полиморфное переопределение
+    public override void VirtualMethod()
+    {
+        Console.WriteLine("Derived.VirtualMethod (override)");
+    }
+    
+    // new — сокрытие (без полиморфизма)
+    public new void NonVirtualMethod()
+    {
+        Console.WriteLine("Derived.NonVirtualMethod (new)");
+    }
+}
+
+// Демонстрация разницы
+BaseClass baseRef = new DerivedClass();
+
+baseRef.VirtualMethod();     // "Derived.VirtualMethod (override)"  — полиморфизм
+baseRef.NonVirtualMethod();  // "Base.NonVirtualMethod" — метод базового класса
+
+DerivedClass derivedRef = (DerivedClass)baseRef;
+derivedRef.NonVirtualMethod();  // "Derived.NonVirtualMethod (new)"</pre>
+
+            <p><strong>Когда что использовать:</strong></p>
+            <ul>
+                <li><strong>virtual/override:</strong> для полиморфного поведения, расширения API</li>
+                <li><strong>new:</strong> если метод базового класса нельзя изменить, но нужно добавить альтернативу</li>
+                <li><strong>sealed override:</strong> запретить дальнейшее переопределение</li>
+                <li><strong>abstract:</strong> если метод не имеет реализации в базовом классе</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Что делает sealed? Для классов и методов.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>sealed</strong> — запрещает наследование (для классов) или переопределение (для методов).</p>
+            
+            <p><strong>1. sealed class — запрет наследования</strong></p>
+            <ul>
+                <li>Класс не может иметь производных классов</li>
+                <li>Защищает класс от некорректного расширения</li>
+                <li>Улучшает производительность (компилятор оптимизирует)</li>
+                <li>Часто используется для утилитных классов, DTO, Value Objects</li>
+            </ul>
+            <pre>
+public sealed class MathHelper
+{
+    public static double CalculateCircleArea(double radius)
+    {
+        return Math.PI * radius * radius;
+    }
+}
+// public class ExtendedMath : MathHelper { }  // Ошибка — нельзя унаследовать</pre>
+
+            <p><strong>2. sealed override — запрет дальнейшего переопределения</strong></p>
+            <ul>
+                <li>Метод уже переопределён, и нельзя переопределить его в следующих наследниках</li>
+                <li>Используется для "заморозки" поведения в иерархии</li>
+                <li>Сочетает <code>sealed</code> и <code>override</code></li>
+            </ul>
+            <pre>
+public class Animal
+{
+    public virtual void Speak() => Console.WriteLine("...");
+}
+
+public class Dog : Animal
+{
+    public sealed override void Speak() => Console.WriteLine("Гав!");
+}
+
+public class Husky : Dog
+{
+    // Ошибка: нельзя переопределить sealed метод
+    // public override void Speak() => Console.WriteLine("Ууу!");
+    
+    // Можно добавить новый метод с другим именем
+    public void Howl() => Console.WriteLine("Ууу!");
+}</pre>
+
+            <p><strong>Когда использовать sealed:</strong></p>
+            <ul>
+                <li><strong>Безопасность:</strong> предотвратить нежелательное изменение поведения</li>
+                <li><strong>Производительность:</strong> компилятор может использовать статические вызовы</li>
+                <li><strong>Проектирование:</strong> класс спроектирован как завершённый, не для наследования</li>
+                <li><strong>Во избежание ошибок:</strong> в сложных иерархиях</li>
+            </ul>
+
+            <p><strong>Что нельзя sealed:</strong></p>
+            <ul>
+                <li>Статические классы (они уже неявно sealed)</li>
+                <li>Структуры (они неявно sealed)</li>
+                <li>Интерфейсы (они не наследуются в классическом смысле)</li>
+                <li>Методы, которые не являются переопределением</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Почему в C# запрещено множественное наследование классов?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>Основная причина:</strong> <strong>Ромбовидная проблема (Diamond Problem)</strong>.</p>
+
+            <p><strong>Что это:</strong></p>
+            <ul>
+                <li>Класс D наследует два класса B и C</li>
+                <li>Оба B и C наследуют один класс A</li>
+                <li>В A есть метод M()</li>
+                <li>B и C могут переопределить M() по-разному</li>
+                <li>Какой M() должен использовать D?</li>
+            </ul>
+
+            <p><strong>Графически:</strong></p>
+            <pre>
+      A
+     / \
+    B   C
+     \ /
+      D
+      
+  Вопрос: какую версию метода M() наследует D?</pre>
+
+            <p><strong>Почему это проблема:</strong></p>
+            <ul>
+                <li><strong>Неоднозначность:</strong> непонятно, какую реализацию использовать</li>
+                <li><strong>Сложность:</strong> усложняет понимание иерархии</li>
+                <li><strong>Нарушение инкапсуляции:</strong> детали реализации двух родителей смешиваются</li>
+                <li><strong>Связанность:</strong> изменения в родителях могут непредсказуемо влиять на потомка</li>
+            </ul>
+
+            <p><strong>Как C# решает эту проблему:</strong></p>
+            <ol>
+                <li><strong>Запрет множественного наследования классов</strong> — класс может иметь только одного родителя</li>
+                <li><strong>Интерфейсы</strong> — вместо классов можно реализовать несколько интерфейсов</li>
+                <li><strong>Дефолтные методы интерфейсов (C# 8+)</strong> — если есть конфликт, класс должен явно реализовать метод</li>
+                <li><strong>Композиция</strong> — вместо наследования можно использовать делегирование</li>
+            </ol>
+
+            <p><strong>Пример с интерфейсами:</strong></p>
+            <pre>
+public interface IWork
+{
+    void DoWork();
+}
+
+public interface IEat
+{
+    void Eat();
+}
+
+public class Human : IWork, IEat
+{
+    // Реализуем оба интерфейса без конфликтов
+    public void DoWork() => Console.WriteLine("Работаю");
+    public void Eat() => Console.WriteLine("Ем");
+}
+
+// Если интерфейсы имеют одинаковые методы
+public interface I1 { void M(); }
+public interface I2 { void M(); }
+
+public class C : I1, I2
+{
+    // Явная реализация для каждого интерфейса
+    void I1.M() => Console.WriteLine("I1.M");
+    void I2.M() => Console.WriteLine("I2.M");
+}</pre>
+
+            <p><strong>Альтернативы множественному наследованию:</strong></p>
+            <ul>
+                <li><strong>Композиция:</strong> класс содержит экземпляры других классов</li>
+                <li><strong>Делегирование:</strong> передача вызовов внутренним объектам</li>
+                <li><strong>Расширения (Extension Methods):</strong> добавление методов к существующим типам</li>
+                <li><strong>Интерфейсы + default методы (C# 8+):</strong> частичное решение</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>От какого класса наследуются все типы в .NET?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p>Все типы в .NET (и классы, и структуры, и примитивы) неявно наследуются от <strong><code>System.Object</code></strong>.</p>
+            
+            <p><strong>Иерархия наследования:</strong></p>
+            <pre>
+System.Object
+    ├── System.ValueType (для значимых типов)
+    │     ├── System.Enum
+    │     ├── System.Int32 (int)
+    │     ├── System.Boolean (bool)
+    │     ├── System.DateTime
+    │     └── ... (все struct)
+    │
+    └── System.Delegate (для делегатов)
+          └── System.MulticastDelegate
+    │
+    └── (все class)
+          ├── System.String
+          ├── System.Array
+          ├── System.Exception
+          ├── System.Collections.Generic.List&lt;T&gt;
+          └── ... (все пользовательские классы)</pre>
+
+            <p><strong>Почему это важно:</strong></p>
+            <ul>
+                <li>Все типы имеют общий набор методов (<code>ToString()</code>, <code>Equals()</code>, <code>GetHashCode()</code>)</li>
+                <li>Любой объект можно привести к <code>object</code> (Unified Type System)</li>
+                <li>Можно создавать коллекции, содержащие любые типы (<code>ArrayList</code>)</li>
+                <li>Значимые типы наследуются от <code>ValueType</code>, который наследуется от <code>Object</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Какие методы есть у System.Object?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Метод</th>
+                    <th>Описание</th>
+                    <th>Пример</th>
+                </tr>
+                <tr>
+                    <td><code>ToString()</code></td>
+                    <td>Возвращает строковое представление объекта</td>
+                    <td><pre>int x = 42; Console.WriteLine(x.ToString()); // "42"</pre></td>
+                </tr>
+                <tr>
+                    <td><code>GetHashCode()</code></td>
+                    <td>Возвращает хэш-код (используется в Dictionary)</td>
+                    <td><pre>var dict = new Dictionary&lt;int, string&gt;();<br>dict.GetHashCode()  // используется для поиска ключа</pre></td>
+                </tr>
+                <tr>
+                    <td><code>Equals(object obj)</code></td>
+                    <td>Сравнение объектов по значению</td>
+                    <td><pre>string s1 = "Hello";<br>string s2 = "Hello";<br>bool eq = s1.Equals(s2); // true</pre></td>
+                </tr>
+                <tr>
+                    <td><code>GetType()</code></td>
+                    <td>Возвращает тип объекта (Reflection)</td>
+                    <td><pre>Type t = "Hello".GetType(); // System.String</pre></td>
+                </tr>
+                <tr>
+                    <td><code>MemberwiseClone()</code></td>
+                    <td>Поверхностное копирование (protected)</td>
+                    <td><pre>public Person Clone() => (Person)this.MemberwiseClone();</pre></td>
+                </tr>
+                <tr>
+                    <td><code>Finalize()</code></td>
+                    <td>Финализатор (protected, вызывается GC)</td>
+                    <td><pre>~MyClass() { /* освобождение ресурсов */ }</pre></td>
+                </tr>
+                <tr>
+                    <td><code>ReferenceEquals()</code></td>
+                    <td>Сравнение ссылок (static)</td>
+                    <td><pre>object.ReferenceEquals(obj1, obj2);</pre></td>
+                </tr>
+            </table>
+
+            <p><strong>Важные правила:</strong></p>
+            <ul>
+                <li>Если переопределяете <code>Equals()</code>, всегда переопределяйте <code>GetHashCode()</code></li>
+                <li><code>GetHashCode()</code> должен быть консистентным (одинаковые объекты → одинаковый хэш-код)</li>
+                <li><code>ToString()</code> часто переопределяют для человекочитаемого вывода</li>
+                <li><code>Finalize()</code> никогда не вызывайте явно — только через деструктор</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>IComparable vs IComparer — разница?</summary>
+        <div class="answer">
+            <p><strong>IComparable&lt;T&gt;</strong> — определяет <strong>естественный порядок</strong> сравнения объектов. Реализуется <strong>самим классом</strong>.</p>
+            <ul>
+                <li>Метод: <code>int CompareTo(T other)</code></li>
+                <li>Возвращает: отрицательное (меньше), 0 (равны), положительное (больше)</li>
+                <li>Используется для сортировки по умолчанию</li>
+            </ul>
+
+            <p><strong>IComparer&lt;T&gt;</strong> — внешний класс для сравнения <strong>двух объектов</strong>.</p>
+            <ul>
+                <li>Метод: <code>int Compare(T x, T y)</code></li>
+                <li>Позволяет реализовать <strong>несколько</strong> вариантов сортировки</li>
+                <li>Не требует изменения самого класса</li>
+                <li>Используется в <code>List.Sort(IComparer)</code></li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Person реализует IComparable (сортировка по возрасту)
+public class Person : IComparable&lt;Person&gt;
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    
+    public int CompareTo(Person other)
+    {
+        return Age.CompareTo(other.Age);
+    }
+}
+
+// Внешний компаратор для сортировки по имени
+public class PersonNameComparer : IComparer&lt;Person&gt;
+{
+    public int Compare(Person x, Person y)
+    {
+        return x.Name.CompareTo(y.Name);
+    }
+}
+
+// Использование
+List&lt;Person&gt; people = new List&lt;Person&gt; { /* ... */ };
+people.Sort();                           // Сортировка по возрасту (IComparable)
+people.Sort(new PersonNameComparer());   // Сортировка по имени (IComparer)</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>IEquatable&lt;T&gt; — зачем переопределять Equals?</summary>
+        <div class="answer">
+            <p><code>IEquatable&lt;T&gt;</code> — интерфейс для сравнения объектов на равенство <strong>без упаковки</strong>.</p>
+            
+            <p><strong>Почему это важно:</strong></p>
+            <ul>
+                <li>Метод <code>Equals(object)</code> требует упаковки для значимых типов (Boxing)</li>
+                <li><code>IEquatable&lt;T&gt;</code> использует <strong>типизированный</strong> параметр (без упаковки)</li>
+                <li>Улучшает производительность, особенно в коллекциях</li>
+                <li>Лучше соответствует принципам обобщённого программирования</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public class Person : IEquatable&lt;Person&gt;
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    
+    // Реализация IEquatable&lt;T&gt;
+    public bool Equals(Person other)
+    {
+        if (other is null) return false;
+        return Id == other.Id && Name == other.Name;
+    }
+    
+    // Переопределение Equals(object) — для совместимости
+    public override bool Equals(object obj)
+    {
+        return Equals(obj as Person);
+    }
+    
+    // Обязательное переопределение GetHashCode()
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Id, Name);
+    }
+}</pre>
+
+            <p><strong>Где используется:</strong></p>
+            <ul>
+                <li><code>Dictionary&lt;K,V&gt;</code> — для сравнения ключей</li>
+                <li><code>HashSet&lt;T&gt;</code> — для хранения уникальных элементов</li>
+                <li><code>List.Contains()</code> — для поиска элемента</li>
+                <li><code>LINQ Distinct()</code>, <code>GroupBy()</code>, <code>Join()</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Что такое UpCast и DownCast?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>UpCast (восходящее приведение):</strong></p>
+            <ul>
+                <li>Приведение от производного класса к базовому</li>
+                <li>Всегда <strong>безопасно</strong> (все объекты производного типа являются объектами базового)</li>
+                <li>Выполняется <strong>неявно</strong></li>
+                <li>Не требует явного приведения</li>
+            </ul>
+            
+            <p><strong>DownCast (нисходящее приведение):</strong></p>
+            <ul>
+                <li>Приведение от базового класса к производному</li>
+                <li>Не всегда безопасно (объект может не быть производным типом)</li>
+                <li>Требует <strong>явного</strong> приведения</li>
+                <li>Может выбросить <code>InvalidCastException</code></li>
+                <li>Используйте <code>as</code> для безопасного приведения</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public class Animal { }
+public class Dog : Animal { public void Bark() => Console.WriteLine("Гав!"); }
+
+Animal animal = new Dog();      // UpCast — неявно, безопасно
+// Dog dog = animal;            // Ошибка — DownCast требует явного приведения
+Dog dog = (Dog)animal;          // DownCast — явно
+dog.Bark();                     // "Гав!"
+
+// Опасный DownCast
+Animal animal2 = new Animal();
+Dog dog2 = (Dog)animal2;        // InvalidCastException!</pre>
+
+            <p><strong>Безопасный DownCast:</strong></p>
+            <pre>
+if (animal is Dog)
+{
+    Dog dog = (Dog)animal;
+    dog.Bark();
+}
+
+// Использование as
+Dog dog = animal as Dog;
+if (dog != null)
+{
+    dog.Bark();
+}
+
+// Pattern matching (C# 7+)
+if (animal is Dog dog)
+{
+    dog.Bark();
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Операторы is и as — разница?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>is — проверка типа</strong></p>
+            <ul>
+                <li>Возвращает <code>bool</code> — совместим ли объект с указанным типом</li>
+                <li>Не выполняет приведение</li>
+                <li>Поддерживает паттерн-матчинг (C# 7+)</li>
+                <li>Не выбрасывает исключений</li>
+            </ul>
+
+            <p><strong>as — приведение с проверкой</strong></p>
+            <ul>
+                <li>Пытается привести объект к указанному типу</li>
+                <li>Возвращает <code>null</code> при неудаче</li>
+                <li>Не выбрасывает исключений</li>
+                <li>Работает только со ссылочными типами и Nullable-структурами</li>
+                <li>Не работает с не-Nullable значимыми типами (int, bool)</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <pre>
+object obj = "Hello World";
+
+// is — проверка
+if (obj is string)
+{
+    string s = (string)obj;  // всё равно нужно явное приведение
+    Console.WriteLine(s.Length);
+}
+
+// as — приведение с проверкой
+string s = obj as string;
+if (s != null)
+{
+    Console.WriteLine(s.Length);
+}
+
+// Pattern matching с is (C# 7+)
+if (obj is string str)
+{
+    Console.WriteLine(str.Length);
+}</pre>
+
+            <p><strong>Когда что использовать:</strong></p>
+            <ul>
+                <li><strong>is:</strong> когда нужно только проверить тип</li>
+                <li><strong>as + проверка на null:</strong> для безопасного приведения</li>
+                <li><strong>Pattern matching (is тип переменная):</strong> современный подход C#</li>
+                <li><strong>Явное приведение (Type):</strong> когда уверены в типе</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Паттерн Factory vs Abstract Factory — базово.</summary>
+        <div class="answer">
+            <p><strong>Factory Method (Фабричный метод)</strong> — создаёт объект одного типа, но позволяет наследникам решать, какой конкретный класс создать.</p>
+            <ul>
+                <li>Один метод создания</li>
+                <li>Используется, когда класс не знает, какой именно тип объектов ему нужен</li>
+                <li>Наследники переопределяют метод для создания своих объектов</li>
+            </ul>
+            <pre>
+public abstract class Creator
+{
+    public abstract IProduct CreateProduct();
+}
+
+public class ConcreteCreatorA : Creator
+{
+    public override IProduct CreateProduct() => new ProductA();
+}
+
+public class ConcreteCreatorB : Creator
+{
+    public override IProduct CreateProduct() => new ProductB();
+}</pre>
+
+            <p><strong>Abstract Factory (Абстрактная фабрика)</strong> — создаёт семейства связанных объектов.</p>
+            <ul>
+                <li>Интерфейс фабрики содержит методы для создания нескольких типов продуктов</li>
+                <li>Клиент работает с фабрикой, создавая целые семейства объектов</li>
+                <li>Разные реализации фабрики создают разные семейства</li>
+            </ul>
+            <pre>
+public interface IUIFactory
+{
+    IButton CreateButton();
+    IWindow CreateWindow();
+}
+
+public class WindowsFactory : IUIFactory
+{
+    public IButton CreateButton() => new WindowsButton();
+    public IWindow CreateWindow() => new WindowsWindow();
+}
+
+public class MacFactory : IUIFactory
+{
+    public IButton CreateButton() => new MacButton();
+    public IWindow CreateWindow() => new MacWindow();
+}</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>Factory Method:</strong> когда нужно создать один объект с возможностью расширения</li>
+                <li><strong>Abstract Factory:</strong> когда нужны семейства взаимосвязанных объектов</li>
+            </ul>
+        </div>
+    </details>
+</section>

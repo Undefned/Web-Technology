@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 1-5 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 5 ===================== -->
+<section class="section c5">
+    <h2>🧠 5. Garbage Collector. Управление памятью <span class="badge purple">Mid+</span></h2>
+
+    <details>
+        <summary>Как работает GC — корневые объекты, маркировка, очистка.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Сборщик мусора (GC)</strong> автоматически управляет памятью в .NET.</p>
+
+            <p><strong>Три основных этапа:</strong></p>
+            <ol>
+                <li><strong>Маркировка (Mark):</strong> GC находит корневые объекты и отмечает все достижимые объекты</li>
+                <li><strong>Очистка (Sweep):</strong> Удаляет недостижимые объекты (без ссылок)</li>
+                <li><strong>Сжатие (Compact):</strong> Перемещает выжившие объекты, чтобы память была непрерывной</li>
+            </ol>
+
+            <p><strong>Корневые объекты (Roots):</strong></p>
+            <ul>
+                <li>Локальные переменные в стеке</li>
+                <li>Статические поля</li>
+                <li>Зарегистрированные обработчики событий</li>
+                <li>Объекты в финализаторе</li>
+                <li>Ссылки из неуправляемого кода (GCHandle)</li>
+            </ul>
+
+            <p><strong>Процесс:</strong></p>
+            <pre>
+// GC находит корни → обходит граф объектов
+class Program
+{
+    static Person _person;  // Корневой объект (статическое поле)
+    
+    void Example()
+    {
+        var p = new Person();  // Корень: локальная переменная
+        p.Name = "Alice";
+        
+        // GC не удалит p, пока он в стеке
+        // После выхода из метода p перестаёт быть корнем
+    }
+}</pre>
+
+            <p><strong>Когда запускается GC:</strong></p>
+            <ul>
+                <li>Недостаток памяти в куче</li>
+                <li>Вызов <code>GC.Collect()</code> (не рекомендуется)</li>
+                <li>Выход из процесса</li>
+                <li>Аллокация памяти превышает порог поколения</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Поколения: Gen 0, Gen 1, Gen 2 — зачем?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Поколения (Generations)</strong> — оптимизация GC для разных типов объектов.</p>
+
+            <p><strong>Gen 0 (Молодые объекты):</strong></p>
+            <ul>
+                <li>Новые объекты</li>
+                <li>Очищается часто (каждый раз, когда заполняется)</li>
+                <li>Быстрая сборка (небольшой размер)</li>
+                <li>Большинство объектов умирают здесь</li>
+            </ul>
+
+            <p><strong>Gen 1 (Пережившие Gen 0):</strong></p>
+            <ul>
+                <li>Объекты, которые пережили одну сборку Gen 0</li>
+                <li>Буферная зона</li>
+                <li>Сборка происходит реже</li>
+            </ul>
+
+            <p><strong>Gen 2 (Долгоживущие объекты):</strong></p>
+            <ul>
+                <li>Объекты, пережившие сборку Gen 1</li>
+                <li>Долгоживущие объекты (статические поля, кэши)</li>
+                <li>Сборка происходит редко</li>
+                <li>Полная сборка (Gen 0 + Gen 1 + Gen 2) — самая дорогая</li>
+            </ul>
+
+            <p><strong>Почему три поколения:</strong></p>
+            <ul>
+                <li><strong>Гипотеза поколений:</strong> большинство объектов живут недолго</li>
+                <li>Оптимизация: частое освобождение мусора в Gen 0 (быстро)</li>
+                <li>Редкая очистка Gen 2 (медленно, но редко)</li>
+                <li>Баланс производительности и времени отклика</li>
+            </ul>
+
+            <p><strong>Демонстрация:</strong></p>
+            <pre>
+var obj = new object();       // Gen 0
+GC.Collect();                 // obj выжил → Gen 1
+GC.Collect();                 // obj выжил → Gen 2
+GC.Collect();                 // obj может быть удалён (если нет ссылок)
+
+// Посмотреть поколение
+int generation = GC.GetGeneration(obj);  // 2</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Large Object Heap (LOH) — объекты > 85 KB, особенности.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Large Object Heap (LOH)</strong> — специальная куча для больших объектов.</p>
+
+            <p><strong>Критерии попадания в LOH:</strong></p>
+            <ul>
+                <li>Объекты размером <strong>> 85 KB</strong> (для массивов)</li>
+                <li>Объекты размера > 85 KB (для ссылочных типов)</li>
+                <li>Все массивы <code>double[]</code> > 85 KB</li>
+                <li>Все объекты > 85 KB</li>
+            </ul>
+
+            <p><strong>Особенности LOH:</strong></p>
+            <ul>
+                <li><strong>Не сжимается</strong> по умолчанию (это дорого)</li>
+                <li>Может вызывать <strong>фрагментацию</strong> памяти</li>
+                <li>Сборка происходит во время Gen 2</li>
+                <li>Объекты в LOH считаются <strong>Gen 2</strong></li>
+                <li>В .NET Core 2.1+ появилась <strong>компактификация</strong> LOH</li>
+            </ul>
+
+            <p><strong>Проблемы LOH:</strong></p>
+            <ul>
+                <li><strong>Фрагментация:</strong> объекты выделяются и освобождаются, оставляя "дыры"</li>
+                <li><strong>Производительность:</strong> выделение больших объектов дороже</li>
+                <li><strong>OutOfMemoryException:</strong> из-за фрагментации, даже если память есть</li>
+            </ul>
+
+            <p><strong>Как избежать проблем:</strong></p>
+            <ul>
+                <li>Используйте <code>ArrayPool&lt;T&gt;</code> для массивов</li>
+                <li>Используйте <code>Span&lt;T&gt;</code> и <code>Memory&lt;T&gt;</code></li>
+                <li>Избегайте частого выделения больших объектов</li>
+                <li>Используйте <code>GC.TryStartNoGCRegion()</code> для критических участков</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Когда вызывается GC — автоматически, GC.Collect() (не рекомендуется).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Автоматические вызовы GC:</strong></p>
+            <ul>
+                <li>Недостаточно памяти для нового объекта</li>
+                <li>Память в куче достигает порога для поколения</li>
+                <li>Физическая память системы заканчивается</li>
+                <li>Вызов <code>GC.AddMemoryPressure()</code></li>
+                <li>Выход из приложения</li>
+            </ul>
+
+            <p><strong>Ручной вызов GC.Collect():</strong></p>
+            <ul>
+                <li><strong>Не рекомендуется</strong> в продакшене</li>
+                <li>Может ухудшить производительность</li>
+                <li>Вызывает полную сборку (Gen 0 + 1 + 2 + LOH)</li>
+                <li>Используется только для <strong>диагностики</strong> и тестирования</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// Принудительная сборка (только для диагностики!)
+GC.Collect();          // Все поколения
+GC.Collect(0);         // Только Gen 0
+GC.Collect(2);         // Все поколения (включая LOH)
+
+// Ожидание финализаторов
+GC.WaitForPendingFinalizers();
+
+// Проверка количества сборок
+int gen0 = GC.CollectionCount(0);  // Количество сборок Gen 0
+int gen1 = GC.CollectionCount(1);
+int gen2 = GC.CollectionCount(2);</pre>
+
+            <p><strong>Когда всё же вызвать GC.Collect():</strong></p>
+            <ul>
+                <li>После тестирования на память</li>
+                <li>После освобождения больших ресурсов</li>
+                <li>В приложениях с низкой нагрузкой</li>
+                <li>Для диагностики утечек</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>IDisposable и Dispose — освобождение ресурсов.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>IDisposable</strong> — интерфейс для <strong>ручного</strong> освобождения ресурсов.</p>
+
+            <p><strong>Зачем нужен:</strong></p>
+            <ul>
+                <li>GC не знает о <strong>неуправляемых</strong> ресурсах (файлы, сокеты, соединения с БД)</li>
+                <li>Нужно освобождать ресурсы <strong>немедленно</strong>, а не ждать GC</li>
+                <li>Реализует паттерн <strong>"Deterministic Finalization"</strong></li>
+            </ul>
+
+            <p><strong>Пример использования:</strong></p>
+            <pre>
+public class FileReader : IDisposable
+{
+    private FileStream _fileStream;
+    private bool _disposed = false;
+    
+    public FileReader(string path)
+    {
+        _fileStream = File.OpenRead(path);
+    }
+    
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);  // Отключаем финализатор
+    }
+    
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        
+        if (disposing)
+        {
+            // Освобождаем управляемые ресурсы
+            _fileStream?.Dispose();
+        }
+        // Освобождаем неуправляемые ресурсы (если есть)
+        
+        _disposed = true;
+    }
+}</pre>
+
+            <p><strong>Использование с using:</strong></p>
+            <pre>
+// using гарантирует вызов Dispose()
+using (var reader = new FileReader("file.txt"))
+{
+    // Читаем файл
+} // Здесь вызывается reader.Dispose()
+
+// Эквивалент без using
+var reader2 = new FileReader("file.txt");
+try { /* ... */ }
+finally { reader2.Dispose(); }</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Finalize (деструктор) — финализация, когда вызывается?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Finalize (финализатор)</strong> — метод, который вызывается <strong>сборщиком мусора</strong> перед удалением объекта.</p>
+
+            <p><strong>Как реализовать:</strong></p>
+            <pre>
+public class MyClass
+{
+    // Финализатор (деструктор)
+    ~MyClass()
+    {
+        // Освобождение ресурсов
+        Console.WriteLine("Финализатор вызван");
+    }
+}</pre>
+
+            <p><strong>Когда вызывается:</strong></p>
+            <ul>
+                <li>GC обнаруживает недостижимый объект</li>
+                <li>Объект помещается в <strong>финализационную очередь</strong></li>
+                <li>Отдельный поток GC вызывает финализаторы</li>
+                <li><strong>Момент вызова недетерминирован</strong> — неизвестно когда</li>
+                <li>Может быть вызван <strong>несколько раз</strong> (если объект снова оживает)</li>
+            </ul>
+
+            <p><strong>Проблемы финализаторов:</strong></p>
+            <ul>
+                <li><strong>Недетерминизм:</strong> неизвестно когда будет вызван</li>
+                <li><strong>Производительность:</strong> объекты с финализаторами живут дольше</li>
+                <li><strong>Сложность:</strong> нужно правильно реализовать паттерн Dispose</li>
+                <li>Может вызвать <strong>OutOfMemoryException</strong> (очередь финализации)</li>
+            </ul>
+
+            <p><strong>Правильный паттерн (Dispose + Finalize):</strong></p>
+            <pre>
+public class ResourceHolder : IDisposable
+{
+    private IntPtr _handle;  // Неуправляемый ресурс
+    private bool _disposed = false;
+    
+    ~ResourceHolder()
+    {
+        Dispose(false);  // Только для неуправляемых ресурсов
+    }
+    
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);  // Не вызывать финализатор
+    }
+    
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        
+        if (disposing)
+        {
+            // Освобождаем managed ресурсы
+        }
+        // Освобождаем unmanaged ресурсы (всегда)
+        CloseHandle(_handle);
+        _disposed = true;
+    }
+}</pre>
+
+            <p><strong>GC.SuppressFinalize:</strong></p>
+            <ul>
+                <li>Сообщает GC, что финализатор <strong>не нужно вызывать</strong></li>
+                <li>Используется вместе с <code>Dispose()</code></li>
+                <li>Улучшает производительность</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>using — во что компилируется?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><code>using</code> — синтаксический сахар для <code>try-finally</code> с вызовом <code>Dispose()</code>.</p>
+
+            <p><strong>Компиляция using:</strong></p>
+            <pre>
+// Исходный код
+using (var stream = new FileStream("file.txt", FileMode.Open))
+{
+    stream.ReadByte();
+}
+
+// Компилируется в:
+FileStream stream = null;
+try
+{
+    stream = new FileStream("file.txt", FileMode.Open);
+    stream.ReadByte();
+}
+finally
+{
+    if (stream != null)
+        stream.Dispose();
+}</pre>
+
+            <p><strong>using с несколькими объектами:</strong></p>
+            <pre>
+// Вложенные using
+using (var file = new FileStream(...))
+using (var reader = new StreamReader(file))
+{
+    reader.ReadToEnd();
+}
+
+// Компилируется в последовательные try-finally</pre>
+
+            <p><strong>using с throw:</strong></p>
+            <pre>
+// Dispose() вызывается даже при исключении
+using (var stream = new FileStream("file.txt", FileMode.Open))
+{
+    throw new Exception("Ошибка");
+} // stream.Dispose() всё равно вызовется</pre>
+
+            <p><strong>IAsyncDisposable (C# 8+):</strong></p>
+            <pre>
+// await using для асинхронного освобождения
+await using (var conn = new SqlConnection(connectionString))
+{
+    await conn.OpenAsync();
+    // ...
+} // await conn.DisposeAsync()</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Disposable паттерн (Dispose(bool disposing)) — для managed + unmanaged.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Disposable паттерн</strong> — стандартная реализация для освобождения ресурсов.</p>
+
+            <p><strong>Структура:</strong></p>
+            <pre>
+public class ResourceHolder : IDisposable
+{
+    private bool _disposed = false;
+    
+    // Публичный метод для клиентов
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    
+    // Защищённый метод с параметром
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        
+        if (disposing)
+        {
+            // ❗ Освобождаем УПРАВЛЯЕМЫЕ ресурсы
+            // Ссылки на другие IDisposable объекты
+            _stream?.Dispose();
+            _connection?.Dispose();
+        }
+        
+        // ❗ Освобождаем НЕУПРАВЛЯЕМЫЕ ресурсы
+        // Всегда, даже при финализации
+        CloseHandle(_handle);
+        FreeMemory(_ptr);
+        
+        _disposed = true;
+    }
+    
+    // Финализатор (вызывает Dispose(false))
+    ~ResourceHolder()
+    {
+        Dispose(false);
+    }
+}</pre>
+
+            <p><strong>Почему bool disposing:</strong></p>
+            <ul>
+                <li><code>true</code> — вызвано из <code>Dispose()</code> (явно). Можно освобождать managed ресурсы.</li>
+                <li><code>false</code> — вызвано из финализатора. <strong>Нельзя</strong> обращаться к managed ресурсам (они могут быть уже удалены).</li>
+            </ul>
+
+            <p><strong>Пример использования:</strong></p>
+            <pre>
+public class ConnectionManager : IDisposable
+{
+    private SqlConnection _connection;  // Managed
+    private IntPtr _nativeHandle;       // Unmanaged
+    
+    public void Open(string connectionString)
+    {
+        _connection = new SqlConnection(connectionString);
+        _nativeHandle = CreateNativeConnection();
+        _connection.Open();
+    }
+    
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        
+        if (disposing)
+        {
+            // Только если явный вызов Dispose()
+            _connection?.Dispose();
+            _connection = null;
+        }
+        
+        // Всегда освобождаем неуправляемые ресурсы
+        if (_nativeHandle != IntPtr.Zero)
+        {
+            CloseNativeConnection(_nativeHandle);
+            _nativeHandle = IntPtr.Zero;
+        }
+        
+        _disposed = true;
+    }
+    
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    
+    ~ConnectionManager()
+    {
+        Dispose(false);
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>IAsyncDisposable — когда использовать?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>IAsyncDisposable</strong> — асинхронная версия <code>IDisposable</code> (C# 8+).</p>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Освобождение <strong>асинхронных</strong> ресурсов</li>
+                <li>Закрытие сетевых соединений</li>
+                <li>Освобождение подключений к БД (асинхронное)</li>
+                <li>Закрытие потоков с асинхронными операциями</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public class AsyncResource : IAsyncDisposable
+{
+    private SqlConnection _connection;
+    private bool _disposed = false;
+    
+    public async Task ConnectAsync(string connectionString)
+    {
+        _connection = new SqlConnection(connectionString);
+        await _connection.OpenAsync();
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeAsync(true);
+        GC.SuppressFinalize(this);
+    }
+    
+    protected virtual async ValueTask DisposeAsync(bool disposing)
+    {
+        if (_disposed) return;
+        
+        if (disposing)
+        {
+            // Асинхронное освобождение
+            if (_connection != null)
+                await _connection.DisposeAsync();
+        }
+        
+        _disposed = true;
+    }
+}
+
+// Использование
+await using (var resource = new AsyncResource())
+{
+    await resource.ConnectAsync(connectionString);
+    // ...
+} // await resource.DisposeAsync()</pre>
+
+            <p><strong>Совместимость с IDisposable:</strong></p>
+            <ul>
+                <li>Класс может реализовывать <strong>оба</strong> интерфейса</li>
+                <li><code>await using</code> вызывает <code>DisposeAsync()</code></li>
+                <li><code>using</code> вызовет <code>Dispose()</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>WeakReference — зачем, когда использовать?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>WeakReference</strong> — слабая ссылка, которая <strong>не препятствует</strong> сборке мусора.</p>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>Кэширование</strong> — объекты могут быть удалены при нехватке памяти</li>
+                <li><strong>События</strong> — слабые обработчики, чтобы не создавать утечек</li>
+                <li><strong>Наблюдатели</strong> — без удержания объектов в памяти</li>
+                <li><strong>Загрузка ресурсов</strong> — можно перезагрузить при необходимости</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public class Cache
+{
+    private Dictionary&lt;string, WeakReference&lt;object&gt;&gt; _cache = new();
+    
+    public void Add(string key, object value)
+    {
+        _cache[key] = new WeakReference&lt;object&gt;(value);
+    }
+    
+    public object Get(string key)
+    {
+        if (_cache.TryGetValue(key, out var weakRef))
+        {
+            if (weakRef.TryGetTarget(out var target))
+                return target;
+            
+            // Объект удалён сборщиком
+            _cache.Remove(key);
+        }
+        return null;
+    }
+}
+
+// Использование
+var cache = new Cache();
+cache.Add("data", new LargeObject());
+var data = cache.Get("data");  // Объект жив
+
+GC.Collect();
+var data2 = cache.Get("data");  // null (если объект удалён)</pre>
+
+            <p><strong>Слабое событие:</strong></p>
+            <pre>
+public class EventSource
+{
+    private List&lt;WeakReference&lt;EventHandler&gt;&gt; _handlers = new();
+    
+    public void AddHandler(EventHandler handler)
+    {
+        _handlers.Add(new WeakReference&lt;EventHandler&gt;(handler));
+    }
+    
+    public void RaiseEvent()
+    {
+        foreach (var weakRef in _handlers.ToList())
+        {
+            if (weakRef.TryGetTarget(out var handler))
+                handler(this, EventArgs.Empty);
+            else
+                _handlers.Remove(weakRef);  // Удаляем мёртвые ссылки
+        }
+    }
+}</pre>
+
+            <p><strong>Предостережения:</strong></p>
+            <ul>
+                <li>Проверяйте <code>IsAlive</code> или <code>TryGetTarget</code> перед использованием</li>
+                <li>Не используйте для критически важных объектов</li>
+                <li>Учитывайте, что объект может быть удалён в любой момент</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>GCHandle — закрепление объектов (pinning).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>GCHandle</strong> — закрепляет объект в памяти, чтобы GC не перемещал его.</p>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>P/Invoke</strong> — передача ссылок на объекты в неуправляемый код</li>
+                <li><strong>Работа с указателями</strong> — безопасная адресация объекта</li>
+                <li><strong>COM-взаимодействие</strong> — передача объектов в COM</li>
+            </ul>
+
+            <p><strong>Типы GCHandle:</strong></p>
+            <ul>
+                <li><code>Normal</code> — обычная ссылка (удерживает объект)</li>
+                <li><code>Pinned</code> — закреплённая ссылка (GC не перемещает)</li>
+                <li><code>Weak</code> — слабая ссылка (не удерживает)</li>
+                <li><code>WeakTrackResurrection</code> — слабая ссылка, отслеживающая финализацию</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Закрепление массива для P/Invoke
+byte[] buffer = new byte[1024];
+GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+
+try
+{
+    // Получаем указатель на закреплённый объект
+    IntPtr ptr = handle.AddrOfPinnedObject();
+    
+    // Передаём ptr в неуправляемый код
+    SomeNativeMethod(ptr, buffer.Length);
+}
+finally
+{
+    // Обязательно освобождаем
+    if (handle.IsAllocated)
+        handle.Free();
+}
+
+// Безопасное получение указателя (упрощённо)
+unsafe void PinArray(byte[] arr)
+{
+    fixed (byte* p = arr)  // Автоматически закрепляет и освобождает
+    {
+        // Работаем с p
+    }
+}</pre>
+
+            <p><strong>Предостережения:</strong></p>
+            <ul>
+                <li>Всегда освобождайте GCHandle (<code>Free()</code>)</li>
+                <li>Закреплённые объекты <strong>ухудшают</strong> производительность GC</li>
+                <li>Избегайте длительного закрепления</li>
+                <li>Используйте <code>fixed</code> где возможно</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>GC.TryStartNoGCRegion — для высоконагруженных сценариев.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>GC.TryStartNoGCRegion()</strong> — пытается отключить GC на время выполнения критического участка.</p>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Высоконагруженные системы (игры, финансы)</li>
+                <li>Критические участки, где GC <strong>недопустим</strong></li>
+                <li>Обработка реального времени (real-time)</li>
+                <li>Когда нужно <strong>предсказуемое</strong> время выполнения</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Попытка войти в режим без GC
+if (GC.TryStartNoGCRegion(1024 * 1024 * 10))  // 10 MB
+{
+    try
+    {
+        // Код, где GC не должен выполняться
+        ProcessCriticalData();
+    }
+    finally
+    {
+        // Выход из режима
+        GC.EndNoGCRegion();
+    }
+}
+else
+{
+    // Не удалось войти в режим (недостаточно памяти)
+}</pre>
+
+            <p><strong>Важные нюансы:</strong></p>
+            <ul>
+                <li>Если во время NoGCRegion потребуется больше памяти, будет <strong>OutOfMemoryException</strong></li>
+                <li>Используйте <strong>краткие</strong> участки</li>
+                <li>Не пытайтесь войти повторно (сначала выйдите)</li>
+                <li>Доступно только в .NET Core / .NET 5+</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Что такое "утечка памяти" в .NET?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Утечка памяти</strong> — когда объект <strong>не может быть удалён</strong> GC, хотя он больше не нужен.</p>
+
+            <p><strong>Основные причины:</strong></p>
+
+            <p><strong>1. Неотписанные события (Events)</strong></p>
+            <ul>
+                <li>Подписчик держит ссылку на издателя</li>
+                <li>Если не отписаться, подписчик живёт всегда</li>
+            </ul>
+            <pre>
+// ❌ Утечка
+public class Publisher
+{
+    public event EventHandler Event;
+}
+
+public class Subscriber
+{
+    public Subscriber(Publisher p)
+    {
+        p.Event += OnEvent;  // Не отписались → утечка
+    }
+    void OnEvent(object sender, EventArgs e) { }
+}
+
+// ✅ Решение
+p.Event -= OnEvent;  // Отписка
+// или Weak Event Pattern</pre>
+
+            <p><strong>2. Статические поля</strong></p>
+            <ul>
+                <li>Статические поля живут <strong>вечно</strong></li>
+                <li>Все объекты, на которые ссылается статическое поле, тоже живут вечно</li>
+            </ul>
+            <pre>
+public static class Cache
+{
+    public static List&lt;object&gt; Items = new();  // Растёт бесконечно
+}
+
+// Решение: использовать WeakReference или ограничивать размер</pre>
+
+            <p><strong>3. Закреплённые объекты (GCHandle)</strong></p>
+            <ul>
+                <li>Не освобождённые GCHandle удерживают объект</li>
+                <li>Всегда вызывайте <code>Free()</code></li>
+            </ul>
+
+            <p><strong>4. Замыкания (Closures)</strong></p>
+            <ul>
+                <li>Лямбды захватывают переменные из внешнего контекста</li>
+                <li>Если лямбда хранится долго, все захваченные объекты тоже живут</li>
+            </ul>
+
+            <p><strong>5. Timer и таймеры</strong></p>
+            <ul>
+                <li>Не остановленный таймер держит объект</li>
+                <li>Всегда <code>Dispose()</code> таймеры</li>
+            </ul>
+
+            <p><strong>Как обнаружить утечку:</strong></p>
+            <ul>
+                <li><strong>dotMemory</strong> (JetBrains)</li>
+                <li><strong>PerfView</strong> (Microsoft)</li>
+                <li><strong>Visual Studio Diagnostic Tools</strong></li>
+                <li><strong>Windows Performance Analyzer</strong></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Как найти утечку памяти — профайлеры.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Инструменты для обнаружения утечек:</strong></p>
+
+            <p><strong>1. dotMemory (JetBrains)</strong></p>
+            <ul>
+                <li>Встроен в Rider / ReSharper</li>
+                <li>Анализ дампов памяти</li>
+                <li>Поиск самых больших объектов</li>
+                <li>Обнаружение утечек через события</li>
+                <li>Сравнение снимков (snapshots)</li>
+            </ul>
+
+            <p><strong>2. PerfView (Microsoft)</strong></p>
+            <ul>
+                <li>Бесплатный инструмент от Microsoft</li>
+                <li>Анализ GC и ETW событий</li>
+                <li>Поиск объектов, удерживаемых в памяти</li>
+                <li>Подходит для серверных приложений</li>
+            </ul>
+
+            <p><strong>3. Visual Studio Diagnostic Tools</strong></p>
+            <ul>
+                <li>Встроен в Visual Studio</li>
+                <li>Профилирование памяти</li>
+                <li>Анализ кучи</li>
+                <li>Поиск объектов с сильными ссылками</li>
+            </ul>
+
+            <p><strong>Процесс поиска утечки:</strong></p>
+            <ol>
+                <li><strong>Снимок 1</strong> — до выполнения действия</li>
+                <li><strong>Снимок 2</strong> — после выполнения действия (несколько раз)</li>
+                <li><strong>Сравнение</strong> — найти объекты, которые появились в снимке 2</li>
+                <li><strong>Анализ ссылок</strong> — найти GC Root, удерживающий объект</li>
+            </ol>
+
+            <p><strong>Практический пример с dotMemory:</strong></p>
+            <ul>
+                <li>Запустить приложение с профилировщиком</li>
+                <li>Сделать снимок памяти</li>
+                <li>Выполнить действие, которое должно освободить память</li>
+                <li>Сделать второй снимок</li>
+                <li>Найти объекты, которые остались в памяти</li>
+                <li>Изучить цепочку ссылок к GC Root</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Generation и LOH compaction — .NET Core 2.1+.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>LOH Compaction</strong> — сжатие Large Object Heap (появилось в .NET Core 2.1).</p>
+
+            <p><strong>Что изменилось:</strong></p>
+            <ul>
+                <li>Раньше LOH <strong>не сжимался</strong> (только очищался)</li>
+                <li>Приводило к <strong>фрагментации</strong> памяти</li>
+                <li>Могло вызвать <code>OutOfMemoryException</code></li>
+                <li>В .NET Core 2.1+ LOH <strong>периодически сжимается</strong></li>
+            </ul>
+
+            <p><strong>Управление компактификацией:</strong></p>
+            <pre>
+// Принудительная компактификация LOH
+GC.Collect(2, GCCollectionMode.Forced);
+GC.Collect(2, GCCollectionMode.Forced, blocking: true);
+
+// Настройка через app.config
+&lt;configuration&gt;
+    &lt;runtime&gt;
+        &lt;gcConcurrent enabled="true" /&gt;
+        &lt;gcServer enabled="true" /&gt;
+        &lt;GCLOHThreshold enabled="true" value="100000" /&gt;  // 100 KB
+    &lt;/runtime&gt;
+&lt;/configuration&gt;</pre>
+
+            <p><strong>POH (Pinned Object Heap) — .NET 5+:</strong></p>
+            <ul>
+                <li>Отдельная куча для <strong>закреплённых объектов</strong></li>
+                <li>Улучшает производительность GC</li>
+                <li>Объекты в POH не требуют компактификации</li>
+                <li>Уменьшает фрагментацию в LOH</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>POH (Pinned Object Heap) — что это?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Pinned Object Heap (POH)</strong> — отдельная куча для закреплённых объектов (появилась в .NET 5).</p>
+
+            <p><strong>Проблема, которую решает:</strong></p>
+            <ul>
+                <li>Раньше закреплённые объекты (<code>GCHandle</code>) хранились в обычной куче</li>
+                <li>Мешали GC, так как не могли быть перемещены</li>
+                <li>Увеличивали фрагментацию</li>
+            </ul>
+
+            <p><strong>Как работает POH:</strong></p>
+            <ul>
+                <li>Закреплённые объекты выделяются <strong>в отдельной куче</strong></li>
+                <li>Не влияют на компактификацию основной кучи</li>
+                <li>Улучшают производительность GC</li>
+                <li>Объекты в POH не сжимаются</li>
+            </ul>
+
+            <p><strong>Объекты, попадающие в POH:</strong></p>
+            <ul>
+                <li><code>GCHandle.Alloc</code> с <code>GCHandleType.Pinned</code></li>
+                <li>Массивы, закреплённые через <code>fixed</code></li>
+                <li>P/Invoke буферы</li>
+                <li>Объекты, созданные через <code>NativeMemory</code></li>
+            </ul>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Меньше фрагментации в основной куче</li>
+                <li>GC работает быстрее</li>
+                <li>Лучшая производительность для P/Invoke</li>
+            </ul>
+        </div>
+    </details>
+</section>

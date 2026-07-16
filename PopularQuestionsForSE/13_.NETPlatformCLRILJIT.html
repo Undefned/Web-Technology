@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 11-18 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 13 ===================== -->
+<section class="section c13">
+    <h2>⚙️ 13. .NET Platform. CLR, IL, JIT <span class="badge purple">Mid+</span></h2>
+
+    <details>
+        <summary>CLR — Common Language Runtime.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>CLR</strong> — исполняющая среда для .NET-приложений.</p>
+
+            <p><strong>Основные функции:</strong></p>
+            <ul>
+                <li><strong>Управление памятью</strong> (Garbage Collector)</li>
+                <li><strong>Безопасность</strong> (CAS, безопасность типов)</li>
+                <li><strong>Обработка исключений</strong></li>
+                <li><strong>Загрузка сборок (Assemblies)</strong></li>
+                <li><strong>JIT-компиляция</strong> (IL → машинный код)</li>
+                <li><strong>Управление потоками</strong></li>
+                <li><strong>Взаимодействие с COM и неуправляемым кодом</strong></li>
+            </ul>
+
+            <p><strong>Схема работы:</strong></p>
+            <pre>
+Исходный код (C#) → Компиляция → IL (Intermediate Language) → JIT → Машинный код → CPU</pre>
+
+            <p><strong>Компоненты:</strong></p>
+            <ul>
+                <li><strong>CTS</strong> (Common Type System) — единая система типов</li>
+                <li><strong>CLS</strong> (Common Language Specification) — спецификация для языков</li>
+                <li><strong>BCL</strong> (Base Class Library) — базовые классы</li>
+                <li><strong>GAC</strong> (Global Assembly Cache) — хранилище сборок</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>IL (Intermediate Language) — что это.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>IL (Intermediate Language)</strong> — промежуточный язык, в который компилируется C# код.</p>
+
+            <p><strong>Особенности:</strong></p>
+            <ul>
+                <li>Независимость от платформы</li>
+                <li>Общий для всех .NET языков</li>
+                <li>Содержит метаданные (информация о типах)</li>
+                <li>Преобразуется в машинный код JIT-компилятором</li>
+            </ul>
+
+            <p><strong>Пример IL:</strong></p>
+            <pre>
+// C# код
+public int Add(int a, int b) => a + b;
+
+// IL
+.method public hidebysig instance int32 Add(int32 a, int32 b) cil managed
+{
+    .maxstack 8
+    ldarg.1    // Загрузить a
+    ldarg.2    // Загрузить b
+    add        // Сложить
+    ret        // Вернуть
+}</pre>
+
+            <p><strong>Просмотр IL:</strong></p>
+            <ul>
+                <li><code>ildasm</code> (инструмент от Microsoft)</li>
+                <li><code>ILSpy</code> / <code>dnSpy</code> (декомпиляторы)</li>
+                <li><code>dotPeek</code> (JetBrains)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>JIT-компиляция — Just-In-Time, преимущества.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>JIT (Just-In-Time)</strong> — компиляция IL в машинный код во время выполнения.</p>
+
+            <p><strong>Как работает:</strong></p>
+            <ol>
+                <li>Метод вызывается впервые</li>
+                <li>JIT компилирует IL в машинный код</li>
+                <li>Код сохраняется в памяти</li>
+                <li>При повторном вызове используется скомпилированный код</li>
+            </ol>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li><strong>Переносимость:</strong> IL не зависит от платформы</li>
+                <li><strong>Оптимизация:</strong> JIT может оптимизировать под конкретную платформу</li>
+                <li><strong>Безопасность:</strong> верификация IL во время компиляции</li>
+                <li><strong>Производительность:</strong> вторая компиляция даёт оптимизированный код</li>
+            </ul>
+
+            <p><strong>Недостатки:</strong></p>
+            <ul>
+                <li><strong>Задержка:</strong> первый вызов метода медленнее</li>
+                <li><strong>Память:</strong> скомпилированный код занимает память</li>
+            </ul>
+
+            <p><strong>Типы JIT:</strong></p>
+            <ul>
+                <li><strong>Normal JIT:</strong> компилирует метод при первом вызове</li>
+                <li><strong>Econo JIT:</strong> быстрая компиляция (меньше оптимизаций)</li>
+                <li><strong>Pre-JIT (NGEN):</strong> компиляция до выполнения (не используется в .NET Core)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>AOT-компиляция (Ahead-Of-Time) — когда используется.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>AOT (Ahead-Of-Time)</strong> — компиляция IL в машинный код до выполнения.</p>
+
+            <p><strong>Когда используется:</strong></p>
+            <ul>
+                <li><strong>Mobile</strong> (iOS, Android) — запрещена JIT-компиляция</li>
+                <li><strong>Blazor WebAssembly</strong> — клиентский код</li>
+                <li><strong>Game consoles</strong> — PlayStation, Xbox</li>
+                <li><strong>Низкое время запуска</strong> — серверные приложения</li>
+                <li><strong>.NET Native</strong> (UWP)</li>
+            </ul>
+
+            <p><strong>Native AOT (.NET 8+):</strong></p>
+            <ul>
+                <li>Компиляция в нативный исполняемый файл</li>
+                <li>Быстрый старт</li>
+                <li>Меньше памяти</li>
+                <li>Ограниченный Reflection</li>
+                <li>Нет JIT-компиляции</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Native AOT в .NET 8
+&lt;PublishAot&gt;true&lt;/PublishAot&gt;
+
+dotnet publish -r win-x64 -c Release</pre>
+
+            <p><strong>Преимущества AOT:</strong></p>
+            <ul>
+                <li>Быстрый старт</li>
+                <li>Меньше потребление памяти</li>
+                <li>Безопасность (нельзя генерировать код)</li>
+            </ul>
+
+            <p><strong>Недостатки:</strong></p>
+            <ul>
+                <li>Больше размер файла</li>
+                <li>Ограниченный Reflection</li>
+                <li>Нельзя генерировать код во время выполнения</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Управляемый vs Неуправляемый код.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Управляемый код (Managed Code):</strong></p>
+            <ul>
+                <li>Выполняется под управлением CLR</li>
+                <li>Память управляется GC</li>
+                <li>Безопасность типов</li>
+                <li>Пример: C#, VB.NET, F#</li>
+            </ul>
+
+            <p><strong>Неуправляемый код (Unmanaged Code):</strong></p>
+            <ul>
+                <li>Выполняется напрямую в ОС</li>
+                <li>Память управляется вручную</li>
+                <li>Нет безопасности типов</li>
+                <li>Пример: C++, WinAPI, COM</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Управляемый</th>
+                    <th>Неуправляемый</th>
+                </tr>
+                <tr>
+                    <td>Память</td>
+                    <td>GC</td>
+                    <td>Ручная (malloc/free)</td>
+                </tr>
+                <tr>
+                    <td>Безопасность</td>
+                    <td>Высокая</td>
+                    <td>Низкая (утечки, buffer overflow)</td>
+                </tr>
+                <tr>
+                    <td>Производительность</td>
+                    <td>Медленнее (обёртка)</td>
+                    <td>Быстрее</td>
+                </tr>
+                <tr>
+                    <td>Примеры</td>
+                    <td>C#, VB.NET, F#</td>
+                    <td>C++, WinAPI</td>
+                </tr>
+            </table>
+
+            <p><strong>Взаимодействие:</strong></p>
+            <pre>
+// P/Invoke — вызов неуправляемого кода
+[DllImport("user32.dll")]
+static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
+
+MessageBox(IntPtr.Zero, "Hello", "Message", 0);
+
+// unsafe код в C#
+unsafe void Example()
+{
+    int* ptr = stackalloc int[10];
+    ptr[0] = 42;
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Сборка (Assembly) — .dll / .exe, структура.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Assembly</strong> — единица развёртывания и версионирования в .NET.</p>
+
+            <p><strong>Форматы:</strong></p>
+            <ul>
+                <li><strong>.exe</strong> — исполняемое приложение (с Entry Point)</li>
+                <li><strong>.dll</strong> — библиотека (без Entry Point)</li>
+            </ul>
+
+            <p><strong>Структура сборки:</strong></p>
+            <ul>
+                <li><strong>Manifest</strong> — метаданные (версия, зависимости)</li>
+                <li><strong>IL-код</strong> — промежуточный язык</li>
+                <li><strong>Метаданные</strong> — информация о типах</li>
+                <li><strong>Ресурсы</strong> — изображения, строки, конфигурация</li>
+            </ul>
+
+            <p><strong>Имя сборки:</strong></p>
+            <pre>
+// Простое имя (Simple Name)
+MyLibrary
+
+// Полное имя (Full Name)
+MyLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+
+// Сильное имя (Strong Name)
+MyLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=abcd1234</pre>
+
+            <p><strong>Просмотр сборки:</strong></p>
+            <ul>
+                <li><code>ildasm MyLibrary.dll</code> — IL-код</li>
+                <li><code>ILSpy</code> — декомпиляция в C#</li>
+                <li><code>dnSpy</code> — декомпиляция + отладка</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Манифест сборки — что содержит.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Assembly Manifest</strong> — метаданные о сборке.</p>
+
+            <p><strong>Содержит:</strong></p>
+            <ul>
+                <li><strong>Имя сборки</strong> (Assembly Name)</li>
+                <li><strong>Номер версии</strong> (Version)</li>
+                <li><strong>Культура</strong> (Culture)</li>
+                <li><strong>Строгое имя</strong> (Strong Name) — публичный ключ</li>
+                <li><strong>Список файлов</strong> — все файлы в сборке</li>
+                <li><strong>Список зависимостей</strong> (Reference) — другие сборки</li>
+                <li><strong>Экспортируемые типы</strong> — публичные типы</li>
+                <li><strong>Атрибуты</strong> — AssemblyInfo (автор, описание)</li>
+            </ul>
+
+            <p><strong>Пример манифеста:</strong></p>
+            <pre>
+.assembly extern mscorlib
+{
+    .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )
+    .ver 4:0:0:0
+}
+.assembly MyLibrary
+{
+    .hash algorithm 0x00008004
+    .ver 1:0:0:0
+}
+.module MyLibrary.dll</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>GAC (Global Assembly Cache) — зачем, сильные имена.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>GAC (Global Assembly Cache)</strong> — глобальное хранилище сборок.</p>
+
+            <p><strong>Зачем нужен:</strong></p>
+            <ul>
+                <li>Общий доступ к сборкам для всех приложений</li>
+                <li>Управление разными версиями сборок</li>
+                <li>Увеличение безопасности (сильные имена)</li>
+            </ul>
+
+            <p><strong>Сильное имя (Strong Name):</strong></p>
+            <ul>
+                <li>Состоит из: Имя + Версия + Культура + Публичный ключ</li>
+                <li>Защита от подделки сборок</li>
+                <li>Уникальность в GAC</li>
+            </ul>
+
+            <p><strong>Работа с GAC:</strong></p>
+            <pre>
+// Создание сильного имени
+sn -k MyKey.snk
+
+// Установка в GAC (устарело)
+gacutil -i MyLibrary.dll
+
+// .NET Core / .NET 5+ — GAC не используется
+// Вместо него — папка приложения или NuGet</pre>
+
+            <p><strong>Почему GAC устарел:</strong></p>
+            <ul>
+                <li>Конфликты версий</li>
+                <li>Сложность развёртывания</li>
+                <li>Медленная эволюция</li>
+                <li>.NET Core не использует GAC</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Reflection — что это, когда использовать.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Reflection</strong> — механизм получения информации о типах во время выполнения.</p>
+
+            <p><strong>Возможности:</strong></p>
+            <ul>
+                <li>Получение информации о типах, методах, свойствах</li>
+                <li>Создание объектов</li>
+                <li>Вызов методов (включая приватные)</li>
+                <li>Динамическая загрузка сборок</li>
+                <li>Работа с атрибутами</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// Получение типа
+Type type = typeof(string);
+Type type2 = "Hello".GetType();
+
+// Информация о типе
+Console.WriteLine(type.Name);           // String
+Console.WriteLine(type.FullName);       // System.String
+Console.WriteLine(type.IsClass);        // True
+
+// Получение методов
+foreach (MethodInfo method in type.GetMethods())
+    Console.WriteLine(method.Name);
+
+// Создание объекта через Reflection
+Type personType = typeof(Person);
+object person = Activator.CreateInstance(personType);
+
+// Вызов метода
+MethodInfo method = personType.GetMethod("SetName");
+method.Invoke(person, new object[] { "Alice" });
+
+// Работа с атрибутами
+[Obsolete("Use NewMethod instead")]
+public void OldMethod() { }
+
+var attr = typeof(MyClass)
+    .GetMethod("OldMethod")
+    .GetCustomAttribute&lt;ObsoleteAttribute&gt;();
+Console.WriteLine(attr.Message);</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>DI контейнеры (регистрация типов)</li>
+                <li>Сериализация (JSON, XML)</li>
+                <li>Обработка атрибутов (MVC, Unit-тесты)</li>
+                <li>Динамическая загрузка плагинов</li>
+                <li>Инструменты и IDE (IntelliSense)</li>
+            </ul>
+
+            <p><strong>Производительность:</strong></p>
+            <ul>
+                <li>Медленнее прямого вызова (в 10-100 раз)</li>
+                <li>Кэшируйте результаты Type</li>
+                <li>Используйте <code>Type.GetMethod</code> один раз</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Атрибуты (Attributes) — как создать, использовать.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Атрибуты</strong> — метаданные, добавляющие информацию к типам и членам.</p>
+
+            <p><strong>Создание атрибута:</strong></p>
+            <pre>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public class AuthorAttribute : Attribute
+{
+    public string Name { get; }
+    public string Email { get; set; }
+    
+    public AuthorAttribute(string name)
+    {
+        Name = name;
+    }
+}</pre>
+
+            <p><strong>Использование:</strong></p>
+            <pre>
+[Author("Alice", Email = "alice@example.com")]
+public class UserService
+{
+    [Author("Bob")]
+    public void Save() { }
+}</pre>
+
+            <p><strong>Получение атрибутов:</strong></p>
+            <pre>
+// Получение атрибута
+var attr = typeof(UserService)
+    .GetCustomAttribute&lt;AuthorAttribute&gt;();
+Console.WriteLine($"Author: {attr.Name}");
+
+// Получение всех атрибутов
+var attrs = typeof(UserService)
+    .GetCustomAttributes&lt;AuthorAttribute&gt;();
+
+// Проверка
+bool hasAttr = typeof(UserService)
+    .IsDefined(typeof(AuthorAttribute), false);</pre>
+
+            <p><strong>Встроенные атрибуты:</strong></p>
+            <ul>
+                <li><code>Obsolete</code> — устаревший код</li>
+                <li><code>Serializable</code> — сериализация</li>
+                <li><code>Conditional</code> — условная компиляция</li>
+                <li><code>DllImport</code> — P/Invoke</li>
+                <li><code>DataAnnotations</code> — валидация</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Методы расширения (Extension Methods) — как работают.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Extension Methods</strong> — методы, добавляющие функциональность к существующим типам.</p>
+
+            <p><strong>Правила:</strong></p>
+            <ul>
+                <li>Статический класс</li>
+                <li>Статический метод</li>
+                <li>Первый параметр — <code>this</code> + тип</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public static class StringExtensions
+{
+    public static bool IsEmail(this string str)
+    {
+        return str.Contains("@") && str.Contains(".");
+    }
+    
+    public static string ToTitleCase(this string str)
+    {
+        return char.ToUpper(str[0]) + str.Substring(1).ToLower();
+    }
+}
+
+// Использование
+string email = "test@example.com";
+bool isValid = email.IsEmail();  // Статический синтаксис
+
+string name = "alice";
+string title = name.ToTitleCase();  // "Alice"</pre>
+
+            <p><strong>Приоритет:</strong></p>
+            <ul>
+                <li>Экземплярные методы имеют приоритет</li>
+                <li>Расширения — если нет подходящего метода</li>
+            </ul>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Добавление функциональности к типам, которые нельзя изменить</li>
+                <li>Утилитные методы (LINQ, StringExtensions)</li>
+                <li>Fluent API (Builder паттерн)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Частичные классы (partial) — зачем.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>partial</strong> — разделение класса на несколько файлов.</p>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Генерация кода (дизайнеры) — отдельный файл для машинного кода</li>
+                <li>Разделение больших классов</li>
+                <li>Разработка в команде (разные файлы для разных задач)</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// File1.cs
+public partial class Person
+{
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+// File2.cs
+public partial class Person
+{
+    public void PrintInfo()
+    {
+        Console.WriteLine($"{Name} ({Email})");
+    }
+}</pre>
+
+            <p><strong>В WPF/Windows Forms:</strong></p>
+            <ul>
+                <li>Visual Studio генерирует код дизайнера в <code>MainWindow.g.i.cs</code></li>
+                <li>Разработчик пишет код в <code>MainWindow.xaml.cs</code></li>
+                <li>Оба файла — один класс</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Статический конструктор — когда вызывается.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Статический конструктор</strong> — вызывается один раз для инициализации статических членов.</p>
+
+            <p><strong>Когда вызывается:</strong></p>
+            <ul>
+                <li>Перед первым созданием экземпляра</li>
+                <li>Перед первым обращением к статическому члену</li>
+                <li>Только один раз за время работы приложения</li>
+                <li>Вызывается автоматически (нельзя вызвать явно)</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public class Config
+{
+    public static string ConnectionString { get; }
+    
+    // Статический конструктор
+    static Config()
+    {
+        Console.WriteLine("Static constructor called");
+        ConnectionString = "Server=localhost;Database=Test;";
+    }
+}
+
+// Использование
+string cs = Config.ConnectionString;  // Вызывается статический конструктор
+var config = new Config();  // Не вызывается (уже вызван)</pre>
+
+            <p><strong>Особенности:</strong></p>
+            <ul>
+                <li>Не имеет параметров</li>
+                <li>Не имеет модификаторов доступа</li>
+                <li>Вызывается в потокобезопасном контексте</li>
+                <li>Если исключение — класс больше не инициализируется</li>
+                <li>Используется для сложной инициализации</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>.NET Standard vs .NET Core vs .NET Framework — разница.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>.NET Framework:</strong></p>
+            <ul>
+                <li>Только Windows</li>
+                <li>Устаревшая версия</li>
+                <li>Нет новых фич</li>
+                <li>Поддержка устаревает</li>
+                <li>Пример: 4.8, 4.7.2</li>
+            </ul>
+
+            <p><strong>.NET Core:</strong></p>
+            <ul>
+                <li>Кросс-платформенный (Win, Linux, Mac)</li>
+                <li>Современная версия</li>
+                <li>Лучшая производительность</li>
+                <li>Активно развивается</li>
+                <li>Пример: 3.1 (последняя версия)</li>
+            </ul>
+
+            <p><strong>.NET 5/6/7/8:</strong></p>
+            <ul>
+                <li>Единая платформа (замена .NET Core + .NET Framework)</li>
+                <li>Кросс-платформенный</li>
+                <li>Новые фичи</li>
+                <li>Активно развивается</li>
+                <li>Пример: 8.0 (текущая)</li>
+            </ul>
+
+            <p><strong>.NET Standard:</strong></p>
+            <ul>
+                <li>Спецификация (не реализация)</li>
+                <li>Набор API, доступных во всех .NET</li>
+                <li>Используется для создания библиотек</li>
+                <li>Устаревает (уступает .NET 5+)</li>
+            </ul>
+
+            <p><strong>Рекомендации:</strong></p>
+            <ul>
+                <li><strong>Новые проекты:</strong> .NET 8+ (LTS)</li>
+                <li><strong>Библиотеки:</strong> .NET Standard 2.0 (совместимость)</li>
+                <li><strong>Устаревшие проекты:</strong> .NET Framework (миграция)</li>
+            </ul>
+        </div>
+    </details>
+</section>

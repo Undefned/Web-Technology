@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 6-10 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 7 ===================== -->
+<section class="section c7">
+    <h2>🧩 7. Делегаты, События, Generics <span class="badge">база</span></h2>
+
+    <details>
+        <summary>Делегат (delegate) — указатель на метод.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Делегат</strong> — тип, представляющий ссылку на метод.</p>
+
+            <p><strong>Структура делегата:</strong></p>
+            <ul>
+                <li>Хранит ссылку на <strong>объект</strong> и <strong>метод</strong></li>
+                <li>Может ссылаться на <strong>статический</strong> или <strong>экземплярный</strong> метод</li>
+                <li>Поддерживает <strong>многоадресность</strong> (цепочка методов)</li>
+                <li>Типобезопасен (проверяет сигнатуру)</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// Объявление делегата
+public delegate int MathOperation(int a, int b);
+
+// Методы, соответствующие делегату
+public static int Add(int a, int b) => a + b;
+public static int Multiply(int a, int b) => a * b;
+
+// Использование
+MathOperation op = Add;           // Ссылка на метод
+int result = op(2, 3);            // 5
+
+op = Multiply;                    // Можно изменить
+result = op(2, 3);                // 6
+
+// Многоадресный делегат
+op += Multiply;                   // Добавляем в цепочку
+result = op(2, 3);                // Выполнит Add И Multiply (последний результат)</pre>
+
+            <p><strong>Применение:</strong></p>
+            <ul>
+                <li>Обработка событий (<code>event</code>)</li>
+                <li>Callback-методы</li>
+                <li>LINQ (<code>Func</code>, <code>Action</code>)</li>
+                <li>Асинхронные операции (продолжения)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Func, Action, Predicate — встроенные делегаты.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Встроенные делегаты в .NET:</strong></p>
+
+            <p><strong>Func — делегат с возвращаемым значением</strong></p>
+            <ul>
+                <li>Последний параметр — <strong>возвращаемый тип</strong></li>
+                <li>До 16 входных параметров</li>
+            </ul>
+            <pre>
+// Func&lt;int, int, int&gt; — два параметра, возвращает int
+Func&lt;int, int, int&gt; add = (a, b) => a + b;
+int result = add(2, 3);  // 5
+
+// Без параметров, возвращает string
+Func&lt;string&gt; getMessage = () => "Hello";</pre>
+
+            <p><strong>Action — делегат без возвращаемого значения</strong></p>
+            <ul>
+                <li>Не возвращает значение (void)</li>
+                <li>До 16 входных параметров</li>
+            </ul>
+            <pre>
+Action&lt;string&gt; print = msg => Console.WriteLine(msg);
+print("Hello");  // Вывод: Hello
+
+Action log = () => Console.WriteLine("Log");</pre>
+
+            <p><strong>Predicate — делегат для проверки условия</strong></p>
+            <ul>
+                <li>Возвращает <code>bool</code></li>
+                <li>Один параметр</li>
+                <li>То же, что <code>Func&lt;T, bool&gt;</code></li>
+            </ul>
+            <pre>
+Predicate&lt;int&gt; isEven = x => x % 2 == 0;
+bool even = isEven(4);  // true</pre>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Делегат</th>
+                    <th>Возвращает</th>
+                    <th>Параметры</th>
+                    <th>Пример</th>
+                </tr>
+                <tr>
+                    <td><code>Func&lt;T, TResult&gt;</code></td>
+                    <td><code>TResult</code></td>
+                    <td>0–16</td>
+                    <td><code>Func&lt;int, int&gt; square = x => x * x;</code></td>
+                </tr>
+                <tr>
+                    <td><code>Action</code></td>
+                    <td><code>void</code></td>
+                    <td>0–16</td>
+                    <td><code>Action print = () => Console.WriteLine();</code></td>
+                </tr>
+                <tr>
+                    <td><code>Predicate&lt;T&gt;</code></td>
+                    <td><code>bool</code></td>
+                    <td>1</td>
+                    <td><code>Predicate&lt;int&gt; isEven = x => x % 2 == 0;</code></td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Многоадресный делегат (MulticastDelegate).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Многоадресный делегат</strong> — делегат, который может ссылаться на <strong>несколько методов</strong> одновременно.</p>
+
+            <p><strong>Как работает:</strong></p>
+            <ul>
+                <li>Использует <code>System.MulticastDelegate</code></li>
+                <li>Хранит список методов в <strong>цепочке</strong></li>
+                <li>При вызове все методы выполняются <strong>последовательно</strong></li>
+                <li>Возвращается <strong>последний</strong> результат (для Func)</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+Action action = () => Console.WriteLine("Первый");
+action += () => Console.WriteLine("Второй");
+action += () => Console.WriteLine("Третий");
+
+// Выполнит все три метода по порядку
+action();
+
+// Удаление
+action -= () => Console.WriteLine("Второй");  // Удаляет последний (сравнивает по ссылке)
+action -= new Action(() => Console.WriteLine("Первый"));  // Создаёт новый делегат (не удалит)
+
+// Получение списка
+var delegates = action.GetInvocationList();
+foreach (var d in delegates)
+{
+    d.DynamicInvoke();
+}</pre>
+
+            <p><strong>Важно:</strong></p>
+            <ul>
+                <li>Порядок вызова <strong>гарантирован</strong> (в порядке добавления)</li>
+                <li>Если метод выбрасывает исключение, выполнение <strong>останавливается</strong></li>
+                <li>Для <code>Func</code> возвращается <strong>последнее</strong> значение</li>
+                <li>Используется в <strong>событиях</strong> (подписка нескольких обработчиков)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>event vs delegate — разница (инкапсуляция).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>event</strong> — специальная конструкция для <strong>инкапсуляции</strong> делегата.</p>
+
+            <p><strong>Основные отличия:</strong></p>
+
+            <p><strong>1. Доступ извне</strong></p>
+            <ul>
+                <li><strong>delegate:</strong> можно вызвать и присвоить из любого места</li>
+                <li><strong>event:</strong> можно только <code>+=</code> и <code>-=</code> (подписка/отписка)</li>
+                <li>Вызвать событие можно <strong>только внутри</strong> класса-владельца</li>
+            </ul>
+
+            <p><strong>2. Присваивание</strong></p>
+            <ul>
+                <li><strong>delegate:</strong> можно перезаписать через <code>=</code></li>
+                <li><strong>event:</strong> нельзя перезаписать (только <code>+=</code> и <code>-=</code>)</li>
+            </ul>
+
+            <p><strong>3. Компиляция</strong></p>
+            <ul>
+                <li><strong>event</strong> компилируется в <strong>приватный делегат</strong> + два публичных метода (<code>add</code> и <code>remove</code>)</li>
+                <li>Аналогично <strong>свойствам</strong> (get/set) для полей</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public class Publisher
+{
+    // ❌ Публичный делегат — опасно
+    public Action OnAction;
+    
+    // ✅ Событие — безопасно
+    public event EventHandler&lt;EventArgs&gt; OnEvent;
+    
+    public void RaiseEvent()
+    {
+        // ✅ Можно вызвать только внутри
+        OnEvent?.Invoke(this, EventArgs.Empty);
+        
+        // ❌ Нельзя вызвать событие извне
+    }
+}
+
+// Использование
+var p = new Publisher();
+
+// С делегатом — всё что угодно
+p.OnAction = () => Console.WriteLine("1");  // Перезаписали
+p.OnAction += () => Console.WriteLine("2");
+p.OnAction();  // Можно вызвать извне
+
+// С событием — только подписка
+p.OnEvent += (s, e) => Console.WriteLine("Событие");
+// p.OnEvent = null;  // ❌ Ошибка
+// p.OnEvent();  // ❌ Ошибка</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Generics (обобщения) — зачем нужны.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Generics (обобщения)</strong> — позволяют создавать типы и методы, работающие с любыми типами данных.</p>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li><strong>Безопасность типов</strong> — ошибки на этапе компиляции</li>
+                <li><strong>Производительность</strong> — нет Boxing/Unboxing</li>
+                <li><strong>Переиспользование</strong> — один код для разных типов</li>
+                <li><strong>Читаемость</strong> — понятный код</li>
+            </ul>
+
+            <p><strong>Пример без Generics (плохо):</strong></p>
+            <pre>
+// ArrayList — хранит object (Boxing для значимых типов)
+var list = new ArrayList();
+list.Add(42);      // Boxing
+list.Add("Hello");
+int x = (int)list[0];  // Unboxing + приведение</pre>
+
+            <p><strong>Пример с Generics (хорошо):</strong></p>
+            <pre>
+// List&lt;T&gt; — хранит конкретный тип
+var list = new List&lt;int&gt;();
+list.Add(42);      // Нет Boxing
+int x = list[0];   // Без приведения</pre>
+
+            <p><strong>Создание Generic класса:</strong></p>
+            <pre>
+public class Repository&lt;T&gt; where T : class
+{
+    private List&lt;T&gt; _items = new List&lt;T&gt;();
+    
+    public void Add(T item) => _items.Add(item);
+    public T Get(int index) => _items[index];
+}
+
+// Использование
+var users = new Repository&lt;User&gt;();
+users.Add(new User());
+var user = users.Get(0);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Ограничения обобщений: where T : class, struct, new(), unmanaged.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Ограничения Generics</strong> — определяют, какие типы могут быть использованы.</p>
+
+            <table>
+                <tr>
+                    <th>Ограничение</th>
+                    <th>Описание</th>
+                    <th>Пример</th>
+                </tr>
+                <tr>
+                    <td><code>where T : class</code></td>
+                    <td>Только ссылочные типы</td>
+                    <td><code>class Repository&lt;T&gt; where T : class</code></td>
+                </tr>
+                <tr>
+                    <td><code>where T : struct</code></td>
+                    <td>Только значимые типы</td>
+                    <td><code>class Parser&lt;T&gt; where T : struct</code></td>
+                </tr>
+                <tr>
+                    <td><code>where T : new()</code></td>
+                    <td>Должен иметь конструктор без параметров</td>
+                    <td><code>class Factory&lt;T&gt; where T : new()</code></td>
+                </tr>
+                <tr>
+                    <td><code>where T : unmanaged</code></td>
+                    <td>Неуправляемые типы (C# 7.3+)</td>
+                    <td><code>class Buffer&lt;T&gt; where T : unmanaged</code></td>
+                </tr>
+                <tr>
+                    <td><code>where T : BaseClass</code></td>
+                    <td>Наследуется от BaseClass</td>
+                    <td><code>where T : Person</code></td>
+                </tr>
+                <tr>
+                    <td><code>where T : IInterface</code></td>
+                    <td>Реализует интерфейс</td>
+                    <td><code>where T : IDisposable</code></td>
+                </tr>
+                <tr>
+                    <td><code>where T : notnull</code></td>
+                    <td>Не null (C# 8+)</td>
+                    <td><code>where T : notnull</code></td>
+                </tr>
+            </table>
+
+            <p><strong>Комбинирование ограничений:</strong></p>
+            <pre>
+// Несколько ограничений
+class Repository&lt;T&gt; where T : class, IEntity, new()
+{
+    public T Create()
+    {
+        return new T();  // ✅ new() гарантирует конструктор
+    }
+}
+
+// Использование с unmanaged
+unsafe struct Buffer&lt;T&gt; where T : unmanaged
+{
+    private T* _ptr;  // Можно использовать указатель
+}</pre>
+
+            <p><strong>Важно:</strong></p>
+            <ul>
+                <li>Ограничения проверяются <strong>на этапе компиляции</strong></li>
+                <li>Порядок: <code>class/struct</code> → интерфейсы → <code>new()</code></li>
+                <li><code>new()</code> должно быть <strong>последним</strong></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Ковариантность (out) и контравариантность (in).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Ковариантность и контравариантность</strong> — для обобщённых интерфейсов и делегатов.</p>
+
+            <p><strong>Ковариантность (out):</strong></p>
+            <ul>
+                <li>Позволяет использовать <strong>более производный</strong> тип</li>
+                <li>Маркер <code>out T</code> — тип используется <strong>только для возврата</strong></li>
+                <li>Применяется к <code>IEnumerable&lt;out T&gt;</code>, <code>Func&lt;out TResult&gt;</code></li>
+            </ul>
+            <pre>
+// IEnumerable&lt;T&gt; ковариантен
+IEnumerable&lt;string&gt; strings = new List&lt;string&gt;();
+IEnumerable&lt;object&gt; objects = strings;  // ✅ Ковариантность
+
+// Функция, возвращающая string
+Func&lt;string&gt; getString = () => "Hello";
+Func&lt;object&gt; getObject = getString;  // ✅ Ковариантность</pre>
+
+            <p><strong>Контравариантность (in):</strong></p>
+            <ul>
+                <li>Позволяет использовать <strong>более базовый</strong> тип</li>
+                <li>Маркер <code>in T</code> — тип используется <strong>только для ввода</strong></li>
+                <li>Применяется к <code>Action&lt;in T&gt;</code></li>
+            </ul>
+            <pre>
+// Action&lt;T&gt; контравариантен
+Action&lt;object&gt; printObject = obj => Console.WriteLine(obj);
+Action&lt;string&gt; printString = printObject;  // ✅ Контравариантность
+
+// IComparer&lt;T&gt; контравариантен
+IComparer&lt;object&gt; comparer = new ObjectComparer();
+IComparer&lt;string&gt; stringComparer = comparer;  // ✅</pre>
+
+            <p><strong>Создание своих интерфейсов:</strong></p>
+            <pre>
+// Ковариантный интерфейс (только для возврата)
+interface IProducer&lt;out T&gt;
+{
+    T GetItem();
+}
+
+// Контравариантный интерфейс (только для ввода)
+interface IConsumer&lt;in T&gt;
+{
+    void Process(T item);
+}
+
+// Использование
+IProducer&lt;string&gt; producer = new StringProducer();
+IProducer&lt;object&gt; producer2 = producer;  // ✅
+
+IConsumer&lt;object&gt; consumer = new ObjectConsumer();
+IConsumer&lt;string&gt; consumer2 = consumer;  // ✅</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Как реализованы дженерики в .NET — стирание типов? Нет, reified.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>В .NET Generics — reified</strong> (информация о типах сохраняется).</p>
+
+            <p><strong>Отличие от Java (стирание типов):</strong></p>
+            <ul>
+                <li><strong>Java:</strong> информация о типах <strong>стирается</strong> после компиляции</li>
+                <li><strong>.NET:</strong> информация о типах <strong>сохраняется</strong> в рантайме</li>
+            </ul>
+
+            <p><strong>Как работает в .NET:</strong></p>
+            <ul>
+                <li>При JIT-компиляции создаётся <strong>уникальный код</strong> для каждого типа</li>
+                <li>Для ссылочных типов — один общий код (оптимизация)</li>
+                <li>Для значимых типов — отдельный код для каждого типа</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+var listInt = new List&lt;int&gt;();
+var listString = new List&lt;string&gt;();
+
+// Получаем реальные типы
+Type t1 = listInt.GetType();    // System.Collections.Generic.List`1[System.Int32]
+Type t2 = listString.GetType(); // System.Collections.Generic.List`1[System.String]
+
+// t1 и t2 — разные типы!
+Console.WriteLine(t1 == t2);  // False
+
+// Reflected типы (информация сохранена)
+Console.WriteLine(typeof(List&lt;&gt;));  // System.Collections.Generic.List`1[T]</pre>
+
+            <p><strong>Преимущества reified:</strong></p>
+            <ul>
+                <li>Можно использовать <code>typeof(T)</code></li>
+                <li>Можно использовать <code>is</code> и <code>as</code></li>
+                <li>Можно создавать экземпляры через <code>new T()</code> (с ограничением)</li>
+                <li>Безопасность типов в рантайме</li>
+                <li>Производительность (оптимизированный код)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Когда генерируется конкретный Generic-класс — JIT при первом обращении.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Generic класс создаётся (JIT-компилируется) при первом обращении.</strong></p>
+
+            <p><strong>Процесс:</strong></p>
+            <ol>
+                <li>Компиляция C# → IL (обобщённый код с параметрами T)</li>
+                <li>При первом обращении JIT создаёт <strong>конкретный тип</strong></li>
+                <li>Для ссылочных типов — <strong>один</strong> общий код (shared)</li>
+                <li>Для значимых типов — <strong>отдельный</strong> код для каждого типа</li>
+            </ol>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// IL содержит обобщённый код
+class Repository&lt;T&gt;
+{
+    public T Get() { return default(T); }
+}
+
+// При первом обращении JIT создаёт код
+var repo1 = new Repository&lt;int&gt;();    // Создаётся код для int
+var repo2 = new Repository&lt;int&gt;();    // Использует существующий код
+
+var repo3 = new Repository&lt;string&gt;(); // Создаётся код для string (shared)
+var repo4 = new Repository&lt;object&gt;(); // Использует тот же код, что и string (shared)</pre>
+
+            <p><strong>Оптимизации:</strong></p>
+            <ul>
+                <li><strong>Shared код:</strong> все ссылочные типы используют один код</li>
+                <li><strong>Уникальный код:</strong> каждый значимый тип имеет свой код</li>
+                <li>Это экономит память и улучшает производительность</li>
+            </ul>
+        </div>
+    </details>
+</section>

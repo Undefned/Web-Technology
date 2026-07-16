@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 11-18 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 17 ===================== -->
+<section class="section c17">
+    <h2>📚 17. Git. Инструменты <span class="badge">база</span></h2>
+
+    <details>
+        <summary>Основные команды Git: clone, commit, push, pull, fetch.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>clone</strong> — копирование репозитория</p>
+            <pre>git clone https://github.com/user/repo.git</pre>
+
+            <p><strong>commit</strong> — сохранение изменений</p>
+            <pre>git add .                    # Добавить все файлы
+git commit -m "Сообщение"   # Создать коммит
+git commit --amend          # Изменить последний коммит</pre>
+
+            <p><strong>push</strong> — отправка изменений в удалённый репозиторий</p>
+            <pre>git push origin main
+git push --force           # Принудительно (опасно!)</pre>
+
+            <p><strong>pull</strong> — получение изменений + слияние (fetch + merge)</p>
+            <pre>git pull origin main</pre>
+
+            <p><strong>fetch</strong> — получение изменений без слияния</p>
+            <pre>git fetch origin
+git diff origin/main      # Посмотреть изменения</pre>
+
+            <p><strong>Другие важные команды:</strong></p>
+            <pre>git status                 # Состояние
+git log                    # История
+git branch                 # Список веток
+git checkout               # Переключение ветки
+git merge                  # Слияние веток
+git rebase                 # Перебазирование</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>rebase vs merge — разница, когда использовать.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>merge — сохраняет историю ветвления</strong></p>
+            <pre>
+git checkout main
+git merge feature
+
+# История: ветки остаются, появляется commit merge</pre>
+
+            <p><strong>rebase — переписывает историю (линейная)</strong></p>
+            <pre>
+git checkout feature
+git rebase main
+
+# История: коммиты feature переезжают наверх main (линейно)</pre>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>merge</th>
+                    <th>rebase</th>
+                </tr>
+                <tr>
+                    <td>История</td>
+                    <td>Ветвистая (сохраняет)</td>
+                    <td>Линейная (чистая)</td>
+                </tr>
+                <tr>
+                    <td>Сложность</td>
+                    <td>Проще</td>
+                    <td>Сложнее (конфликты)</td>
+                </tr>
+                <tr>
+                    <td>Безопасность</td>
+                    <td>Безопаснее</td>
+                    <td>Опасно (переписывает историю)</td>
+                </tr>
+                <tr>
+                    <td>Время</td>
+                    <td>Меньше конфликтов</td>
+                    <td>Много конфликтов</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>merge:</strong> для публичных веток, главная ветка</li>
+                <li><strong>rebase:</strong> для локальных веток, чтобы очистить историю</li>
+                <li><strong>Никогда не rebase:</strong> общие ветки (main, develop)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Конфликты — как возникают, как решать.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Конфликт</strong> — когда Git не может автоматически объединить изменения.</p>
+
+            <p><strong>Как возникает:</strong></p>
+            <ul>
+                <li>Два разработчика изменяют <strong>одни и те же строки</strong></li>
+                <li>Один удалил файл, другой изменил</li>
+                <li>Слияние веток с разными версиями</li>
+            </ul>
+
+            <p><strong>Как решать:</strong></p>
+
+            <p><strong>1. Посмотреть конфликт</strong></p>
+            <pre>git status              # Видим конфликт
+git diff               # Показывает конфликт</pre>
+
+            <p><strong>2. Открыть файл</strong></p>
+            <pre>
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+Console.WriteLine("Моя версия");
+=======
+Console.WriteLine("Их версия");
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature-branch</pre>
+
+            <p><strong>3. Исправить вручную</strong></p>
+            <ul>
+                <li>Удалить маркеры (<code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code>, <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>)</li>
+                <li>Оставить правильную версию</li>
+                <li>Или объединить обе</li>
+            </ul>
+
+            <p><strong>4. Сохранить изменения</strong></p>
+            <pre>git add .
+git commit -m "Resolved conflict"</pre>
+
+            <p><strong>Инструменты:</strong></p>
+            <ul>
+                <li>VS Code — встроенный мерж-тул</li>
+                <li>Git GUI — SourceTree, GitKraken</li>
+                <li>Командная строка — <code>git mergetool</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>cherry-pick — зачем.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>cherry-pick</strong> — перенос конкретного коммита в другую ветку.</p>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Нужно перенести <strong>один</strong> коммит, не сливая ветку</li>
+                <li>Исправление бага в продакшене (hotfix)</li>
+                <li>Перенос фичи в другую ветку</li>
+                <li>Отмена изменений</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+# Найти нужный коммит
+git log --oneline
+# a1b2c3d Fix: исправление бага
+# d4e5f6g Add: новая фича
+
+# Переключиться на целевую ветку
+git checkout main
+
+# Перенести коммит
+git cherry-pick a1b2c3d
+
+# Если конфликт — исправить и продолжить
+git cherry-pick --continue
+# или отменить
+git cherry-pick --abort</pre>
+
+            <p><strong>Важно:</strong></p>
+            <ul>
+                <li>Создаёт <strong>новый</strong> коммит (с новым хэшом)</li>
+                <li>Может вызвать конфликты</li>
+                <li>Не изменяет исходную ветку</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>reset (--soft, --hard, --mixed) — разница.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>reset</strong> — отмена изменений с разными уровнями.</p>
+
+            <p><strong>--soft (мягкий)</strong></p>
+            <ul>
+                <li>Сбрасывает <strong>только HEAD</strong> (указатель ветки)</li>
+                <li>Индекс (staging) <strong>сохраняется</strong></li>
+                <li>Рабочая директория <strong>сохраняется</strong></li>
+                <li>Изменения остаются в staging</li>
+            </ul>
+            <pre>git reset --soft HEAD~1   # Отменить последний коммит, оставить изменения в staging</pre>
+
+            <p><strong>--mixed (по умолчанию)</strong></p>
+            <ul>
+                <li>Сбрасывает HEAD и <strong>индекс</strong></li>
+                <li>Рабочая директория <strong>сохраняется</strong></li>
+                <li>Изменения остаются в рабочей директории (unstaged)</li>
+            </ul>
+            <pre>git reset HEAD~1           # Отменить коммит, изменения в рабочей директории</pre>
+
+            <p><strong>--hard (жёсткий)</strong></p>
+            <ul>
+                <li>Сбрасывает <strong>всё</strong> (HEAD, индекс, рабочую директорию)</li>
+                <li>Изменения <strong>теряются</strong> (нельзя восстановить)</li>
+                <li>Опасная команда!</li>
+            </ul>
+            <pre>git reset --hard HEAD~1   # Удалить последний коммит и все изменения</pre>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Режим</th>
+                    <th>HEAD</th>
+                    <th>Индекс (staging)</th>
+                    <th>Рабочая директория</th>
+                </tr>
+                <tr>
+                    <td>--soft</td>
+                    <td>✅ Сброс</td>
+                    <td>✅ Сохраняется</td>
+                    <td>✅ Сохраняется</td>
+                </tr>
+                <tr>
+                    <td>--mixed</td>
+                    <td>✅ Сброс</td>
+                    <td>✅ Сброс</td>
+                    <td>✅ Сохраняется</td>
+                </tr>
+                <tr>
+                    <td>--hard</td>
+                    <td>✅ Сброс</td>
+                    <td>✅ Сброс</td>
+                    <td>✅ Сброс (потеря данных)</td>
+                </tr>
+            </table>
+
+            <p><strong>Безопасная альтернатива:</strong> <code>git revert</code> (создаёт новый коммит).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Git Flow / GitHub Flow — базово.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Git Flow:</strong></p>
+            <ul>
+                <li>Сложная модель с множеством веток</li>
+                <li><strong>main</strong> — продакшен</li>
+                <li><strong>develop</strong> — разработка</li>
+                <li><strong>feature/*</strong> — фичи (от develop)</li>
+                <li><strong>release/*</strong> — подготовка релиза</li>
+                <li><strong>hotfix/*</strong> — срочные исправления</li>
+            </ul>
+            <pre>
+git flow init
+git flow feature start new-feature
+git flow feature finish new-feature
+git flow release start 1.0.0
+git flow release finish 1.0.0
+git flow hotfix start critical-fix</pre>
+
+            <p><strong>GitHub Flow (проще):</strong></p>
+            <ul>
+                <li><strong>main</strong> — всегда готов к деплою</li>
+                <li><strong>feature/*</strong> — ветки для фич</li>
+                <li>Нет develop, release веток</li>
+                <li>Каждая фича → PR → main</li>
+                <li>Деплой из main</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Git Flow</th>
+                    <th>GitHub Flow</th>
+                </tr>
+                <tr>
+                    <td>Сложность</td>
+                    <td>Высокая</td>
+                    <td>Низкая</td>
+                </tr>
+                <tr>
+                    <td>Ветки</td>
+                    <td>Много</td>
+                    <td>Мало</td>
+                </tr>
+                <tr>
+                    <td>Деплой</td>
+                    <td>Релизные ветки</td>
+                    <td>Из main</td>
+                </tr>
+                <tr>
+                    <td>Подходит для</td>
+                    <td>Крупные проекты</td>
+                    <td>CI/CD, микросервисы</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+</section>

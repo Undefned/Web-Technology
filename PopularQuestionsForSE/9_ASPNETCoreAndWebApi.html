@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 6-10 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 9 ===================== -->
+<section class="section c9">
+    <h2>🌐 9. ASP.NET Core. Web API <span class="badge red">100%</span></h2>
+
+    <details>
+        <summary>REST API — принципы (ресурсы, HTTP методы, stateless).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>REST (Representational State Transfer)</strong> — архитектурный стиль для API.</p>
+
+            <p><strong>Основные принципы:</strong></p>
+
+            <p><strong>1. Ресурсы (Resources)</strong></p>
+            <ul>
+                <li>Всё — это <strong>ресурс</strong> (пользователь, заказ, товар)</li>
+                <li>Ресурс идентифицируется <strong>URL</strong>: <code>/api/users/5</code></li>
+                <li>Ресурс представляется в форматах: <code>JSON</code>, <code>XML</code></li>
+            </ul>
+
+            <p><strong>2. HTTP методы (Verbs)</strong></p>
+            <ul>
+                <li><code>GET</code> — получение ресурса (без изменений)</li>
+                <li><code>POST</code> — создание нового ресурса</li>
+                <li><code>PUT</code> — полная замена ресурса</li>
+                <li><code>PATCH</code> — частичное обновление</li>
+                <li><code>DELETE</code> — удаление ресурса</li>
+                <li><code>OPTIONS</code> — информация о ресурсе</li>
+                <li><code>HEAD</code> — заголовки без тела</li>
+            </ul>
+
+            <p><strong>3. Stateless (отсутствие состояния)</strong></p>
+            <ul>
+                <li>Каждый запрос <strong>независим</strong> от других</li>
+                <li>Не хранится состояние на сервере</li>
+                <li>Аутентификация в каждом запросе (JWT)</li>
+                <li>Упрощает масштабирование</li>
+            </ul>
+
+            <p><strong>4. HATEOAS (Hypermedia as the Engine of Application State)</strong></p>
+            <ul>
+                <li>Ответ содержит ссылки на возможные действия</li>
+                <li>Редко используется на практике</li>
+            </ul>
+
+            <p><strong>Пример REST API:</strong></p>
+            <pre>
+GET    /api/users         → Список пользователей
+GET    /api/users/5       → Пользователь #5
+POST   /api/users         → Создать пользователя
+PUT    /api/users/5       → Обновить #5
+PATCH  /api/users/5       → Частично обновить #5
+DELETE /api/users/5       → Удалить #5</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>GET vs POST vs PUT vs PATCH vs DELETE.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Метод</th>
+                    <th>Назначение</th>
+                    <th>Идемпотентность</th>
+                    <th>Тело</th>
+                    <th>Кэширование</th>
+                </tr>
+                <tr>
+                    <td><code>GET</code></td>
+                    <td>Получение ресурса</td>
+                    <td>✅ Да</td>
+                    <td>Нет</td>
+                    <td>✅ Да</td>
+                </tr>
+                <tr>
+                    <td><code>POST</code></td>
+                    <td>Создание ресурса</td>
+                    <td>❌ Нет</td>
+                    <td>Да</td>
+                    <td>❌ Нет</td>
+                </tr>
+                <tr>
+                    <td><code>PUT</code></td>
+                    <td>Полная замена ресурса</td>
+                    <td>✅ Да</td>
+                    <td>Да</td>
+                    <td>❌ Нет</td>
+                </tr>
+                <tr>
+                    <td><code>PATCH</code></td>
+                    <td>Частичное обновление</td>
+                    <td>⚠️ Зависит</td>
+                    <td>Да</td>
+                    <td>❌ Нет</td>
+                </tr>
+                <tr>
+                    <td><code>DELETE</code></td>
+                    <td>Удаление ресурса</td>
+                    <td>✅ Да</td>
+                    <td>Нет</td>
+                    <td>❌ Нет</td>
+                </tr>
+            </table>
+
+            <p><strong>Идемпотентность — повторный запрос даёт тот же результат.</strong></p>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// GET — безопасный и идемпотентный
+GET /api/users/5 → 200 OK
+
+// POST — не идемпотентный (создаёт новый ресурс)
+POST /api/users → 201 Created
+
+// PUT — идемпотентный (полная замена)
+PUT /api/users/5 → 200 OK или 204 No Content
+
+// PATCH — может быть идемпотентным
+PATCH /api/users/5 → 200 OK
+
+// DELETE — идемпотентный (первый раз 200, второй — 404)
+DELETE /api/users/5 → 200 OK</pre>
+
+            <p><strong>Когда что использовать:</strong></p>
+            <ul>
+                <li><strong>GET:</strong> получение данных (без изменений)</li>
+                <li><strong>POST:</strong> создание нового ресурса</li>
+                <li><strong>PUT:</strong> полное обновление (замена)</li>
+                <li><strong>PATCH:</strong> частичное обновление</li>
+                <li><strong>DELETE:</strong> удаление</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>HTTP коды: 200, 201, 204, 400, 401, 403, 404, 409, 500.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>2xx — Успех (Success)</strong></p>
+            <ul>
+                <li><code>200 OK</code> — запрос успешно выполнен</li>
+                <li><code>201 Created</code> — ресурс создан (обычно с POST)</li>
+                <li><code>204 No Content</code> — успешно, но тело ответа пустое</li>
+            </ul>
+
+            <p><strong>4xx — Ошибка клиента (Client Error)</strong></p>
+            <ul>
+                <li><code>400 Bad Request</code> — неверный запрос (валидация)</li>
+                <li><code>401 Unauthorized</code> — требуется аутентификация</li>
+                <li><code>403 Forbidden</code> — нет прав доступа</li>
+                <li><code>404 Not Found</code> — ресурс не найден</li>
+                <li><code>409 Conflict</code> — конфликт (например, дубликат)</li>
+                <li><code>422 Unprocessable Entity</code> — ошибка бизнес-логики</li>
+            </ul>
+
+            <p><strong>5xx — Ошибка сервера (Server Error)</strong></p>
+            <ul>
+                <li><code>500 Internal Server Error</code> — внутренняя ошибка сервера</li>
+                <li><code>501 Not Implemented</code> — метод не реализован</li>
+                <li><code>503 Service Unavailable</code> — сервис недоступен</li>
+            </ul>
+
+            <p><strong>Примеры использования:</strong></p>
+            <pre>
+// GET /api/users/5
+200 OK → { id: 5, name: "Alice" }
+
+// POST /api/users (создание)
+201 Created → Location: /api/users/5
+
+// PUT /api/users/5
+204 No Content → тело пустое
+
+// GET /api/users/999
+404 Not Found → { error: "User not found" }
+
+// POST /api/users (валидация)
+400 Bad Request → { errors: { email: "Invalid email" } }
+
+// POST /api/users (дубликат)
+409 Conflict → { error: "User already exists" }
+
+// Внутренняя ошибка
+500 Internal Server Error → { error: "Something went wrong" }</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Middleware — что это, порядок регистрации.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Middleware</strong> — компоненты в конвейере обработки HTTP-запросов.</p>
+
+            <p><strong>Как работает:</strong></p>
+            <ul>
+                <li>Каждый middleware может <strong>обработать</strong> запрос</li>
+                <li>Может передать управление <strong>следующему</strong> middleware</li>
+                <li>Может выполнить код <strong>до и после</strong> следующего middleware</li>
+                <li>Запрос проходит по цепочке <strong>туда</strong> и <strong>обратно</strong></li>
+            </ul>
+
+            <p><strong>Порядок регистрации (важен!):</strong></p>
+            <pre>
+var app = builder.Build();
+
+// Порядок имеет значение!
+app.UseExceptionHandler();          // 1. Обработка ошибок (первым!)
+app.UseHttpsRedirection();          // 2. HTTPS
+app.UseStaticFiles();               // 3. Статические файлы
+app.UseRouting();                   // 4. Маршрутизация
+app.UseAuthentication();            // 5. Аутентификация
+app.UseAuthorization();             // 6. Авторизация
+app.MapControllers();               // 7. Контроллеры (последним!)
+
+// Custom middleware
+app.Use(async (context, next) =>
+{
+    Console.WriteLine("До следующего middleware");
+    await next();  // Передаём дальше
+    Console.WriteLine("После следующего middleware");
+});</pre>
+
+            <p><strong>Создание собственного middleware:</strong></p>
+            <pre>
+public class LoggingMiddleware
+{
+    private readonly RequestDelegate _next;
+    
+    public LoggingMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+    
+    public async Task InvokeAsync(HttpContext context)
+    {
+        Console.WriteLine($"Запрос: {context.Request.Method} {context.Request.Path}");
+        
+        await _next(context);  // Передаём дальше
+        
+        Console.WriteLine($"Ответ: {context.Response.StatusCode}");
+    }
+}
+
+// Регистрация
+app.UseMiddleware&lt;LoggingMiddleware&gt;();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>JWT-токен — структура (Header, Payload, Signature).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>JWT (JSON Web Token)</strong> — стандарт для аутентификации и обмена данными.</p>
+
+            <p><strong>Структура:</strong></p>
+            <pre>
+// Формат: header.payload.signature
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
+eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4iLCJpYXQiOjE1MTYyMzkwMjJ9.
+SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</pre>
+
+            <p><strong>1. Header (Заголовок)</strong></p>
+            <ul>
+                <li>Алгоритм шифрования (<code>alg</code>)</li>
+                <li>Тип токена (<code>typ</code>)</li>
+            </ul>
+            <pre>
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}</pre>
+
+            <p><strong>2. Payload (Данные)</strong></p>
+            <ul>
+                <li>Claims (утверждения о пользователе)</li>
+                <li>Стандартные: <code>iss</code>, <code>exp</code>, <code>iat</code>, <code>sub</code></li>
+                <li>Кастомные: <code>userId</code>, <code>role</code>, <code>email</code></li>
+            </ul>
+            <pre>
+{
+  "sub": "1234567890",
+  "name": "John Doe",
+  "iat": 1516239022,
+  "exp": 1516242622,
+  "userId": 42,
+  "role": "admin"
+}</pre>
+
+            <p><strong>3. Signature (Подпись)</strong></p>
+            <ul>
+                <li>Создаётся из header + payload + секрет</li>
+                <li>Обеспечивает <strong>целостность</strong> (нельзя подделать)</li>
+                <li>Проверяется на сервере</li>
+            </ul>
+            <pre>
+HMACSHA256(
+  base64UrlEncode(header) + "." + base64UrlEncode(payload),
+  secret
+)</pre>
+
+            <p><strong>Использование в ASP.NET Core:</strong></p>
+            <pre>
+// Генерация токена
+var claims = new[]
+{
+    new Claim(ClaimTypes.Name, user.Email),
+    new Claim(ClaimTypes.Role, "Admin"),
+    new Claim("userId", user.Id.ToString())
+};
+
+var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("super-secret-key"));
+var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+var token = new JwtSecurityToken(
+    issuer: "myapp",
+    audience: "myapp",
+    claims: claims,
+    expires: DateTime.Now.AddHours(1),
+    signingCredentials: creds
+);
+
+var tokenString = new JwtSecurityTokenHandler().WriteToken(token);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Аутентификация vs Авторизация — разница.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Аутентификация (Authentication) — Кто ты?</strong></p>
+            <ul>
+                <li>Проверка <strong>личности</strong> пользователя</li>
+                <li>Логин + пароль, JWT, OAuth, биометрия</li>
+                <li>Вопрос: "Ты действительно тот, за кого себя выдаёшь?"</li>
+                <li>Отвечает за <strong>вход</strong> в систему</li>
+            </ul>
+
+            <p><strong>Авторизация (Authorization) — Что тебе можно?</strong></p>
+            <ul>
+                <li>Проверка <strong>прав доступа</strong></li>
+                <li>Роли, разрешения, политики</li>
+                <li>Вопрос: "Имеешь ли ты право делать это?"</li>
+                <li>Отвечает за <strong>доступ</strong> к ресурсам</li>
+            </ul>
+
+            <p><strong>Пример в ASP.NET Core:</strong></p>
+            <pre>
+// Аутентификация — проверка JWT
+[Authorize]
+public class UsersController : ControllerBase
+{
+    // Авторизация — проверка ролей
+    [Authorize(Roles = "Admin")]
+    [HttpGet]
+    public IActionResult GetAll()
+    {
+        return Ok(_userService.GetAll());
+    }
+    
+    // Авторизация — проверка политики
+    [Authorize(Policy = "CanEditUsers")]
+    [HttpPut("{id}")]
+    public IActionResult Update(int id, UserDto user)
+    {
+        return Ok(_userService.Update(id, user));
+    }
+}</pre>
+
+            <p><strong>Порядок в Middleware:</strong></p>
+            <pre>
+app.UseAuthentication();  // Сначала аутентификация
+app.UseAuthorization();   // Потом авторизация</pre>
+
+            <p><strong>Схема:</strong></p>
+            <ul>
+                <li><strong>Вход:</strong> Аутентификация → Проверка пароля → Создание JWT</li>
+                <li><strong>Запрос:</strong> JWT → Аутентификация → Проверка токена → Авторизация → Проверка прав</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Dependency Injection в ASP.NET Core — встроенный контейнер.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Dependency Injection (DI)</strong> — паттерн, где зависимости <strong>внедряются</strong> извне.</p>
+
+            <p><strong>Регистрация сервисов:</strong></p>
+            <pre>
+// Program.cs или Startup.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// Регистрация сервисов
+builder.Services.AddControllers();
+builder.Services.AddScoped&lt;IUserService, UserService&gt;();
+builder.Services.AddTransient&lt;ILogger, ConsoleLogger&gt;();
+builder.Services.AddSingleton&lt;ICache, MemoryCache&gt;();
+
+// Регистрация с фабрикой
+builder.Services.AddScoped&lt;IRepository&gt;(sp =>
+{
+    var config = sp.GetRequiredService&lt;IConfiguration&gt;();
+    return new Repository(config.GetConnectionString("Default"));
+});
+
+var app = builder.Build();</pre>
+
+            <p><strong>Внедрение зависимостей:</strong></p>
+            <pre>
+// Конструкторная инъекция (рекомендуется)
+[ApiController]
+[Route("api/users")]
+public class UsersController : ControllerBase
+{
+    private readonly IUserService _userService;
+    private readonly ILogger _logger;
+    
+    public UsersController(IUserService userService, ILogger logger)
+    {
+        _userService = userService;
+        _logger = logger;
+    }
+    
+    [HttpGet]
+    public IActionResult GetUsers()
+    {
+        _logger.LogInformation("Получение пользователей");
+        return Ok(_userService.GetAll());
+    }
+}</pre>
+
+            <p><strong>Жизненные циклы:</strong></p>
+            <ul>
+                <li><code>AddTransient</code> — новый экземпляр каждый раз</li>
+                <li><code>AddScoped</code> — один экземпляр на запрос</li>
+                <li><code>AddSingleton</code> — один экземпляр на всё приложение</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Transient / Scoped / Singleton — жизненные циклы.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Жизненный цикл</th>
+                    <th>Описание</th>
+                    <th>Создание</th>
+                    <th>Когда использовать</th>
+                </tr>
+                <tr>
+                    <td><code>Transient</code></td>
+                    <td>Новый экземпляр при каждом внедрении</td>
+                    <td>Каждый раз</td>
+                    <td>Лёгкие, stateless сервисы</td>
+                </tr>
+                <tr>
+                    <td><code>Scoped</code></td>
+                    <td>Один экземпляр на HTTP-запрос</td>
+                    <td>На каждый запрос</td>
+                    <td>DbContext, бизнес-логика</td>
+                </tr>
+                <tr>
+                    <td><code>Singleton</code></td>
+                    <td>Один экземпляр на всё приложение</td>
+                    <td>Один раз</td>
+                    <td>Кэш, конфигурация, логирование</td>
+                </tr>
+            </table>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// Transient — каждый раз новый
+builder.Services.AddTransient&lt;IMathService, MathService&gt;();
+
+// Scoped — один на запрос
+builder.Services.AddScoped&lt;IDbContext, AppDbContext&gt;();
+
+// Singleton — один на приложение
+builder.Services.AddSingleton&lt;ICache, MemoryCache&gt;();
+
+// Или с лямбдой
+builder.Services.AddSingleton&lt;IConfiguration&gt;(provider =>
+{
+    return new ConfigurationBuilder().Build();
+});</pre>
+
+            <p><strong>Важные нюансы:</strong></p>
+            <ul>
+                <li><strong>Transient</strong> нельзя внедрять в <strong>Singleton</strong> (будет жить как Singleton)</li>
+                <li><strong>Scoped</strong> нельзя внедрять в <strong>Singleton</strong> (будет жить как Singleton)</li>
+                <li>Для веб-приложений: Scoped = на один HTTP-запрос</li>
+                <li>Для консольных приложений: нужно создать <code>IServiceScope</code></li>
+            </ul>
+
+            <p><strong>Как получить сервис вручную:</strong></p>
+            <pre>
+// Вне контекста контроллера
+var service = app.Services.GetRequiredService&lt;IUserService&gt;();
+
+// В контроллере через IServiceProvider
+[FromServices] public IUserService UserService { get; set; }</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>IoC контейнеры: встроенный, Autofac, Unity — сравнение.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Встроенный DI (.NET Core):</strong></p>
+            <ul>
+                <li>✅ Лёгкий, простой, всегда доступен</li>
+                <li>✅ Интегрирован в ASP.NET Core</li>
+                <li>❌ Ограниченные возможности (нет property injection)</li>
+                <li>❌ Сложные сценарии (декораторы) требуют обходных путей</li>
+            </ul>
+
+            <p><strong>Autofac:</strong></p>
+            <ul>
+                <li>✅ Богатые возможности (декораторы, property injection)</li>
+                <li>✅ Интеграция с ASP.NET Core</li>
+                <li>✅ Модульная регистрация</li>
+                <li>❌ Может быть сложным для новичков</li>
+            </ul>
+            <pre>
+// Autofac
+var builder = new ContainerBuilder();
+builder.RegisterType&lt;UserService&gt;().As&lt;IUserService&gt;();
+builder.RegisterType&lt;LoggingService&gt;().As&lt;ILogger&gt;().InstancePerLifetimeScope();
+builder.RegisterDecorator&lt;LoggingUserService, IUserService&gt;();
+
+var container = builder.Build();</pre>
+
+            <p><strong>Unity:</strong></p>
+            <ul>
+                <li>✅ Простой, от Microsoft</li>
+                <li>❌ Устаревший, не развивается</li>
+                <li>❌ Нет интеграции с ASP.NET Core</li>
+            </ul>
+
+            <p><strong>Выбор:</strong></p>
+            <ul>
+                <li><strong>Встроенный:</strong> для 90% приложений</li>
+                <li><strong>Autofac:</strong> для сложных сценариев (декораторы, перехват)</li>
+                <li><strong>Unity:</strong> не рекомендуется (устарел)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kestrel — что это, reverse proxy (Nginx/IIS).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Kestrel</strong> — <strong>кросс-платформенный</strong> веб-сервер для ASP.NET Core.</p>
+
+            <p><strong>Характеристики:</strong></p>
+            <ul>
+                <li>Написан на C# (управляемый код)</li>
+                <li>Высокая производительность (использует libuv)</li>
+                <li>Поддерживает HTTP/1.1, HTTP/2, HTTP/3</li>
+                <li>Работает на Windows, Linux, macOS</li>
+                <li>Лёгкий, быстрый</li>
+            </ul>
+
+            <p><strong>Reverse Proxy (обратный прокси):</strong></p>
+            <ul>
+                <li>Kestrel используется <strong>за</strong> обратным прокси</li>
+                <li>Прокси принимает внешние запросы и перенаправляет в Kestrel</li>
+                <li>Обеспечивает безопасность, балансировку, SSL</li>
+            </ul>
+
+            <p><strong>Настройка:</strong></p>
+            <pre>
+// Program.cs
+var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Listen(IPAddress.Any, 5000);  // HTTP
+    options.Listen(IPAddress.Any, 5001, listenOptions =>
+    {
+        listenOptions.UseHttps("certificate.pfx", "password");
+    });
+});</pre>
+
+            <p><strong>Сравнение Kestrel и IIS:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Kestrel</th>
+                    <th>IIS</th>
+                </tr>
+                <tr>
+                    <td>Платформа</td>
+                    <td>Кросс-платформенный</td>
+                    <td>Только Windows</td>
+                </tr>
+                <tr>
+                    <td>Производительность</td>
+                    <td>Высокая</td>
+                    <td>Средняя</td>
+                </tr>
+                <tr>
+                    <td>Функции</td>
+                    <td>Базовые</td>
+                    <td>Богатые (SSL, auth, кэширование)</td>
+                </tr>
+                <tr>
+                    <td>Настройка</td>
+                    <td>В коде</td>
+                    <td>Через GUI</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Фильтры: Authorization, Resource, Action, Exception, Result.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Фильтры</strong> — выполняют код до и после обработки запроса.</p>
+
+            <p><strong>Типы фильтров (порядок выполнения):</strong></p>
+
+            <p><strong>1. Authorization Filters</strong></p>
+            <ul>
+                <li>Самый ранний этап</li>
+                <li>Проверка прав доступа</li>
+                <li>Может остановить выполнение</li>
+            </ul>
+            <pre>
+public class CustomAuthorizeFilter : IAuthorizationFilter
+{
+    public void OnAuthorization(AuthorizationFilterContext context)
+    {
+        if (!context.HttpContext.User.Identity.IsAuthenticated)
+        {
+            context.Result = new UnauthorizedResult();
+        }
+    }
+}</pre>
+
+            <p><strong>2. Resource Filters</strong></p>
+            <ul>
+                <li>До и после модели</li>
+                <li>Для кэширования, логирования</li>
+                <li>Может остановить выполнение</li>
+            </ul>
+            <pre>
+public class CacheResourceFilter : IResourceFilter
+{
+    public void OnResourceExecuting(ResourceExecutingContext context)
+    {
+        // До выполнения
+    }
+    
+    public void OnResourceExecuted(ResourceExecutedContext context)
+    {
+        // После выполнения
+    }
+}</pre>
+
+            <p><strong>3. Action Filters</strong></p>
+            <ul>
+                <li>До и после выполнения метода контроллера</li>
+                <li>Может остановить выполнение</li>
+            </ul>
+            <pre>
+public class LogActionFilter : IActionFilter
+{
+    public void OnActionExecuting(ActionExecutingContext context)
+    {
+        // До выполнения метода
+        Console.WriteLine($"Вызов: {context.ActionDescriptor.DisplayName}");
+    }
+    
+    public void OnActionExecuted(ActionExecutedContext context)
+    {
+        // После выполнения метода
+        Console.WriteLine($"Результат: {context.Result}");
+    }
+}</pre>
+
+            <p><strong>4. Exception Filters</strong></p>
+            <ul>
+                <li>Обработка исключений</li>
+                <li>Глобальная обработка ошибок</li>
+            </ul>
+            <pre>
+public class GlobalExceptionFilter : IExceptionFilter
+{
+    public void OnException(ExceptionContext context)
+    {
+        context.Result = new ObjectResult(new { error = context.Exception.Message })
+        {
+            StatusCode = 500
+        };
+        context.ExceptionHandled = true;
+    }
+}</pre>
+
+            <p><strong>5. Result Filters</strong></p>
+            <ul>
+                <li>До и после выполнения результата</li>
+                <li>Модификация ответа</li>
+            </ul>
+            <pre>
+public class FormatResultFilter : IResultFilter
+{
+    public void OnResultExecuting(ResultExecutingContext context)
+    {
+        // До отправки результата
+    }
+    
+    public void OnResultExecuted(ResultExecutedContext context)
+    {
+        // После отправки результата
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Model Binding и Model Validation — Data Annotations.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Model Binding</strong> — преобразование данных запроса в объекты модели.</p>
+            <pre>
+[ApiController]
+[Route("api/users")]
+public class UsersController : ControllerBase
+{
+    [HttpGet("{id}")]
+    public IActionResult GetUser([FromRoute] int id) { }
+    
+    [HttpPost]
+    public IActionResult CreateUser([FromBody] CreateUserRequest request) { }
+    
+    [HttpGet]
+    public IActionResult Search([FromQuery] SearchRequest request) { }
+    
+    [HttpPut("{id}")]
+    public IActionResult Update([FromRoute] int id, [FromBody] UpdateRequest request) { }
+}</pre>
+
+            <p><strong>Model Validation — Data Annotations:</strong></p>
+            <pre>
+public class CreateUserRequest
+{
+    [Required]
+    [StringLength(50, MinimumLength = 2)]
+    public string Name { get; set; }
+    
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; }
+    
+    [Range(18, 100)]
+    public int Age { get; set; }
+    
+    [RegularExpression(@"^\+7\d{10}$")]
+    public string Phone { get; set; }
+    
+    [Compare("Password")]
+    public string ConfirmPassword { get; set; }
+}</pre>
+
+            <p><strong>Валидация в контроллере:</strong></p>
+            <pre>
+[HttpPost]
+public IActionResult Create([FromBody] CreateUserRequest request)
+{
+    if (!ModelState.IsValid)
+    {
+        return BadRequest(ModelState);
+    }
+    
+    // Обработка
+    return Ok();
+}</pre>
+
+            <p><strong>Автоматическая валидация:</strong></p>
+            <pre>
+// Включена по умолчанию в ASP.NET Core
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            return new BadRequestObjectResult(context.ModelState);
+        };
+    });</pre>
+        </div>
+    </details>
+</section>

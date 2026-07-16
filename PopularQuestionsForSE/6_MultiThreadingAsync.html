@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 6-10 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 6 ===================== -->
+<section class="section c6">
+    <h2>⚡ 6. Многопоточность и Асинхронность <span class="badge red">100%</span></h2>
+
+    <details>
+        <summary>Процесс vs Поток (Process vs Thread) — разница?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Процесс (Process):</strong></p>
+            <ul>
+                <li>Изолированный экземпляр выполняющейся программы</li>
+                <li>Имеет собственное <strong>виртуальное адресное пространство</strong></li>
+                <li>Содержит один или несколько потоков</li>
+                <li>Ресурсы процесса изолированы от других процессов</li>
+                <li>Ошибка в одном процессе не влияет на другие</li>
+                <li>Создание процесса — <strong>дорогая</strong> операция</li>
+            </ul>
+
+            <p><strong>Поток (Thread):</strong></p>
+            <ul>
+                <li>Единица выполнения внутри процесса</li>
+                <li>Потоки <strong>делят</strong> память процесса (кучу, статические данные)</li>
+                <li>Каждый поток имеет свой <strong>стек</strong> и регистры</li>
+                <li>Создание потока — <strong>дешевле</strong>, чем процесса</li>
+                <li>Ошибка в одном потоке может "убить" весь процесс</li>
+                <li>Переключение между потоками <strong>быстрее</strong>, чем между процессами</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Процесс</th>
+                    <th>Поток</th>
+                </tr>
+                <tr>
+                    <td>Память</td>
+                    <td>Изолированная</td>
+                    <td>Общая</td>
+                </tr>
+                <tr>
+                    <td>Создание</td>
+                    <td>Дорогое</td>
+                    <td>Дешёвое</td>
+                </tr>
+                <tr>
+                    <td>Переключение</td>
+                    <td>Медленное</td>
+                    <td>Быстрое</td>
+                </tr>
+                <tr>
+                    <td>Безопасность</td>
+                    <td>Высокая</td>
+                    <td>Низкая</td>
+                </tr>
+                <tr>
+                    <td>Обмен данными</td>
+                    <td>IPC (сложно)</td>
+                    <td>Прямой доступ (легко)</td>
+                </tr>
+            </table>
+
+            <p><strong>Пример в C#:</strong></p>
+            <pre>
+// Процесс
+var process = Process.Start("notepad.exe");
+process.WaitForExit();
+
+// Поток
+var thread = new Thread(() => Console.WriteLine("Hello from thread"));
+thread.Start();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Thread vs Task — отличия, что использовать?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Thread:</strong></p>
+            <ul>
+                <li>Низкоуровневый объект, представляющий <strong>поток ОС</strong></li>
+                <li>Занимает ~1 МБ стека</li>
+                <li>Создание <strong>дорогое</strong></li>
+                <li>Не имеет встроенной поддержки async/await</li>
+                <li>Используется для фоновых задач с долгим временем жизни</li>
+                <li>Можно управлять приоритетом, состоянием</li>
+            </ul>
+
+            <p><strong>Task:</strong></p>
+            <ul>
+                <li>Высокоуровневая абстракция над <strong>пулом потоков</strong></li>
+                <li>Использует существующие потоки из ThreadPool</li>
+                <li>Создание <strong>дешёвое</strong></li>
+                <li>Поддерживает <strong>async/await</strong></li>
+                <li>Поддерживает <strong>отмену</strong> (CancellationToken)</li>
+                <li>Поддерживает <strong>продолжения</strong> (ContinueWith)</li>
+                <li>Поддерживает <strong>агрегацию</strong> (WhenAll, WhenAny)</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Thread</th>
+                    <th>Task</th>
+                </tr>
+                <tr>
+                    <td>Создание</td>
+                    <td>Дорогое (1 МБ)</td>
+                    <td>Дешёвое (пул потоков)</td>
+                </tr>
+                <tr>
+                    <td>async/await</td>
+                    <td>Нет</td>
+                    <td>Да</td>
+                </tr>
+                <tr>
+                    <td>Отмена</td>
+                    <td>Сложно</td>
+                    <td>CancellationToken</td>
+                </tr>
+                <tr>
+                    <td>Возврат результата</td>
+                    <td>Нет</td>
+                    <td>Task&lt;TResult&gt;</td>
+                </tr>
+                <tr>
+                    <td>Исключения</td>
+                    <td>В потоке</td>
+                    <td>Агрегированные</td>
+                </tr>
+            </table>
+
+            <p><strong>Что использовать:</strong></p>
+            <ul>
+                <li><strong>Task:</strong> в 99% случаев (асинхронные операции, API, веб)</li>
+                <li><strong>Thread:</strong> только для долгоживущих фоновых задач, где нужен контроль</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// Thread
+var thread = new Thread(() => DoWork());
+thread.IsBackground = true;
+thread.Start();
+
+// Task
+Task.Run(() => DoWork());  // Использует ThreadPool
+await Task.Run(() => DoWork());  // С async/await
+
+// Task с результатом
+var task = Task.Run(() => ComputeResult());
+int result = await task;</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>ThreadPool — зачем нужен, как работает?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>ThreadPool (пул потоков)</strong> — управляет набором рабочих потоков для выполнения задач.</p>
+
+            <p><strong>Зачем нужен:</strong></p>
+            <ul>
+                <li>Избегает затрат на создание/уничтожение потоков</li>
+                <li>Ограничивает количество параллельных потоков</li>
+                <li>Эффективно использует ресурсы</li>
+                <li>Автоматически управляет размером пула</li>
+            </ul>
+
+            <p><strong>Как работает:</strong></p>
+            <ul>
+                <li>При запуске создаётся <strong>минимальное</strong> количество потоков</li>
+                <li>Задачи помещаются в <strong>очередь</strong></li>
+                <li>Потоки забирают задачи из очереди</li>
+                <li>При высокой нагрузке пул <strong>расширяется</strong></li>
+                <li>При простое потоки <strong>завершаются</strong></li>
+            </ul>
+
+            <p><strong>Параметры пула:</strong></p>
+            <pre>
+// Получить настройки
+ThreadPool.GetMinThreads(out int minWorker, out int minIO);
+ThreadPool.GetMaxThreads(out int maxWorker, out int maxIO);
+
+// Изменить настройки
+ThreadPool.SetMinThreads(4, 4);  // Минимум 4 рабочих и 4 порта завершения
+ThreadPool.SetMaxThreads(100, 100);  // Максимум 100
+
+// Использование
+ThreadPool.QueueUserWorkItem(state => DoWork());
+ThreadPool.QueueUserWorkItem(DoWork, "параметр");</pre>
+
+            <p><strong>Проблемы ThreadPool:</strong></p>
+            <ul>
+                <li><strong>Блокирующие операции</strong> — могут исчерпать пул</li>
+                <li><strong>Долгие задачи</strong> — лучше использовать отдельный поток</li>
+                <li><strong>Нельзя контролировать</strong> конкретный поток</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>TPL (Task Parallel Library) — Parallel.For, Parallel.ForEach.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>TPL</strong> — библиотека для параллельного программирования.</p>
+
+            <p><strong>Parallel.For — параллельный цикл (for)</strong></p>
+            <pre>
+// Обычный цикл
+for (int i = 0; i &lt; 1000; i++)
+    Process(i);
+
+// Параллельный цикл
+Parallel.For(0, 1000, i => Process(i));
+
+// С локальными данными (оптимизация)
+Parallel.For(0, 1000,
+    () => new List&lt;int&gt;(),  // Инициализация для каждого потока
+    (i, state, local) =>    // Тело цикла
+    {
+        local.Add(i * i);
+        return local;
+    },
+    local =>                // Пост-обработка
+    {
+        lock (results) results.AddRange(local);
+    });</pre>
+
+            <p><strong>Parallel.ForEach — параллельный цикл по коллекции</strong></p>
+            <pre>
+var items = Enumerable.Range(0, 1000).ToList();
+
+// Параллельная обработка
+Parallel.ForEach(items, item => Process(item));
+
+// С опциями
+var options = new ParallelOptions
+{
+    MaxDegreeOfParallelism = 4,  // Не более 4 потоков
+    CancellationToken = cts.Token
+};
+Parallel.ForEach(items, options, item => Process(item));</pre>
+
+            <p><strong>Важно:</strong></p>
+            <ul>
+                <li>Используйте для <strong>CPU-bound</strong> задач</li>
+                <li>Не используйте для <strong>IO-bound</strong> задач (лучше async/await)</li>
+                <li>Всегда обрабатывайте исключения</li>
+                <li>Следите за <strong>Deadlock</strong> при работе с общими ресурсами</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>async / await — как работает, State Machine.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>async/await</strong> — механизм асинхронного программирования на основе <strong>State Machine</strong>.</p>
+
+            <p><strong>Как работает:</strong></p>
+            <ol>
+                <li>Компилятор генерирует <strong>структуру-состояние</strong> (IAsyncStateMachine)</li>
+                <li>Метод разбивается на <strong>состояния</strong> (до await, после await)</li>
+                <li>При вызове <code>await</code> метод <strong>приостанавливается</strong></li>
+                <li>Управление возвращается вызывающему коду</li>
+                <li>Когда Task завершается, выполнение <strong>продолжается</strong> с того же места</li>
+                <li>Контекст синхронизации <strong>восстанавливается</strong> (SynchronizationContext)</li>
+            </ol>
+
+            <p><strong>Пример (упрощённо):</strong></p>
+            <pre>
+// Исходный код
+async Task&lt;int&gt; GetDataAsync()
+{
+    Console.WriteLine("Старт");
+    var data = await DownloadAsync();
+    Console.WriteLine("После загрузки");
+    return data.Length;
+}
+
+// Компилируется в State Machine
+struct GetDataAsyncStateMachine : IAsyncStateMachine
+{
+    int _state;
+    TaskAwaiter&lt;string&gt; _awaiter;
+    int _result;
+    
+    void MoveNext()
+    {
+        switch (_state)
+        {
+            case 0:
+                Console.WriteLine("Старт");
+                _awaiter = DownloadAsync().GetAwaiter();
+                if (!_awaiter.IsCompleted)
+                {
+                    _state = 1;
+                    // Регистрируем продолжение
+                    return;
+                }
+                goto case 1;
+            case 1:
+                var data = _awaiter.GetResult();
+                Console.WriteLine("После загрузки");
+                _result = data.Length;
+                _state = -1;
+                break;
+        }
+    }
+}</pre>
+
+            <p><strong>Важные нюансы:</strong></p>
+            <ul>
+                <li><code>async</code> метод всегда возвращает <code>Task</code> или <code>Task&lt;T&gt;</code></li>
+                <li><code>await</code> можно использовать только в <code>async</code> методах</li>
+                <li>Метод выполняется <strong>синхронно</strong> до первого <code>await</code></li>
+                <li>После <code>await</code> выполнение может продолжиться в <strong>другом потоке</strong></li>
+                <li>Используйте <code>ConfigureAwait(false)</code> для избежания контекста UI</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Почему async void — плохо (кроме событий)?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>async void</strong> — асинхронный метод, который <strong>не возвращает Task</strong>.</p>
+
+            <p><strong>Почему это плохо:</strong></p>
+
+            <p><strong>1. Исключения теряются</strong></p>
+            <ul>
+                <li>Исключения в <code>async void</code> <strong>не перехватываются</strong> вызывающим кодом</li>
+                <li>Приводят к <strong>падению приложения</strong> (UnhandledException)</li>
+                <li>Трудно отлаживать</li>
+            </ul>
+            <pre>
+async void BadMethod()
+{
+    throw new Exception("Ошибка");  // Вызовет UnhandledException
+}
+
+try
+{
+    BadMethod();  // Исключение НЕ перехватывается!
+}
+catch (Exception) { }  // Сюда не попадём</pre>
+
+            <p><strong>2. Нельзя дождаться завершения</strong></p>
+            <ul>
+                <li>Нельзя использовать <code>await</code> для <code>async void</code></li>
+                <li>Неизвестно, когда метод закончится</li>
+                <li>Нельзя получить результат</li>
+            </ul>
+
+            <p><strong>3. Трудно тестировать</strong></p>
+            <ul>
+                <li>Unit-тесты не могут дождаться завершения</li>
+                <li>Сложно проверить результат</li>
+            </ul>
+
+            <p><strong>Когда всё же можно:</strong></p>
+            <ul>
+                <li><strong>Обработчики событий</strong> (Windows Forms, WPF, ASP.NET Core)</li>
+                <li>Только если метод <strong>никогда не выбрасывает</strong> исключения</li>
+                <li>Всегда перехватывайте исключения внутри</li>
+            </ul>
+
+            <p><strong>Правильный подход:</strong></p>
+            <pre>
+// ❌ Плохо
+async void OnButtonClick(object sender, EventArgs e)
+{
+    await DoSomethingAsync();  // Ошибка убьёт приложение
+}
+
+// ✅ Хорошо
+async void OnButtonClick(object sender, EventArgs e)
+{
+    try
+    {
+        await DoSomethingAsync();
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex);
+        MessageBox.Show("Ошибка: " + ex.Message);
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>ConfigureAwait(false) — зачем, когда использовать?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><code>ConfigureAwait(false)</code> — указывает, что продолжение после <code>await</code> <strong>не требует</strong> исходного контекста синхронизации.</p>
+
+            <p><strong>Что такое SynchronizationContext:</strong></p>
+            <ul>
+                <li>В UI приложениях (WPF, WinForms) — главный поток (UI Thread)</li>
+                <li>В ASP.NET Core — контекст запроса</li>
+                <li>По умолчанию после <code>await</code> выполнение продолжается в <strong>том же контексте</strong></li>
+                <li>Это может вызвать <strong>Deadlock</strong></li>
+            </ul>
+
+            <p><strong>Проблема Deadlock:</strong></p>
+            <pre>
+// WPF приложение
+void Button_Click(object sender, EventArgs e)
+{
+    var task = GetDataAsync();
+    task.Wait();  // ❌ Блокировка UI потока → Deadlock!
+}
+
+async Task&lt;string&gt; GetDataAsync()
+{
+    // UI поток
+    var result = await DownloadAsync();  // После await нужно вернуться в UI поток
+    return result;  // Deadlock — UI заблокирован ожиданием
+}
+
+// Решение
+async Task&lt;string&gt; GetDataAsync()
+{
+    var result = await DownloadAsync().ConfigureAwait(false);
+    // Продолжение в пуле потоков, а не в UI
+    return result;
+}</pre>
+
+            <p><strong>Когда использовать ConfigureAwait(false):</strong></p>
+            <ul>
+                <li><strong>Библиотеки</strong> — не знают о контексте вызова</li>
+                <li><strong>Код без UI</strong> — консоль, сервисы, микросервисы</li>
+                <li><strong>Чтобы избежать Deadlock</strong></li>
+                <li><strong>Для производительности</strong> — меньше переключений контекста</li>
+            </ul>
+
+            <p><strong>Когда НЕ использовать ConfigureAwait(false):</strong></p>
+            <ul>
+                <li><strong>UI приложения</strong> — нужно обновить UI после await</li>
+                <li><strong>ASP.NET Core</strong> (современные версии) — Context не нужен</li>
+                <li><strong>Когда важен HttpContext</strong></li>
+            </ul>
+
+            <p><strong>Современные рекомендации (.NET Core 3+):</strong></p>
+            <ul>
+                <li>В ASP.NET Core <strong>нет</strong> SynchronizationContext</li>
+                <li>ConfigureAwait(false) не обязателен, но полезен</li>
+                <li>Лучше использовать <code>ConfigureAwait(false)</code> в библиотеках</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Task vs ValueTask — разница, когда использовать ValueTask?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Task:</strong></p>
+            <ul>
+                <li>Ссылочный тип, всегда <strong>аллоцируется</strong> в куче</li>
+                <li>Подходит для <strong>асинхронных</strong> операций</li>
+                <li>Хорош для долгих операций</li>
+                <li>Поддерживает все возможности TPL</li>
+            </ul>
+
+            <p><strong>ValueTask:</strong></p>
+            <ul>
+                <li>Структура (значимый тип), <strong>может не аллоцироваться</strong></li>
+                <li>Подходит для <strong>синхронных</strong> операций, которые могут быть асинхронными</li>
+                <li>Может быть <strong>несколько раз</strong> использован (в отличие от ValueTask)</li>
+                <li>Ограниченная поддержка TPL</li>
+            </ul>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>ValueTask:</strong> если результат <strong>часто синхронный</strong> (кэш, мемоизация)</li>
+                <li><strong>ValueTask:</strong> в <strong>горячих путях</strong> (часто вызывается)</li>
+                <li><strong>Task:</strong> для любых <strong>долгих</strong> асинхронных операций</li>
+                <li><strong>Task:</strong> если нужны возможности TPL</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// ❌ Плохо — всегда аллоцирует Task
+public async Task&lt;int&gt; GetCachedValueAsync()
+{
+    if (_cache.TryGetValue(out int value))
+        return value;  // ❌ Всё равно создаётся Task
+    return await ComputeValueAsync();
+}
+
+// ✅ Хорошо — ValueTask без аллокации
+public async ValueTask&lt;int&gt; GetCachedValueAsync()
+{
+    if (_cache.TryGetValue(out int value))
+        return value;  // ✅ Нет аллокации (ValueTask)
+    return await ComputeValueAsync();
+}</pre>
+
+            <p><strong>Важно:</strong></p>
+            <ul>
+                <li><code>ValueTask</code> можно <strong>await</strong> только один раз</li>
+                <li>Не сохраняйте <code>ValueTask</code> в переменные (может быть уже использован)</li>
+                <li>Используйте <code>ValueTask</code> в <strong>горячих путях</strong> (часто вызываемые методы)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>lock — синхронизация, объект блокировки.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><code>lock</code> — ключевое слово для синхронизации доступа к ресурсам.</p>
+
+            <p><strong>Как работает:</strong></p>
+            <ul>
+                <li>Использует <code>Monitor.Enter()</code> и <code>Monitor.Exit()</code></li>
+                <li>Только один поток может войти в блок <code>lock</code></li>
+                <li>Остальные потоки <strong>блокируются</strong> до освобождения</li>
+                <li>Блокировка снимается в <code>finally</code> (гарантированно)</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+private readonly object _locker = new object();
+private int _counter = 0;
+
+public void Increment()
+{
+    lock (_locker)
+    {
+        _counter++;
+    }
+}
+
+public int GetCounter()
+{
+    lock (_locker)
+    {
+        return _counter;
+    }
+}</pre>
+
+            <p><strong>Правила выбора объекта блокировки:</strong></p>
+            <ul>
+                <li>Никогда не используйте <code>lock(this)</code> (публичный объект)</li>
+                <li>Никогда не используйте <code>lock(typeof(MyClass))</code> (публичный объект)</li>
+                <li>Никогда не используйте <code>lock("string")</code> (строки интернируются)</li>
+                <li>Используйте <code>private readonly object</code></li>
+                <li>Используйте <strong>отдельный</strong> объект для каждого ресурса</li>
+            </ul>
+
+            <p><strong>lock vs Monitor:</strong></p>
+            <pre>
+// lock — синтаксический сахар
+lock (_locker)
+{
+    // Код
+}
+
+// Эквивалентно
+try
+{
+    Monitor.Enter(_locker);
+    // Код
+}
+finally
+{
+    Monitor.Exit(_locker);
+}</pre>
+
+            <p><strong>Опасности:</strong></p>
+            <ul>
+                <li><strong>Deadlock</strong> — взаимная блокировка</li>
+                <li><strong>Starvation</strong> — поток долго ждёт блокировку</li>
+                <li><strong>Нельзя использовать</strong> <code>await</code> внутри <code>lock</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Monitor — низкоуровневый аналог lock.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Monitor</strong> — класс для синхронизации доступа к ресурсам (низкоуровневый аналог <code>lock</code>).</p>
+
+            <p><strong>Основные методы:</strong></p>
+            <ul>
+                <li><code>Monitor.Enter()</code> — войти в блокировку</li>
+                <li><code>Monitor.Exit()</code> — выйти из блокировки</li>
+                <li><code>Monitor.Wait()</code> — освободить блокировку и ждать сигнала</li>
+                <li><code>Monitor.Pulse()</code> — уведомить один ожидающий поток</li>
+                <li><code>Monitor.PulseAll()</code> — уведомить все ожидающие потоки</li>
+                <li><code>Monitor.TryEnter()</code> — попытаться войти с таймаутом</li>
+            </ul>
+
+            <p><strong>Пример Producer-Consumer:</strong></p>
+            <pre>
+private readonly object _locker = new object();
+private Queue&lt;int&gt; _queue = new Queue&lt;int&gt;();
+private bool _isCompleted = false;
+
+// Producer
+public void Produce(int item)
+{
+    lock (_locker)
+    {
+        _queue.Enqueue(item);
+        Monitor.Pulse(_locker);  // Уведомляем Consumer
+    }
+}
+
+// Consumer
+public int Consume()
+{
+    lock (_locker)
+    {
+        while (_queue.Count == 0 && !_isCompleted)
+        {
+            Monitor.Wait(_locker);  // Ждём уведомления
+        }
+        return _queue.Dequeue();
+    }
+}</pre>
+
+            <p><strong>lock vs Monitor:</strong></p>
+            <ul>
+                <li><code>lock</code> — синтаксический сахар для <code>Monitor.Enter/Exit</code></li>
+                <li><code>Monitor</code> даёт <strong>больше контроля</strong> (Wait, Pulse, TryEnter)</li>
+                <li><code>Monitor</code> может вызывать <strong>OutOfMemoryException</strong> (редко)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Mutex, Semaphore, SemaphoreSlim — межпроцессная/внутренняя синхронизация.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Mutex:</strong></p>
+            <ul>
+                <li><strong>Межпроцессная</strong> синхронизация</li>
+                <li>Только один поток может владеть Mutex</li>
+                <li>Именованный Mutex доступен другим процессам</li>
+                <li>Использует системные ресурсы (дороже)</li>
+            </ul>
+            <pre>
+using (var mutex = new Mutex(false, "Global\\MyMutex"))
+{
+    if (mutex.WaitOne(TimeSpan.FromSeconds(5)))
+    {
+        try { /* Критическая секция */ }
+        finally { mutex.ReleaseMutex(); }
+    }
+}</pre>
+
+            <p><strong>Semaphore / SemaphoreSlim:</strong></p>
+            <ul>
+                <li>Разрешает <strong>ограниченное количество</strong> потоков одновременно</li>
+                <li><strong>Semaphore</strong> — межпроцессный (системный)</li>
+                <li><strong>SemaphoreSlim</strong> — внутрипроцессный (быстрее)</li>
+            </ul>
+            <pre>
+// SemaphoreSlim (внутрипроцессный)
+var semaphore = new SemaphoreSlim(3, 3);  // Не более 3 потоков
+
+async Task ProcessAsync()
+{
+    await semaphore.WaitAsync();
+    try { /* Критическая секция */ }
+    finally { semaphore.Release(); }
+}</pre>
+
+            <p><strong>Выбор инструмента:</strong></p>
+            <ul>
+                <li><strong>lock:</strong> для простых внутрипроцессных сценариев</li>
+                <li><strong>Mutex:</strong> для синхронизации между процессами</li>
+                <li><strong>SemaphoreSlim:</strong> для ограничения количества потоков</li>
+                <li><strong>Semaphore:</strong> для межпроцессного ограничения</li>
+                <li><strong>Monitor:</strong> для тонкого контроля (Wait/Pulse)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Deadlock — причины, как избежать?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Deadlock (взаимная блокировка)</strong> — два или более потоков ожидают друг друга.</p>
+
+            <p><strong>Условия Deadlock (Coffman):</strong></p>
+            <ol>
+                <li><strong>Взаимное исключение</strong> — ресурсы нельзя разделить</li>
+                <li><strong>Удержание и ожидание</strong> — поток удерживает ресурс и ждёт другой</li>
+                <li><strong>Отсутствие вытеснения</strong> — ресурсы нельзя отобрать</li>
+                <li><strong>Циклическое ожидание</strong> — цепочка ожиданий образует цикл</li>
+            </ol>
+
+            <p><strong>Пример Deadlock:</strong></p>
+            <pre>
+// Поток 1
+lock (resource1)
+{
+    Thread.Sleep(100);
+    lock (resource2) { /* ... */ }
+}
+
+// Поток 2
+lock (resource2)
+{
+    Thread.Sleep(100);
+    lock (resource1) { /* ... */ }
+}</pre>
+
+            <p><strong>Как избежать:</strong></p>
+
+            <p><strong>1. Фиксированный порядок блокировок</strong></p>
+            <pre>
+// Всегда блокируем в одном порядке
+int hash1 = resource1.GetHashCode();
+int hash2 = resource2.GetHashCode();
+
+if (hash1 < hash2)
+{
+    lock (resource1) lock (resource2) { /* ... */ }
+}
+else
+{
+    lock (resource2) lock (resource1) { /* ... */ }
+}</pre>
+
+            <p><strong>2. Использовать таймауты</strong></p>
+            <pre>
+if (Monitor.TryEnter(resource1, TimeSpan.FromSeconds(1)))
+{
+    try
+    {
+        if (Monitor.TryEnter(resource2, TimeSpan.FromSeconds(1)))
+        {
+            try { /* ... */ }
+            finally { Monitor.Exit(resource2); }
+        }
+    }
+    finally { Monitor.Exit(resource1); }
+}</pre>
+
+            <p><strong>3. Использовать асинхронные блокировки</strong></p>
+            <pre>
+// SemaphoreSlim с async/await
+await semaphore.WaitAsync();
+try { /* ... */ }
+finally { semaphore.Release(); }</pre>
+
+            <p><strong>4. Избегать блокировок в async методах</strong></p>
+            <ul>
+                <li>Никогда не используйте <code>lock</code> внутри <code>async</code></li>
+                <li>Используйте <code>SemaphoreSlim.WaitAsync()</code></li>
+                <li>Используйте <code>AsyncLock</code> из библиотек</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Race Condition — что это, как избежать?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Race Condition (состояние гонки)</strong> — когда результат операции зависит от порядка выполнения потоков.</p>
+
+            <p><strong>Пример Race Condition:</strong></p>
+            <pre>
+// ❌ Код с гонкой
+private int _counter = 0;
+
+public void Increment()
+{
+    _counter++;  // Не атомарно!
+    // Читает _counter → инкрементирует → записывает
+}
+
+// Два потока одновременно:
+// Поток 1: читает 0 → инкремент до 1 → записывает 1
+// Поток 2: читает 0 → инкремент до 1 → записывает 1
+// Результат: 1 (потеряли одно обновление)</pre>
+
+            <p><strong>Как избежать:</strong></p>
+
+            <p><strong>1. Использовать атомарные операции</strong></p>
+            <pre>
+private int _counter = 0;
+public void Increment()
+{
+    Interlocked.Increment(ref _counter);  // Атомарно!
+}</pre>
+
+            <p><strong>2. Использовать блокировки</strong></p>
+            <pre>
+private readonly object _locker = new object();
+private int _counter = 0;
+
+public void Increment()
+{
+    lock (_locker) { _counter++; }
+}</pre>
+
+            <p><strong>3. Использовать потокобезопасные коллекции</strong></p>
+            <pre>
+var dict = new ConcurrentDictionary&lt;string, int&gt;();
+dict.AddOrUpdate("key", 1, (k, v) => v + 1);  // Атомарно!</pre>
+
+            <p><strong>4. Использовать неизменяемые структуры</strong></p>
+            <pre>
+// Неизменяемый объект — безопасен
+public record Person(string Name, int Age);
+var p1 = new Person("Alice", 30);
+var p2 = p1 with { Age = 31 };  // Новая копия</pre>
+
+            <p><strong>Обнаружение Race Condition:</strong></p>
+            <ul>
+                <li>Сложно воспроизвести</li>
+                <li>Используйте <strong>Data Race Detector</strong> (ThreadSanitizer)</li>
+                <li>Тестируйте с высоким параллелизмом</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Interlocked — атомарные операции.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Interlocked</strong> — класс для <strong>атомарных</strong> операций без блокировок.</p>
+
+            <p><strong>Основные методы:</strong></p>
+            <ul>
+                <li><code>Increment(ref int)</code> — атомарное увеличение</li>
+                <li><code>Decrement(ref int)</code> — атомарное уменьшение</li>
+                <li><code>Add(ref int, int)</code> — атомарное добавление</li>
+                <li><code>CompareExchange(ref int, int, int)</code> — CAS (Compare and Swap)</li>
+                <li><code>Exchange(ref int, int)</code> — атомарная замена</li>
+                <li><code>Read(ref long)</code> — атомарное чтение (для 64-битных)</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+private int _counter = 0;
+private long _longValue = 0;
+
+public void Increment()
+{
+    // Атомарное увеличение
+    int newValue = Interlocked.Increment(ref _counter);
+}
+
+public bool TryUpdate(int oldValue, int newValue)
+{
+    // CAS (Compare and Swap)
+    int original = Interlocked.CompareExchange(ref _counter, newValue, oldValue);
+    return original == oldValue;
+}
+
+public long GetLongValue()
+{
+    // Атомарное чтение для 64-битных типов
+    return Interlocked.Read(ref _longValue);
+}</pre>
+
+            <p><strong>Interlocked vs lock:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Interlocked</th>
+                    <th>lock</th>
+                </tr>
+                <tr>
+                    <td>Производительность</td>
+                    <td>Очень быстрый</td>
+                    <td>Медленнее</td>
+                </tr>
+                <tr>
+                    <td>Атомарность</td>
+                    <td>Одна операция</td>
+                    <td>Блок кода</td>
+                </tr>
+                <tr>
+                    <td>Deadlock</td>
+                    <td>Нет</td>
+                    <td>Возможен</td>
+                </tr>
+                <tr>
+                    <td>Сложность</td>
+                    <td>Простые операции</td>
+                    <td>Любые</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>Interlocked:</strong> для простых атомарных операций (инкремент, CAS)</li>
+                <li><strong>lock:</strong> для сложных операций и блоков кода</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Асинхронность vs Многопоточность vs Параллелизм — разница.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Асинхронность (Asynchronous):</strong></p>
+            <ul>
+                <li>Не блокирует поток во время ожидания</li>
+                <li>Использует <strong>один поток</strong> для обработки нескольких задач</li>
+                <li>Освобождает поток для других операций</li>
+                <li>Идеально для <strong>IO-bound</strong> операций (диск, сеть, БД)</li>
+                <li>Реализуется через <code>async/await</code></li>
+            </ul>
+
+            <p><strong>Многопоточность (Multithreading):</strong></p>
+            <ul>
+                <li>Использует <strong>несколько потоков</strong> одновременно</li>
+                <li>Каждый поток — отдельный поток ОС</li>
+                <li>Потоки могут выполняться параллельно на разных ядрах</li>
+                <li>Идеально для <strong>CPU-bound</strong> операций (вычисления)</li>
+                <li>Требует синхронизации (<code>lock</code>, <code>Monitor</code>)</li>
+            </ul>
+
+            <p><strong>Параллелизм (Parallelism):</strong></p>
+            <ul>
+                <li>Частный случай многопоточности</li>
+                <li>Выполнение задач <strong>одновременно</strong> на разных ядрах</li>
+                <li>Фокус на <strong>производительности</strong></li>
+                <li>Реализуется через <code>Parallel.For</code>, <code>PLINQ</code></li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Асинхронность</th>
+                    <th>Многопоточность</th>
+                    <th>Параллелизм</th>
+                </tr>
+                <tr>
+                    <td>Цель</td>
+                    <td>Не блокировать поток</td>
+                    <td>Использовать несколько потоков</td>
+                    <td>Ускорение на нескольких ядрах</td>
+                </tr>
+                <tr>
+                    <td>Использование</td>
+                    <td>IO-bound</td>
+                    <td>CPU-bound + IO</td>
+                    <td>CPU-bound</td>
+                </tr>
+                <tr>
+                    <td>Потоки</td>
+                    <td>Один или несколько</td>
+                    <td>Несколько</td>
+                    <td>Несколько</td>
+                </tr>
+                <tr>
+                    <td>Синхронизация</td>
+                    <td>Не требуется</td>
+                    <td>Требуется</td>
+                    <td>Требуется</td>
+                </tr>
+                <tr>
+                    <td>Пример</td>
+                    <td>await DownloadAsync()</td>
+                    <td>new Thread(() => Work())</td>
+                    <td>Parallel.For(0, n, i => Work(i))</td>
+                </tr>
+            </table>
+
+            <p><strong>Примеры в коде:</strong></p>
+            <pre>
+// Асинхронность (IO-bound)
+async Task&lt;string&gt; GetDataAsync()
+{
+    var response = await httpClient.GetStringAsync("https://api.com");
+    return response;
+}
+
+// Многопоточность (CPU-bound)
+void ProcessData()
+{
+    var thread = new Thread(() => HeavyComputation());
+    thread.Start();
+}
+
+// Параллелизм (CPU-bound)
+void ProcessDataParallel()
+{
+    Parallel.For(0, 1000, i => HeavyComputation(i));
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>CPU-bound vs IO-bound задачи — как выбирать подход.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>CPU-bound задачи (привязанные к процессору):</strong></p>
+            <ul>
+                <li>Требуют <strong>вычислений</strong> (циклы, расчёты, алгоритмы)</li>
+                <li>Используют процессор на 100%</li>
+                <li>Подход: <strong>Task.Run()</strong> или <strong>Parallel</strong></li>
+                <li>Количество задач = количество ядер</li>
+            </ul>
+
+            <p><strong>IO-bound задачи (привязанные к вводу-выводу):</strong></p>
+            <ul>
+                <li>Ожидают внешние ресурсы (диск, сеть, БД)</li>
+                <li>Процессор простаивает большую часть времени</li>
+                <li>Подход: <strong>async/await</strong></li>
+                <li>Много задач может быть выполнено на одном потоке</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// CPU-bound — используем Task.Run
+async Task&lt;int&gt; ProcessDataAsync()
+{
+    return await Task.Run(() =>
+    {
+        // Долгие вычисления
+        int result = 0;
+        for (int i = 0; i &lt; 1000000; i++)
+            result += i * i;
+        return result;
+    });
+}
+
+// IO-bound — используем async/await
+async Task&lt;string&gt; DownloadDataAsync(string url)
+{
+    using var client = new HttpClient();
+    return await client.GetStringAsync(url);  // Не блокирует поток
+}</pre>
+
+            <p><strong>Критерии выбора:</strong></p>
+            <ul>
+                <li><strong>IO-bound:</strong> используйте <code>async/await</code></li>
+                <li><strong>CPU-bound:</strong> используйте <code>Task.Run</code>, <code>Parallel</code>, <code>PLINQ</code></li>
+                <li><strong>Смешанные:</strong> комбинируйте подходы</li>
+            </ul>
+
+            <p><strong>Рекомендации Microsoft:</strong></p>
+            <ul>
+                <li>Для CPU-bound задач используйте <strong>Parallel.For</strong> или <strong>PLINQ</strong></li>
+                <li>Для IO-bound задач используйте <strong>async/await</strong></li>
+                <li>В UI приложениях всегда используйте async/await (не блокируйте UI поток)</li>
+            </ul>
+        </div>
+    </details>
+</section>

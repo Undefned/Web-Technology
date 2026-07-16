@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 1-5 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 4 ===================== -->
+<section class="section c4">
+    <h2>🗂️ 4. Коллекции и LINQ <span class="badge red">100%</span></h2>
+
+    <details>
+        <summary>Array — фиксированный размер, сложность O(1) по индексу.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Array</strong> — коллекция фиксированного размера с прямым доступом по индексу.</p>
+
+            <p><strong>Характеристики:</strong></p>
+            <ul>
+                <li>Размер задаётся при создании и <strong>не меняется</strong></li>
+                <li>Доступ по индексу: <strong>O(1)</strong> (константное время)</li>
+                <li>Элементы хранятся непрерывно в памяти</li>
+                <li>Быстрый доступ, низкий overhead</li>
+                <li>При создании все элементы инициализируются значениями по умолчанию</li>
+            </ul>
+
+            <p><strong>Создание и использование:</strong></p>
+            <pre>
+// Создание
+int[] arr1 = new int[10];          // Все элементы = 0
+int[] arr2 = new int[] { 1, 2, 3 };// Инициализация
+int[] arr3 = { 1, 2, 3 };          // Сокращённая запись
+
+// Доступ
+arr1[0] = 42;           // O(1)
+int x = arr1[0];        // O(1)
+
+// Методы
+Array.Sort(arr1);       // Сортировка O(n log n)
+Array.Reverse(arr1);    // Разворот O(n)
+Array.Resize(ref arr1, 20);  // Создаёт новый массив</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Размер известен и не меняется</li>
+                <li>Нужна максимальная производительность</li>
+                <li>Работа с низкоуровневыми операциями (P/Invoke, Span)</li>
+                <li>Фиксированное количество элементов</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>List&lt;T&gt; — динамический массив, сложность Add.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>List&lt;T&gt;</strong> — динамический массив, который автоматически расширяется.</p>
+
+            <p><strong>Сложность операций:</strong></p>
+            <ul>
+                <li><strong>Доступ по индексу:</strong> O(1)</li>
+                <li><strong>Добавление в конец (Add):</strong> O(1) амортизированно (иногда O(n) при расширении)</li>
+                <li><strong>Вставка в середину (Insert):</strong> O(n) — сдвиг элементов</li>
+                <li><strong>Удаление из середины (RemoveAt):</strong> O(n) — сдвиг элементов</li>
+                <li><strong>Поиск (Contains, IndexOf):</strong> O(n)</li>
+                <li><strong>Сортировка (Sort):</strong> O(n log n)</li>
+            </ul>
+
+            <p><strong>Как работает расширение:</strong></p>
+            <ul>
+                <li>Начальная ёмкость по умолчанию: 4 элемента</li>
+                <li>При переполнении ёмкость удваивается (4 → 8 → 16 → 32 ...)</li>
+                <li>Требует копирования всех элементов в новый массив</li>
+            </ul>
+
+            <p><strong>Оптимизация:</strong></p>
+            <pre>
+// Без оптимизации — несколько расширений
+var list = new List&lt;int&gt;();
+for (int i = 0; i &lt; 1000; i++)
+    list.Add(i);  // Расширения: 4 → 8 → 16 → 32 → ... → 1024
+
+// С оптимизацией — одно выделение
+var list2 = new List&lt;int&gt;(1000);
+for (int i = 0; i &lt; 1000; i++)
+    list2.Add(i);  // Без расширений</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Dictionary&lt;K,V&gt; — хэш-таблица, сложность.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Dictionary&lt;K,V&gt;</strong> — коллекция ключ-значение на основе хэш-таблицы.</p>
+
+            <p><strong>Сложность операций:</strong></p>
+            <ul>
+                <li><strong>Добавление (Add):</strong> O(1) в среднем, O(n) в худшем (коллизии)</li>
+                <li><strong>Поиск (TryGetValue, this[]):</strong> O(1) в среднем, O(n) в худшем</li>
+                <li><strong>Удаление (Remove):</strong> O(1) в среднем, O(n) в худшем</li>
+                <li><strong>Итерация (foreach):</strong> O(n)</li>
+            </ul>
+
+            <p><strong>Внутреннее устройство:</strong></p>
+            <ul>
+                <li>Массив <strong>buckets</strong> (корзин) для хранения списков элементов</li>
+                <li>Ключи хранятся в <strong>связных списках</strong> внутри корзин</li>
+                <li>Использует <code>GetHashCode()</code> ключа для определения корзины</li>
+                <li>При коллизиях элементы попадают в одну корзину</li>
+            </ul>
+
+            <p><strong>Структура:</strong></p>
+            <pre>
+// Внутреннее устройство (упрощённо)
+class Dictionary&lt;K, V&gt;
+{
+    struct Entry { K key; V value; int next; }
+    Entry[] _entries;      // Массив записей
+    int[] _buckets;        // Корзины (индексы в _entries)
+    
+    void Add(K key, V value)
+    {
+        int hash = key.GetHashCode();
+        int bucket = hash % _buckets.Length;
+        // Проверка существования, добавление в список
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>HashSet&lt;T&gt; — что это, сложность.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>HashSet&lt;T&gt;</strong> — коллекция <strong>уникальных</strong> элементов без дубликатов.</p>
+
+            <p><strong>Характеристики:</strong></p>
+            <ul>
+                <li>Хранит только <strong>уникальные</strong> элементы</li>
+                <li>Построен на основе хэш-таблицы</li>
+                <li>Сложность операций: <strong>O(1)</strong> в среднем</li>
+                <li>Не поддерживает индексацию (нет this[index])</li>
+                <li>Порядок элементов не гарантируется</li>
+            </ul>
+
+            <p><strong>Использование:</strong></p>
+            <pre>
+var set = new HashSet&lt;int&gt;();
+set.Add(1);
+set.Add(2);
+set.Add(1);  // Игнорируется (уже есть)
+
+Console.WriteLine(set.Contains(1));  // True
+Console.WriteLine(set.Count);        // 2
+
+// Удаление дубликатов из списка
+var numbers = new List&lt;int&gt; { 1, 2, 2, 3, 3, 3 };
+var unique = new HashSet&lt;int&gt;(numbers);
+Console.WriteLine(unique.Count);  // 3
+
+// Множества (Set operations)
+var set1 = new HashSet&lt;int&gt; { 1, 2, 3 };
+var set2 = new HashSet&lt;int&gt; { 2, 3, 4 };
+set1.IntersectWith(set2);  // { 2, 3 }
+set1.UnionWith(set2);      // { 1, 2, 3, 4 }
+set1.ExceptWith(set2);     // { 1 }</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Нужно хранить уникальные элементы</li>
+                <li>Частые операции проверки существования</li>
+                <li>Удаление дубликатов</li>
+                <li>Операции над множествами (пересечение, объединение)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Queue&lt;T&gt; и Stack&lt;T&gt; — описание.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Queue&lt;T&gt; — FIFO (First In, First Out)</strong></p>
+            <ul>
+                <li>Первый добавленный элемент будет первым удалён</li>
+                <li>Аналогичен очереди в магазине</li>
+                <li>Методы: <code>Enqueue()</code> (добавить), <code>Dequeue()</code> (извлечь), <code>Peek()</code> (посмотреть)</li>
+                <li>Применение: обработка задач, очереди сообщений, BFS в графах</li>
+            </ul>
+
+            <p><strong>Stack&lt;T&gt; — LIFO (Last In, First Out)</strong></p>
+            <ul>
+                <li>Последний добавленный элемент будет первым удалён</li>
+                <li>Аналогичен стопке тарелок</li>
+                <li>Методы: <code>Push()</code> (добавить), <code>Pop()</code> (извлечь), <code>Peek()</code> (посмотреть)</li>
+                <li>Применение: обратные вызовы, парсинг, DFS в графах, отмена действий (Undo)</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// Queue — FIFO
+var queue = new Queue&lt;string&gt;();
+queue.Enqueue("Первый");
+queue.Enqueue("Второй");
+queue.Enqueue("Третий");
+Console.WriteLine(queue.Dequeue());  // "Первый"
+Console.WriteLine(queue.Dequeue());  // "Второй"
+
+// Stack — LIFO
+var stack = new Stack&lt;string&gt;();
+stack.Push("Первый");
+stack.Push("Второй");
+stack.Push("Третий");
+Console.WriteLine(stack.Pop());  // "Третий"
+Console.WriteLine(stack.Pop());  // "Второй"
+
+// Реальный пример: обработка команд
+var commands = new Queue&lt;ICommand&gt;();
+commands.Enqueue(new SaveCommand());
+commands.Enqueue(new PrintCommand());
+while (commands.Count > 0)
+    commands.Dequeue().Execute();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>LinkedList&lt;T&gt; — когда использовать?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>LinkedList&lt;T&gt;</strong> — двусвязный список.</p>
+
+            <p><strong>Сложность операций:</strong></p>
+            <ul>
+                <li>Вставка/удаление в <strong>начало/конец</strong>: O(1)</li>
+                <li>Вставка/удаление <strong>в середине</strong>: O(1) если есть узел, иначе O(n)</li>
+                <li>Доступ по индексу: <strong>O(n)</strong> (нужно пройти по списку)</li>
+                <li>Поиск: O(n)</li>
+            </ul>
+
+            <p><strong>Сравнение с List:</strong></p>
+            <ul>
+                <li><strong>List:</strong> быстрый доступ по индексу, медленная вставка/удаление в середине</li>
+                <li><strong>LinkedList:</strong> медленный доступ по индексу, быстрая вставка/удаление в середине</li>
+            </ul>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Частые вставки/удаления <strong>в середине</strong></li>
+                <li>Размер коллекции <strong>неизвестен</strong> и меняется</li>
+                <li>Не нужен доступ по индексу</li>
+                <li>Работа с очередями с приоритетом</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+var list = new LinkedList&lt;int&gt;();
+var node1 = list.AddFirst(1);
+var node2 = list.AddLast(3);
+list.AddAfter(node1, 2);   // 1 → 2 → 3
+
+// Перебор
+foreach (int item in list) { }
+
+// Вставка в середину без поиска
+var middle = list.Find(2);
+if (middle != null)
+    list.AddBefore(middle, 0);  // 1 → 0 → 2 → 3</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>SortedList vs SortedDictionary — различия.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th><code>SortedList&lt;K,V&gt;</code></th>
+                    <th><code>SortedDictionary&lt;K,V&gt;</code></th>
+                </tr>
+                <tr>
+                    <td>Структура</td>
+                    <td>Два массива (ключи + значения)</td>
+                    <td>Дерево (красно-чёрное)</td>
+                </tr>
+                <tr>
+                    <td>Память</td>
+                    <td>Меньше (массивы)</td>
+                    <td>Больше (узлы дерева)</td>
+                </tr>
+                <tr>
+                    <td>Поиск</td>
+                    <td>O(log n) (бинарный поиск)</td>
+                    <td>O(log n)</td>
+                </tr>
+                <tr>
+                    <td>Вставка</td>
+                    <td>O(n) (сдвиг массива)</td>
+                    <td>O(log n)</td>
+                </tr>
+                <tr>
+                    <td>Удаление</td>
+                    <td>O(n) (сдвиг массива)</td>
+                    <td>O(log n)</td>
+                </tr>
+                <tr>
+                    <td>Доступ по индексу</td>
+                    <td>O(1) (через массивы)</td>
+                    <td>Нет</td>
+                </tr>
+                <tr>
+                    <td>Когда использовать</td>
+                    <td>Создаётся один раз, мало изменений</td>
+                    <td>Частые изменения</td>
+                </tr>
+            </table>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+var sortedList = new SortedList&lt;string, int&gt;();
+sortedList.Add("B", 2);
+sortedList.Add("A", 1);
+sortedList.Add("C", 3);
+
+// Всегда отсортировано по ключу
+foreach (var kv in sortedList)
+    Console.WriteLine($"{kv.Key}: {kv.Value}");  // A:1, B:2, C:3
+
+// Доступ по индексу
+Console.WriteLine(sortedList.Keys[0]);  // "A"</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Concurrent коллекции — какие есть?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Concurrent коллекции</strong> — потокобезопасные коллекции из <code>System.Collections.Concurrent</code>.</p>
+
+            <p><strong>Список:</strong></p>
+            <ul>
+                <li><code>ConcurrentDictionary&lt;K,V&gt;</code> — потокобезопасный словарь</li>
+                <li><code>ConcurrentQueue&lt;T&gt;</code> — потокобезопасная очередь (FIFO)</li>
+                <li><code>ConcurrentStack&lt;T&gt;</code> — потокобезопасный стек (LIFO)</li>
+                <li><code>ConcurrentBag&lt;T&gt;</code> — неупорядоченная коллекция</li>
+                <li><code>BlockingCollection&lt;T&gt;</code> — блокирующая коллекция (Producer-Consumer)</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// ConcurrentDictionary
+var dict = new ConcurrentDictionary&lt;string, int&gt;();
+dict.TryAdd("key", 42);
+dict.AddOrUpdate("key", 0, (k, v) => v + 1);  // 43
+
+// ConcurrentQueue
+var queue = new ConcurrentQueue&lt;int&gt;();
+queue.Enqueue(1);
+queue.Enqueue(2);
+queue.TryDequeue(out int result);  // result = 1
+
+// ConcurrentBag (производительность, порядок не гарантируется)
+var bag = new ConcurrentBag&lt;string&gt;();
+bag.Add("Hello");
+bag.TryTake(out string item);
+
+// BlockingCollection (Producer-Consumer)
+var bc = new BlockingCollection&lt;int&gt;();
+// Producer
+Task.Run(() => { for(int i=0; i&lt;10; i++) bc.Add(i); bc.CompleteAdding(); });
+// Consumer
+foreach (var item in bc.GetConsumingEnumerable())
+    Console.WriteLine(item);</pre>
+
+            <p><strong>Преимущества перед lock:</strong></p>
+            <ul>
+                <li>Оптимизированы для многопоточности</li>
+                <li>Используют lock-free и низкоуровневые операции</li>
+                <li>Лучшая производительность при высокой конкуренции</li>
+                <li>Проще в использовании</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>IEnumerable vs IQueryable — КРИТИЧНО для EF.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>IEnumerable&lt;T&gt;:</strong></p>
+            <ul>
+                <li>Выполняется <strong>в памяти</strong> (на клиенте)</li>
+                <li>Все данные загружаются из БД, фильтрация идёт в .NET</li>
+                <li>Медленно для больших таблиц</li>
+                <li>Нет оптимизации запроса</li>
+                <li>Используйте когда данные уже в памяти</li>
+            </ul>
+
+            <p><strong>IQueryable&lt;T&gt;:</strong></p>
+            <ul>
+                <li>Выполняется <strong>в БД</strong> (на сервере)</li>
+                <li>Фильтрация превращается в <strong>SQL WHERE</strong></li>
+                <li>Быстро для больших таблиц</li>
+                <li>Строит оптимизированный SQL-запрос</li>
+                <li>Используйте для запросов к БД</li>
+            </ul>
+
+            <p><strong>Критическая разница:</strong></p>
+            <pre>
+// ❌ ПЛОХО — все данные в память
+IEnumerable&lt;Order&gt; orders = db.Orders;
+var result = orders.Where(o => o.Total > 1000).ToList();
+// SQL: SELECT * FROM Orders (все записи!)
+// Фильтрация в .NET
+
+// ✅ ХОРОШО — фильтрация в БД
+IQueryable&lt;Order&gt; orders = db.Orders;
+var result = orders.Where(o => o.Total > 1000).ToList();
+// SQL: SELECT * FROM Orders WHERE Total > 1000</pre>
+
+            <p><strong>Демонстрация:</strong></p>
+            <pre>
+// IEnumerable — фильтрация на клиенте
+IEnumerable&lt;Phone&gt; phones = db.Phones;
+var result = phones.Where(p => p.Price > 500).ToList();
+// SQL: SELECT * FROM Phones (все телефоны)
+// Затем в памяти: WHERE Price > 500
+
+// IQueryable — фильтрация в БД
+IQueryable&lt;Phone&gt; phones = db.Phones;
+var result = phones.Where(p => p.Price > 500).ToList();
+// SQL: SELECT * FROM Phones WHERE Price > 500</pre>
+
+            <p><strong>Правила:</strong></p>
+            <ul>
+                <li>Всегда используйте <code>IQueryable</code> для фильтрации в БД</li>
+                <li>Превращайте в <code>IEnumerable</code> только после <code>ToList()</code> или <code>AsEnumerable()</code></li>
+                <li>Используйте <code>AsNoTracking()</code> для чтения без отслеживания</li>
+                <li>Избегайте <code>.ToList()</code> до <code>.Where()</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>IEnumerable vs IList vs ICollection — иерархия.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Иерархия интерфейсов:</strong></p>
+            <pre>
+IEnumerable&lt;T&gt;
+    │
+    ├── ICollection&lt;T&gt;      ←  добавляет Count, Add, Remove, Clear, IsReadOnly
+    │     │
+    │     ├── IList&lt;T&gt;      ←  добавляет доступ по индексу (this[index])
+    │     │     │
+    │     │     ├── List&lt;T&gt;
+    │     │     └── T[] (array)
+    │     │
+    │     ├── ISet&lt;T&gt;
+    │     │     └── HashSet&lt;T&gt;
+    │     │
+    │     └── IDictionary&lt;K,V&gt;
+    │           └── Dictionary&lt;K,V&gt;
+    │
+    └── IReadOnlyCollection&lt;T&gt;  ←  только чтение (Count)
+          │
+          └── IReadOnlyList&lt;T&gt;  ←  доступ по индексу (без изменения)</pre>
+
+            <p><strong>Характеристики:</strong></p>
+            <table>
+                <tr><th>Интерфейс</th><th>Возможности</th></tr>
+                <tr><td><code>IEnumerable&lt;T&gt;</code></td><td>Только итерация (<code>foreach</code>)</td></tr>
+                <tr><td><code>ICollection&lt;T&gt;</code></td><td>+ <code>Count</code>, <code>Add</code>, <code>Remove</code>, <code>Clear</code></td></tr>
+                <tr><td><code>IList&lt;T&gt;</code></td><td>+ доступ по индексу (<code>this[index]</code>)</td></tr>
+            </table>
+
+            <p><strong>Практическое использование:</strong></p>
+            <pre>
+// Используйте самый общий интерфейс
+void Print(IEnumerable&lt;int&gt; items)
+{
+    foreach (var item in items)
+        Console.WriteLine(item);
+}
+
+// ICollection — когда нужен Count
+void Process(ICollection&lt;int&gt; items)
+{
+    if (items.Count > 0) { }
+}
+
+// IList — когда нужен доступ по индексу
+void Swap(IList&lt;int&gt; items, int i, int j)
+{
+    var temp = items[i];
+    items[i] = items[j];
+    items[j] = temp;
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>IEnumerator и yield return — как работает?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>yield return</strong> — создаёт итератор с <strong>отложенным выполнением</strong>.</p>
+
+            <p><strong>Как работает:</strong></p>
+            <ul>
+                <li>Компилятор генерирует <strong>state machine</strong></li>
+                <li>Код выполняется <strong>лениво</strong> — только при итерации</li>
+                <li>Каждый <code>yield return</code> возвращает элемент и приостанавливает выполнение</li>
+                <li>При следующем <code>MoveNext()</code> выполнение продолжается с того же места</li>
+                <li>Сохраняется состояние между вызовами</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Метод с yield
+IEnumerable&lt;int&gt; GetNumbers()
+{
+    Console.WriteLine("Начало");
+    yield return 1;
+    Console.WriteLine("После первого");
+    yield return 2;
+    Console.WriteLine("После второго");
+    yield return 3;
+    Console.WriteLine("Конец");
+}
+
+// Использование
+var numbers = GetNumbers();  // Ничего не выполняется!
+foreach (var n in numbers)   // Здесь начинается выполнение
+{
+    Console.WriteLine($"Получено: {n}");
+}
+// Вывод:
+// Начало
+// Получено: 1
+// После первого
+// Получено: 2
+// После второго
+// Получено: 3
+// Конец</pre>
+
+            <p><strong>Варианты yield:</strong></p>
+            <ul>
+                <li><code>yield return</code> — возвращает один элемент</li>
+                <li><code>yield break</code> — завершает итерацию</li>
+                <li>Нельзя использовать в <code>try-catch</code> (только в <code>try-finally</code>)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>LINQ — отложенное выполнение (deferred execution).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Отложенное выполнение (Deferred Execution)</strong> — LINQ-запросы выполняются <strong>не сразу</strong>, а только при итерации.</p>
+
+            <p><strong>Как работает:</strong></p>
+            <ul>
+                <li>Запросы LINQ возвращают <code>IEnumerable</code></li>
+                <li>Сам запрос <strong>не выполняется</strong> при объявлении</li>
+                <li>Выполнение происходит при <strong>foreach</strong>, <strong>ToList()</strong> или <strong>Count()</strong></li>
+                <li>Запрос вычисляется <strong>заново</strong> при каждой итерации</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+var numbers = new List&lt;int&gt; { 1, 2, 3, 4, 5 };
+
+// Запрос не выполняется здесь
+var query = numbers.Where(x => x > 3);
+
+numbers.Add(6);  // Можно изменить коллекцию
+
+// Только здесь запрос выполняется
+foreach (var n in query)  // Вывод: 4, 5, 6
+    Console.WriteLine(n);
+
+// Повторная итерация — повторное выполнение
+foreach (var n in query)  // Снова выполняется
+    Console.WriteLine(n);</pre>
+
+            <p><strong>Методы с отложенным выполнением:</strong></p>
+            <ul>
+                <li><code>Where</code>, <code>Select</code>, <code>OrderBy</code>, <code>GroupBy</code></li>
+                <li><code>SelectMany</code>, <code>Skip</code>, <code>Take</code></li>
+            </ul>
+
+            <p><strong>Методы с немедленным выполнением:</strong></p>
+            <ul>
+                <li><code>ToList()</code>, <code>ToArray()</code></li>
+                <li><code>Count()</code>, <code>First()</code>, <code>Any()</code></li>
+                <li><code>Sum()</code>, <code>Average()</code>, <code>Max()</code>, <code>Min()</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>LINQ: немедленное выполнение — примеры.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Методы, которые принудительно выполняют запрос:</strong></p>
+
+            <p><strong>1. ToList() / ToArray()</strong> — материализуют результат в коллекцию</p>
+            <pre>
+var list = numbers.Where(x => x > 5).ToList();  // Выполнилось сразу
+var array = numbers.Select(x => x * 2).ToArray();</pre>
+
+            <p><strong>2. Count() / LongCount()</strong> — вычисляет количество элементов</p>
+            <pre>
+int count = numbers.Where(x => x > 5).Count();</pre>
+
+            <p><strong>3. First() / FirstOrDefault()</strong> — возвращает первый элемент</p>
+            <pre>
+int first = numbers.Where(x => x > 5).First();
+int firstOrDefault = numbers.Where(x => x > 100).FirstOrDefault();</pre>
+
+            <p><strong>4. Any() / All()</strong> — проверка условия</p>
+            <pre>
+bool any = numbers.Any(x => x > 5);
+bool all = numbers.All(x => x > 0);</pre>
+
+            <p><strong>5. Sum() / Average() / Max() / Min()</strong> — агрегатные функции</p>
+            <pre>
+int sum = numbers.Sum();
+double avg = numbers.Average();
+int max = numbers.Max();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>First() vs FirstOrDefault() vs Single() vs SingleOrDefault().</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Метод</th>
+                    <th>Пустой результат</th>
+                    <th>Несколько элементов</th>
+                </tr>
+                <tr>
+                    <td><code>First()</code></td>
+                    <td><strong>Исключение</strong> (<code>InvalidOperationException</code>)</td>
+                    <td>Возвращает первый</td>
+                </tr>
+                <tr>
+                    <td><code>FirstOrDefault()</code></td>
+                    <td><code>default</code> (null для ссылочных)</td>
+                    <td>Возвращает первый</td>
+                </tr>
+                <tr>
+                    <td><code>Single()</code></td>
+                    <td><strong>Исключение</strong></td>
+                    <td><strong>Исключение</strong> (больше одного)</td>
+                </tr>
+                <tr>
+                    <td><code>SingleOrDefault()</code></td>
+                    <td><code>default</code></td>
+                    <td><strong>Исключение</strong> (больше одного)</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>First()</strong> — когда точно знаем, что есть элементы</li>
+                <li><strong>FirstOrDefault()</strong> — когда возможно отсутствие элементов</li>
+                <li><strong>Single()</strong> — когда должен быть ровно один элемент</li>
+                <li><strong>SingleOrDefault()</strong> — когда может быть 0 или 1 элемент</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+var numbers = new List&lt;int&gt; { 1, 2, 3 };
+
+// First
+int first = numbers.First();  // 1
+int error = new List&lt;int&gt;().First();  // Exception!
+
+// FirstOrDefault
+int empty = new List&lt;int&gt;().FirstOrDefault();  // 0
+
+// Single
+int single = numbers.Single(n => n == 2);  // 2
+int error2 = numbers.Single(n => n > 1);   // Exception (2 и 3)
+
+// SingleOrDefault
+int single2 = numbers.SingleOrDefault(n => n == 5);  // 0
+int error3 = numbers.SingleOrDefault(n => n > 1);    // Exception!</pre>
+
+            <p><strong>Производительность:</strong></p>
+            <ul>
+                <li><code>First()</code> и <code>FirstOrDefault()</code> — O(1) (останавливаются на первом совпадении)</li>
+                <li><code>Single()</code> и <code>SingleOrDefault()</code> — O(n) (проверяют, что только один)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>LINQ: Select, Where, GroupBy, OrderBy, Distinct, Join.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Select — проекция (преобразование)</strong></p>
+            <pre>
+var names = people.Select(p => p.Name);
+var ages = people.Select(p => new { p.Name, p.Age });</pre>
+
+            <p><strong>Where — фильтрация</strong></p>
+            <pre>
+var adults = people.Where(p => p.Age >= 18);</pre>
+
+            <p><strong>GroupBy — группировка</strong></p>
+            <pre>
+var groups = people.GroupBy(p => p.City);
+foreach (var group in groups)
+{
+    Console.WriteLine($"{group.Key}: {group.Count()}");
+}</pre>
+
+            <p><strong>OrderBy / OrderByDescending — сортировка</strong></p>
+            <pre>
+var sorted = people.OrderBy(p => p.Age).ThenBy(p => p.Name);
+var desc = people.OrderByDescending(p => p.Age);</pre>
+
+            <p><strong>Distinct — уникальные элементы</strong></p>
+            <pre>
+var unique = numbers.Distinct();
+var uniqueBy = people.DistinctBy(p => p.Name);  // C# 9+</pre>
+
+            <p><strong>Join — соединение коллекций</strong></p>
+            <pre>
+var joined = from person in people
+             join city in cities on person.CityId equals city.Id
+             select new { person.Name, city.Name };
+
+// Или методом
+var joined2 = people.Join(cities,
+    person => person.CityId,
+    city => city.Id,
+    (person, city) => new { person.Name, city.Name });</pre>
+
+            <p><strong>GroupJoin — группирующее соединение</strong></p>
+            <pre>
+var grouped = from city in cities
+              join person in people on city.Id equals person.CityId into cityPeople
+              select new { City = city.Name, People = cityPeople };</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Написать свой метод Where / Select (с yield).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>MyWhere — фильтрация с отложенным выполнением</strong></p>
+            <pre>
+public static IEnumerable&lt;T&gt; MyWhere&lt;T&gt;(this IEnumerable&lt;T&gt; source, Func&lt;T, bool&gt; predicate)
+{
+    if (source == null) throw new ArgumentNullException(nameof(source));
+    if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+    
+    foreach (var item in source)
+    {
+        if (predicate(item))
+            yield return item;
+    }
+}
+
+// Использование
+var numbers = new List&lt;int&gt; { 1, 2, 3, 4, 5 };
+var result = numbers.MyWhere(x => x > 3);  // Отложенное выполнение
+foreach (var n in result)
+    Console.WriteLine(n);  // 4, 5</pre>
+
+            <p><strong>MySelect — проекция</strong></p>
+            <pre>
+public static IEnumerable&lt;TResult&gt; MySelect&lt;TSource, TResult&gt;(
+    this IEnumerable&lt;TSource&gt; source,
+    Func&lt;TSource, TResult&gt; selector)
+{
+    if (source == null) throw new ArgumentNullException(nameof(source));
+    if (selector == null) throw new ArgumentNullException(nameof(selector));
+    
+    foreach (var item in source)
+    {
+        yield return selector(item);
+    }
+}
+
+// Использование
+var squares = numbers.MySelect(x => x * x);</pre>
+
+            <p><strong>MyWhere с проверкой аргументов (eager validation)</strong></p>
+            <pre>
+public static IEnumerable&lt;T&gt; MyWhere&lt;T&gt;(this IEnumerable&lt;T&gt; source, Func&lt;T, bool&gt; predicate)
+{
+    // Проверки выполняются сразу (eager)
+    if (source == null) throw new ArgumentNullException(nameof(source));
+    if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+    
+    return MyWhereIterator(source, predicate);
+}
+
+private static IEnumerable&lt;T&gt; MyWhereIterator&lt;T&gt;(IEnumerable&lt;T&gt; source, Func&lt;T, bool&gt; predicate)
+{
+    foreach (var item in source)
+        if (predicate(item))
+            yield return item;
+}</pre>
+        </div>
+    </details>
+</section>

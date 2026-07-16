@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 1-5 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 3 ===================== -->
+<section class="section c3">
+    <h2>🧵 3. String и StringBuilder <span class="badge red">100%</span></h2>
+
+    <details>
+        <summary>String — иммутабельность: что это значит?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Иммутабельность (неизменяемость)</strong> — свойство объектов, которые нельзя изменить после создания.</p>
+
+            <p><strong>Как это работает со строками:</strong></p>
+            <ul>
+                <li>Строка создаётся один раз и никогда не меняется</li>
+                <li>Любая операция (конкатенация, замена, вставка, удаление) создаёт <strong>новую строку</strong></li>
+                <li>Старая строка остаётся в памяти до сборки мусора</li>
+                <li>Все строки в .NET иммутабельны</li>
+            </ul>
+
+            <p><strong>Почему это важно:</strong></p>
+            <ul>
+                <li><strong>Безопасность:</strong> строки можно безопасно использовать в многопоточном коде</li>
+                <li><strong>Производительность:</strong> можно использовать intern pool, кэширование</li>
+                <li><strong>Надёжность:</strong> никакой код не может изменить вашу строку</li>
+                <li><strong>Недостаток:</strong> много операций → много аллокаций → нагрузка на GC</li>
+            </ul>
+
+            <p><strong>Демонстрация:</strong></p>
+            <pre>
+string s = "Hello";
+string s2 = s;              // s2 ссылается на ту же строку
+s2 = s2 + " World";         // Создаётся НОВАЯ строка "Hello World"
+Console.WriteLine(s);       // "Hello" — не изменилась!
+Console.WriteLine(s2);      // "Hello World"
+
+// В памяти:
+// "Hello"    — всё ещё существует
+// "Hello World" — новый объект</pre>
+
+            <p><strong>Решение проблемы:</strong></p>
+            <ul>
+                <li>Для частых изменений используйте <code>StringBuilder</code></li>
+                <li>Он мутабельный и изменяет существующий буфер</li>
+                <li>Намного эффективнее в циклах</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>StringBuilder — внутреннее устройство (буфер).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>StringBuilder</strong> — мутабельный класс для работы со строками.</p>
+
+            <p><strong>Внутреннее устройство:</strong></p>
+            <ul>
+                <li>Содержит <strong>внутренний буфер</strong> — массив символов (<code>char[]</code>)</li>
+                <li><strong>Capacity</strong> — текущая ёмкость буфера</li>
+                <li><strong>Length</strong> — текущая длина строки</li>
+                <li>При добавлении текста он изменяет буфер, а не создаёт новый объект</li>
+                <li>Когда длина превышает ёмкость, буфер <strong>автоматически расширяется</strong></li>
+                <li>Расширение обычно в <strong>2 раза</strong></li>
+            </ul>
+
+            <p><strong>Структура:</strong></p>
+            <pre>
+public sealed class StringBuilder
+{
+    private char[] _buffer;     // Внутренний массив
+    private int _length;        // Текущая длина
+    private int _capacity;      // Ёмкость буфера
+    private int _maxCapacity;   // Максимальная ёмкость
+    
+    // При добавлении
+    public StringBuilder Append(string value)
+    {
+        int needed = _length + value.Length;
+        if (needed > _capacity)
+            EnsureCapacity(needed);  // Увеличиваем буфер
+        // Копируем символы в буфер
+        value.CopyTo(0, _buffer, _length, value.Length);
+        _length += value.Length;
+        return this;
+    }
+}</pre>
+
+            <p><strong>Оптимизация:</strong></p>
+            <ul>
+                <li>При создании можно задать начальную ёмкость: <code>new StringBuilder(1000)</code></li>
+                <li>Это избегает многократных расширений</li>
+                <li><code>ToString()</code> создаёт новую строку из буфера</li>
+                <li><code>Clear()</code> сбрасывает длину, но сохраняет буфер</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+var sb = new StringBuilder(100);  // Начальная ёмкость 100
+Console.WriteLine(sb.Capacity);   // 100
+
+sb.Append("Hello");               // Использует буфер
+sb.Append(" World");              // Использует тот же буфер
+sb.AppendFormat(" {0}", 42);      // "Hello World 42"
+
+string result = sb.ToString();    // Создаёт строку
+
+// Оптимизация: предварительное выделение
+const int EXPECTED_SIZE = 10000;
+var sbOptimized = new StringBuilder(EXPECTED_SIZE);
+for (int i = 0; i < EXPECTED_SIZE; i++)
+    sbOptimized.Append(i);  // Без перевыделений</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Когда использовать StringBuilder vs string?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Используйте string когда:</strong></p>
+            <ul>
+                <li>Строка создаётся <strong>один раз</strong> и не изменяется</li>
+                <li>Конкатенация <strong>2-3 строк</strong> (компилятор оптимизирует)</li>
+                <li>Нужно <strong>сравнение, поиск, чтение</strong> строк</li>
+                <li>Строка является <strong>константой</strong> или литералом</li>
+                <li>Работаете с <strong>ключами словаря</strong> (использует GetHashCode)</li>
+            </ul>
+
+            <p><strong>Используйте StringBuilder когда:</strong></p>
+            <ul>
+                <li>Строка <strong>часто изменяется</strong> (в циклах)</li>
+                <li>Более <strong>5-10 конкатенаций</strong> в одном месте</li>
+                <li>Строите <strong>большие тексты</strong> (JSON, XML, HTML, SQL)</li>
+                <li>Неизвестен итоговый размер строки</li>
+                <li>Работаете в <strong>высоконагруженных</strong> системах</li>
+            </ul>
+
+            <p><strong>Сравнение производительности:</strong></p>
+            <pre>
+// ❌ ПЛОХО — много аллокаций
+string s = "";
+for (int i = 0; i &lt; 10000; i++)
+{
+    s += i;  // Каждая итерация создаёт новую строку
+}
+// В памяти: 10000 объектов! Огромная нагрузка на GC
+
+// ✅ ХОРОШО — один буфер
+var sb = new StringBuilder(50000);  // Оптимальная ёмкость
+for (int i = 0; i &lt; 10000; i++)
+{
+    sb.Append(i);  // Изменяет существующий буфер
+}
+string result = sb.ToString();</pre>
+
+            <p><strong>Когда компилятор сам оптимизирует конкатенацию:</strong></p>
+            <pre>
+// Компилятор превращает это в одну строку
+string s = "Hello" + " " + "World";  // Эквивалентно "Hello World"
+
+// Но это уже не оптимизируется (переменные)
+string s = a + b + c + d + e + f + g + h + i + j;  // Много аллокаций</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>String.Intern — пул строк.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>String.Intern()</strong> — механизм, который хранит уникальные строки в специальном пуле (intern pool).</p>
+
+            <p><strong>Как работает:</strong></p>
+            <ul>
+                <li>Строковые <strong>литералы</strong> автоматически помещаются в пул</li>
+                <li>Динамически созданные строки — <strong>нет</strong></li>
+                <li><code>String.Intern(str)</code> — добавляет строку в пул или возвращает существующую</li>
+                <li>Если строка уже есть — возвращает ссылку на неё</li>
+                <li>Экономит память при множестве одинаковых строк</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+string s1 = "Hello";                    // Литерал — в пуле
+string s2 = new string('H', 5);         // "Hello" — не в пуле (новая память)
+string s3 = string.Intern(s2);          // Помещаем в пул
+
+Console.WriteLine(object.ReferenceEquals(s1, s2)); // False — разные объекты
+Console.WriteLine(object.ReferenceEquals(s1, s3)); // True — один объект из пула
+
+// Создание 1000 одинаковых строк без пула
+for (int i = 0; i &lt; 1000; i++)
+{
+    string s = new string('H', 5);  // 1000 отдельных объектов
+}
+
+// С пулом — один объект
+string pool = string.Intern("Hello");
+for (int i = 0; i &lt; 1000; i++)
+{
+    string s = string.Intern("Hello");  // Все ссылаются на pool
+}</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Много <strong>одинаковых строк</strong> в памяти (например, названия тегов)</li>
+                <li>Строки <strong>читаются из файла</strong> или сети и часто повторяются</li>
+                <li><strong>Не используйте:</strong> для уникальных строк (бесполезно)</li>
+                <li><strong>Осторожно:</strong> строки в пуле <strong>не удаляются</strong> до конца приложения</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Сравнение строк: Equals vs == vs Compare.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>== и Equals:</strong> сравнивают <strong>значение</strong> строки (перегрузка оператора).</p>
+            <ul>
+                <li><code>==</code> — более читаемый</li>
+                <li><code>Equals</code> — может использовать <code>StringComparison</code></li>
+                <li>Оба сравнивают содержимое, а не ссылки</li>
+                <li><strong>Для строк</strong> — одинаковы (для других типов — разница)</li>
+            </ul>
+
+            <p><strong>Compare:</strong> для сортировки (<strong>лексикографическое</strong> сравнение).</p>
+            <ul>
+                <li>Возвращает <code>int</code>: отрицательное (меньше), 0 (равно), положительное (больше)</li>
+                <li>Используется в алгоритмах сортировки</li>
+                <li>Учитывает культуру по умолчанию</li>
+            </ul>
+
+            <p><strong>ReferenceEquals:</strong> сравнивает <strong>ссылки</strong> (адреса в памяти).</p>
+            <ul>
+                <li>Не рекомендуется для строк</li>
+                <li>Может вернуть false для одинаковых строк из разных мест</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+string s1 = "Hello";
+string s2 = "Hello";
+string s3 = "HELLO";
+
+Console.WriteLine(s1 == s2);                    // True (значение)
+Console.WriteLine(s1.Equals(s2));               // True (значение)
+Console.WriteLine(s1.CompareTo(s2));            // 0 (равны)
+Console.WriteLine(string.Compare(s1, s3));      // -1 (регистр)
+Console.WriteLine(string.Compare(s1, s3, true)); // 0 (без учёта регистра)
+
+// ReferenceEquals
+string s4 = new string("Hello".ToCharArray());  // Новая строка
+Console.WriteLine(object.ReferenceEquals(s1, s4)); // False</pre>
+
+            <p><strong>Сравнение с учётом культуры:</strong></p>
+            <pre>
+// Ordinal — по байтам (быстро)
+bool eq1 = string.Equals(s1, s2, StringComparison.Ordinal);
+
+// InvariantCulture — стабильное сравнение
+bool eq2 = string.Equals(s1, s2, StringComparison.InvariantCulture);
+
+// CurrentCulture — системная культура
+bool eq3 = string.Equals(s1, s2, StringComparison.CurrentCulture);
+
+// IgnoreCase — без учёта регистра
+bool eq4 = string.Equals(s1, s3, StringComparison.OrdinalIgnoreCase);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>StringComparison — Ordinal, InvariantCulture, CurrentCulture.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>StringComparison.Ordinal:</strong></p>
+            <ul>
+                <li>Сравнивает по <strong>кодам символов</strong> (UTF-16)</li>
+                <li>Самый <strong>быстрый</strong> вариант</li>
+                <li>Не учитывает культурные правила</li>
+                <li>Используйте для: внутренних данных (пути, теги, ключи), парсинга</li>
+            </ul>
+
+            <p><strong>StringComparison.InvariantCulture:</strong></p>
+            <ul>
+                <li>Использует <strong>инвариантную культуру</strong> (стабильная для всех систем)</li>
+                <li>Одинаковое поведение на всех компьютерах</li>
+                <li>Чуть медленнее Ordinal</li>
+                <li>Используйте для: хранения данных, сортировки в нейтральной среде</li>
+            </ul>
+
+            <p><strong>StringComparison.CurrentCulture:</strong></p>
+            <ul>
+                <li>Учитывает <strong>текущую системную культуру</strong></li>
+                <li>Поведение зависит от настроек ОС</li>
+                <li>Самый медленный</li>
+                <li>Используйте для: UI, пользовательского ввода, локализации</li>
+            </ul>
+
+            <p><strong>Варианты с игнорированием регистра:</strong></p>
+            <ul>
+                <li><code>OrdinalIgnoreCase</code> — быстрое сравнение без учёта регистра</li>
+                <li><code>InvariantCultureIgnoreCase</code> — как InvariantCulture, без регистра</li>
+                <li><code>CurrentCultureIgnoreCase</code> — как CurrentCulture, без регистра</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+string a = "STRASSE";
+string b = "Strasse";
+
+// Ordinal — считает разными (S vs s)
+bool o1 = string.Equals(a, b, StringComparison.Ordinal);          // False
+bool o2 = string.Equals(a, b, StringComparison.OrdinalIgnoreCase); // True
+
+// InvariantCulture — учитывает немецкие правила
+bool i = string.Equals(a, b, StringComparison.InvariantCulture);   // False
+bool ii = string.Equals(a, b, StringComparison.InvariantCultureIgnoreCase); // True
+
+// Для сравнения с учётом языка
+bool c = string.Equals("Strasse", "Straße", StringComparison.CurrentCulture);
+// В немецкой культуре может быть True</pre>
+
+            <p><strong>Рекомендации Microsoft:</strong></p>
+            <ul>
+                <li>Для <strong>безопасности</strong> (сравнение паролей) — <code>Ordinal</code></li>
+                <li>Для <strong>внутренних данных</strong> — <code>Ordinal</code> или <code>OrdinalIgnoreCase</code></li>
+                <li>Для <strong>пользовательского ввода</strong> — <code>CurrentCulture</code></li>
+                <li>Для <strong>сортировки в БД</strong> — <code>InvariantCulture</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>StringBuilder.Append vs AppendLine vs AppendFormat.</summary>
+        <div class="answer">
+            <p><strong>Append:</strong> добавляет строку, массив символов, char.</p>
+            <pre>
+sb.Append("Hello");
+sb.Append('!');
+sb.Append(new char[] { 'A', 'B' });</pre>
+
+            <p><strong>AppendLine:</strong> добавляет строку + <strong>перевод строки</strong>.</p>
+            <pre>
+sb.AppendLine("Hello");      // "Hello\n"
+sb.AppendLine();              // Пустая строка + перевод</pre>
+
+            <p><strong>AppendFormat:</strong> добавляет <strong>форматированную</strong> строку (как <code>string.Format</code>).</p>
+            <pre>
+sb.AppendFormat("Name: {0}, Age: {1}", name, age);
+sb.AppendFormat("{0:yyyy-MM-dd}", DateTime.Now);</pre>
+
+            <p><strong>Chain вызовов:</strong></p>
+            <pre>
+sb.Append("Hello")
+  .AppendLine()
+  .AppendFormat("Age: {0}", 30)
+  .AppendLine(" years");</pre>
+
+            <p><strong>Производительность:</strong></p>
+            <ul>
+                <li><code>Append</code> — самый быстрый</li>
+                <li><code>AppendLine</code> — чуть медленнее (добавляет символы \r\n)</li>
+                <li><code>AppendFormat</code> — медленнее (парсинг формата)</li>
+                <li><strong>Совет:</strong> для максимальной производительности используйте <code>Append</code> с явными переносами</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>String.Create (C# 10) — высокопроизводительное создание строк.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><code>string.Create()</code> — метод для создания строк с <strong>минимальным числом выделений</strong> памяти.</p>
+
+            <p><strong>Как работает:</strong></p>
+            <ul>
+                <li>Создаёт строку заданной длины</li>
+                <li>Предоставляет <code>Span&lt;char&gt;</code> для прямой записи</li>
+                <li>Не создаёт промежуточных объектов</li>
+                <li>Аллокация только финальной строки</li>
+            </ul>
+
+            <p><strong>Сравнение с конкатенацией:</strong></p>
+            <pre>
+// ❌ Плохо — много аллокаций
+string result = "Hello" + " " + "World" + "!";
+
+// ✅ Хорошо — только одна аллокация
+string result = string.Create(12, 42, (span, state) =>
+{
+    span[0] = 'H';
+    span[1] = 'e';
+    span[2] = 'l';
+    span[3] = 'l';
+    span[4] = 'o';
+    span[5] = ' ';
+    span[6] = 'W';
+    span[7] = 'o';
+    span[8] = 'r';
+    span[9] = 'l';
+    span[10] = 'd';
+    span[11] = '!';
+});</pre>
+
+            <p><strong>Практический пример:</strong></p>
+            <pre>
+// Создание строки с форматированием
+string FormatPerson(string name, int age)
+{
+    // Определяем размер: "Name: X, Age: Y"
+    int length = "Name: , Age: ".Length + name.Length + age.ToString().Length;
+    
+    return string.Create(length, (name, age), (span, state) =>
+    {
+        var (n, a) = state;
+        int pos = 0;
+        
+        // Заполняем вручную
+        "Name: ".AsSpan().CopyTo(span);
+        pos += 6;
+        n.AsSpan().CopyTo(span[pos..]);
+        pos += n.Length;
+        ", Age: ".AsSpan().CopyTo(span[pos..]);
+        pos += 7;
+        a.ToString().AsSpan().CopyTo(span[pos..]);
+    });
+}</pre>
+
+            <p><strong>Где использовать:</strong></p>
+            <ul>
+                <li>Высоконагруженные системы (HTTP-серверы, обработка данных)</li>
+                <li>Парсинг и сериализация</li>
+                <li>Когда важно минимизировать аллокации</li>
+                <li>Вместо <code>StringBuilder</code> для известной длины</li>
+            </ul>
+        </div>
+    </details>
+</section>

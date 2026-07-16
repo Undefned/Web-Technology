@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 11-18 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 18 ===================== -->
+<section class="section c18">
+    <h2>🚀 18. Middle: углублённые темы <span class="badge purple">Mid+</span></h2>
+
+    <details>
+        <summary>Expression Trees — что это, когда использовать.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Expression Trees</strong> — представление кода в виде дерева (может быть скомпилировано).</p>
+
+            <p><strong>Где используется:</strong></p>
+            <ul>
+                <li><strong>LINQ to SQL / EF Core</strong> — преобразование C# в SQL</li>
+                <li><strong>Dynamic LINQ</strong> — динамические запросы</li>
+                <li><strong>Сериализация</strong> — правила валидации</li>
+                <li><strong>Компиляция</strong> — динамическая генерация кода</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Expression Tree
+Expression&lt;Func&lt;int, bool&gt;&gt; expr = x => x > 5;
+
+// Смотрим структуру
+Console.WriteLine(expr);  // x => (x > 5)
+
+// Компилируем в делегат
+Func&lt;int, bool&gt; func = expr.Compile();
+Console.WriteLine(func(10));  // True
+
+// Строим вручную
+ParameterExpression param = Expression.Parameter(typeof(int), "x");
+ConstantExpression constant = Expression.Constant(5);
+BinaryExpression greaterThan = Expression.GreaterThan(param, constant);
+var lambda = Expression.Lambda&lt;Func&lt;int, bool&gt;&gt;(greaterThan, param);
+var compiled = lambda.Compile();
+Console.WriteLine(compiled(10));  // True</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Динамические запросы</li>
+                <li>Правила и валидация</li>
+                <li>Генерация кода</li>
+                <li>ORM и DSL</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Source Generators — что это, отличие от Reflection.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Source Generators</strong> — генерация кода во время компиляции.</p>
+
+            <p><strong>Отличие от Reflection:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Source Generators</th>
+                    <th>Reflection</th>
+                </tr>
+                <tr>
+                    <td>Время выполнения</td>
+                    <td>Компиляция (до runtime)</td>
+                    <td>Runtime (во время выполнения)</td>
+                </tr>
+                <tr>
+                    <td>Производительность</td>
+                    <td>Высокая (нет накладных расходов)</td>
+                    <td>Низкая (медленно)</td>
+                </tr>
+                <tr>
+                    <td>Доступ к приватным членам</td>
+                    <td>Да</td>
+                    <td>Да</td>
+                </tr>
+                <tr>
+                    <td>Сложность</td>
+                    <td>Высокая</td>
+                    <td>Средняя</td>
+                </tr>
+                <tr>
+                    <td>Примеры</td>
+                    <td>JSON сериализация, DI, MVVM</td>
+                    <td>DI, тестирование, атрибуты</td>
+                </tr>
+            </table>
+
+            <p><strong>Пример Source Generator:</strong></p>
+            <pre>
+[Generator]
+public class HelloWorldGenerator : ISourceGenerator
+{
+    public void Initialize(GeneratorInitializationContext context) { }
+    
+    public void Execute(GeneratorExecutionContext context)
+    {
+        var source = @"
+namespace Generated
+{
+    public static class HelloWorld
+    {
+        public static void SayHello() => Console.WriteLine(""Hello from generator!"");
+    }
+}";
+        context.AddSource("HelloWorld.g.cs", source);
+    }
+}
+
+// Использование (генерируется автоматически)
+Generated.HelloWorld.SayHello();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Native AOT (.NET 8+) — что это, ограничения.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Native AOT</strong> — компиляция приложения в нативный исполняемый файл.</p>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Быстрый старт (мгновенный)</li>
+                <li>Малое потребление памяти</li>
+                <li>Нет JIT-компиляции</li>
+                <li>Один исполняемый файл (.exe)</li>
+                <li>Подходит для Docker (маленький размер)</li>
+            </ul>
+
+            <p><strong>Ограничения:</strong></p>
+            <ul>
+                <li>Ограниченный Reflection (только compile-time)</li>
+                <li>Нет динамической генерации кода (Emit)</li>
+                <li>Некоторые библиотеки не совместимы</li>
+                <li>Больше размер файла (чем обычный)</li>
+                <li>Ограниченная поддержка платформ</li>
+            </ul>
+
+            <p><strong>Как использовать:</strong></p>
+            <pre>
+&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+    &lt;PropertyGroup&gt;
+        &lt;PublishAot&gt;true&lt;/PublishAot&gt;
+        &lt;SelfContained&gt;true&lt;/SelfContained&gt;
+        &lt;RuntimeIdentifier&gt;win-x64&lt;/RuntimeIdentifier&gt;
+    &lt;/PropertyGroup&gt;
+&lt;/Project&gt;
+
+// Публикация
+dotnet publish -c Release -r win-x64</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>CLI-инструменты</li>
+                <li>Серверные приложения (быстрый старт)</li>
+                <li>Docker-контейнеры</li>
+                <li>IoT и встраиваемые системы</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Функциональное программирование в C# — неизменяемость, чистые функции.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Функциональное программирование</strong> — парадигма с акцентом на функции и неизменяемость.</p>
+
+            <p><strong>Неизменяемость (Immutability):</strong></p>
+            <ul>
+                <li>Объекты не изменяются после создания</li>
+                <li>При изменении создаётся новый объект</li>
+                <li>Пример: <code>record</code>, <code>string</code></li>
+            </ul>
+            <pre>
+// Неизменяемый объект
+public record Person(string Name, int Age);
+
+var p1 = new Person("Alice", 30);
+var p2 = p1 with { Age = 31 };  // Новая копия</pre>
+
+            <p><strong>Чистые функции (Pure Functions):</strong></p>
+            <ul>
+                <li>Одинаковый результат для одинаковых аргументов</li>
+                <li>Не имеет побочных эффектов (side effects)</li>
+                <li>Легко тестировать</li>
+            </ul>
+            <pre>
+// ❌ Нечистая функция (есть побочный эффект)
+int AddAndLog(int a, int b)
+{
+    Console.WriteLine($"Adding {a} and {b}");  // Побочный эффект
+    return a + b;
+}
+
+// ✅ Чистая функция
+int Add(int a, int b) => a + b;</pre>
+
+            <p><strong>FP-концепции в C#:</strong></p>
+            <ul>
+                <li><strong>LINQ</strong> — функциональные операции (Select, Where)</li>
+                <li><strong>Делегаты</strong> — функции как значения</li>
+                <li><strong>Лямбды</strong> — анонимные функции</li>
+                <li><strong>Tuple</strong> — возврат нескольких значений</li>
+                <li><strong>Record</strong> — неизменяемые объекты</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Фоновые задачи — IHostedService, BackgroundService.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>IHostedService</strong> — интерфейс для фоновых задач в ASP.NET Core.</p>
+
+            <pre>
+public interface IHostedService
+{
+    Task StartAsync(CancellationToken cancellationToken);
+    Task StopAsync(CancellationToken cancellationToken);
+}</pre>
+
+            <p><strong>BackgroundService</strong> — абстрактный класс для периодических задач.</p>
+
+            <p><strong>Пример BackgroundService:</strong></p>
+            <pre>
+public class TimedHostedService : BackgroundService
+{
+    private readonly ILogger&lt;TimedHostedService&gt; _logger;
+    
+    public TimedHostedService(ILogger&lt;TimedHostedService&gt; logger)
+    {
+        _logger = logger;
+    }
+    
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            _logger.LogInformation("Background task running at: {time}", DateTime.Now);
+            await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+        }
+    }
+}</pre>
+
+            <p><strong>Регистрация в DI:</strong></p>
+            <pre>
+// Program.cs
+builder.Services.AddHostedService&lt;TimedHostedService&gt;();
+
+// Альтернатива: IHostedService
+builder.Services.AddHostedService&lt;MyHostedService&gt;();</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Периодические задачи (очистка кэша)</li>
+                <li>Обработка очередей</li>
+                <li>Мониторинг и уведомления</li>
+                <li>Фоновые операции</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Health Checks — для чего.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Health Checks</strong> — проверка работоспособности приложения.</p>
+
+            <p><strong>Зачем нужны:</strong></p>
+            <ul>
+                <li>Мониторинг состояния сервиса</li>
+                <li>Проверка зависимостей (БД, Redis, API)</li>
+                <li>Автоматическое восстановление</li>
+                <li>Kubernetes (liveness/readiness probes)</li>
+                <li>Load balancer (проверка живых экземпляров)</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Program.cs
+builder.Services.AddHealthChecks()
+    .AddCheck&lt;DatabaseHealthCheck&gt;("database")
+    .AddCheck&lt;ApiHealthCheck&gt;("api")
+    .AddDbContextCheck&lt;AppDbContext&gt;()
+    .AddUrlGroup(new Uri("https://api.example.com/health"), "external");
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = _ => true  // Проверяет все
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false  // Проверяет только liveness
+});</pre>
+
+            <p><strong>Кастомный Health Check:</strong></p>
+            <pre>
+public class DatabaseHealthCheck : IHealthCheck
+{
+    private readonly AppDbContext _context;
+    
+    public DatabaseHealthCheck(AppDbContext context)
+    {
+        _context = context;
+    }
+    
+    public async Task&lt;HealthCheckResult&gt; CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _context.Database.ExecuteSqlRawAsync("SELECT 1", cancellationToken);
+            return HealthCheckResult.Healthy("Database is healthy");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("Database is unhealthy", ex);
+        }
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>OpenTelemetry — распределённая трассировка.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>OpenTelemetry</strong> — стандарт для сбора телеметрии (трассировки, метрики, логи).</p>
+
+            <p><strong>Компоненты:</strong></p>
+            <ul>
+                <li><strong>Traces</strong> — распределённая трассировка (Jaeger, Zipkin)</li>
+                <li><strong>Metrics</strong> — метрики (Prometheus)</li>
+                <li><strong>Logs</strong> — логи (ELK, Seq)</li>
+            </ul>
+
+            <p><strong>Пример в ASP.NET Core:</strong></p>
+            <pre>
+// Program.cs
+using OpenTelemetry.Trace;
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()   // HTTP-запросы
+            .AddHttpClientInstrumentation()   // HTTP-клиент
+            .AddSqlClientInstrumentation()    // SQL-запросы
+            .AddOtlpExporter();               // Экспорт в Collector
+    });
+
+// Использование Activity
+var tracer = TracerProvider.Default.GetTracer("MyApp");
+using var activity = tracer.StartActiveSpan("ProcessOrder");
+activity.SetTag("order.id", orderId);
+// ...
+activity.End();</pre>
+
+            <p><strong>Почему важно:</strong></p>
+            <ul>
+                <li>Отслеживание запросов через микросервисы</li>
+                <li>Поиск узких мест</li>
+                <li>Диагностика ошибок</li>
+                <li>Анализ производительности</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Rate Limiting — ограничение запросов в ASP.NET Core.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Rate Limiting</strong> — ограничение количества запросов (защита от перегрузки).</p>
+
+            <p><strong>Стратегии:</strong></p>
+            <ul>
+                <li><strong>Fixed Window</strong> — фиксированное окно (например, 100 запросов/мин)</li>
+                <li><strong>Sliding Window</strong> — скользящее окно</li>
+                <li><strong>Token Bucket</strong> — токены + пополнение</li>
+                <li><strong>Concurrency</strong> — ограничение параллельных запросов</li>
+            </ul>
+
+            <p><strong>Пример в .NET 7+:</strong></p>
+            <pre>
+// Program.cs
+builder.Services.AddRateLimiter(options =>
+{
+    // Фиксированное окно
+    options.AddFixedWindowLimiter("fixed", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 100;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 5;
+    });
+    
+    // Token Bucket
+    options.AddTokenBucketLimiter("token", limiterOptions =>
+    {
+        limiterOptions.TokenLimit = 100;
+        limiterOptions.TokensPerPeriod = 10;
+        limiterOptions.ReplenishmentPeriod = TimeSpan.FromSeconds(1);
+    });
+});
+
+app.UseRateLimiter();
+
+// В контроллере
+[EnableRateLimiting("fixed")]
+[HttpGet]
+public IActionResult Get() { }
+
+// Отключение для метода
+[DisableRateLimiting]
+[HttpGet("unlimited")]
+public IActionResult Unlimited() { }</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Polly — Retry, Circuit Breaker, Timeout.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Polly</strong> — библиотека для устойчивости к ошибкам.</p>
+
+            <p><strong>Основные политики:</strong></p>
+
+            <p><strong>1. Retry (повтор)</strong></p>
+            <pre>
+var retry = Policy
+    .Handle&lt;HttpRequestException&gt;()
+    .RetryAsync(3, onRetry: (ex, retryCount) =>
+    {
+        Console.WriteLine($"Retry {retryCount}: {ex.Message}");
+    });
+
+await retry.ExecuteAsync(async () =>
+{
+    await httpClient.GetAsync("https://api.example.com");
+});</pre>
+
+            <p><strong>2. Circuit Breaker (предохранитель)</strong></p>
+            <pre>
+var circuitBreaker = Policy
+    .Handle&lt;HttpRequestException&gt;()
+    .CircuitBreakerAsync(
+        exceptionsAllowedBeforeBreaking: 3,
+        durationOfBreak: TimeSpan.FromSeconds(30)
+    );
+
+await circuitBreaker.ExecuteAsync(async () =>
+{
+    await httpClient.GetAsync("https://api.example.com");
+});</pre>
+
+            <p><strong>3. Timeout (тайм-аут)</strong></p>
+            <pre>
+var timeout = Policy
+    .TimeoutAsync(TimeSpan.FromSeconds(5));
+
+await timeout.ExecuteAsync(async () =>
+{
+    await Task.Delay(10000);  // Будет отменён через 5 сек
+});</pre>
+
+            <p><strong>4. Bulkhead (ограничение параллельности)</strong></p>
+            <pre>
+var bulkhead = Policy
+    .BulkheadAsync(maxParallelization: 10, maxQueuingActions: 100);
+
+await bulkhead.ExecuteAsync(() => DoWork());</pre>
+
+            <p><strong>5. Fallback (запасной вариант)</strong></p>
+            <pre>
+var fallback = Policy&lt;string&gt;
+    .Handle&lt;Exception&gt;()
+    .FallbackAsync("Default value");
+
+var result = await fallback.ExecuteAsync(async () =>
+{
+    return await GetDataAsync();
+});</pre>
+
+            <p><strong>Комбинирование:</strong></p>
+            <pre>
+var policy = Policy
+    .WrapAsync(retry, circuitBreaker, timeout);
+
+await policy.ExecuteAsync(async () =>
+{
+    await httpClient.GetAsync("https://api.example.com");
+});</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Channel (System.Threading.Channels) — Producer/Consumer.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Channel</strong> — потокобезопасная очередь для Producer/Consumer.</p>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Встроен в .NET</li>
+                <li>Потокобезопасен</li>
+                <li>Поддерживает async/await</li>
+                <li>Разные стратегии (Bounded/Unbounded)</li>
+            </ul>
+
+            <p><strong>Пример Producer/Consumer:</strong></p>
+            <pre>
+// Создание канала
+var channel = Channel.CreateBounded&lt;string&gt;(
+    new BoundedChannelOptions(100)
+    {
+        FullMode = BoundedChannelFullMode.Wait
+    });
+
+// Producer
+async Task ProducerAsync(ChannelWriter&lt;string&gt; writer)
+{
+    for (int i = 0; i < 100; i++)
+    {
+        await writer.WriteAsync($"Message {i}");
+        await Task.Delay(100);
+    }
+    writer.Complete();  // Завершить
+}
+
+// Consumer
+async Task ConsumerAsync(ChannelReader&lt;string&gt; reader)
+{
+    await foreach (var message in reader.ReadAllAsync())
+    {
+        Console.WriteLine($"Received: {message}");
+    }
+}
+
+// Запуск
+var producer = ProducerAsync(channel.Writer);
+var consumer = ConsumerAsync(channel.Reader);
+
+await Task.WhenAll(producer, consumer);</pre>
+
+            <p><strong>Неограниченный канал:</strong></p>
+            <pre>
+var unbounded = Channel.CreateUnbounded&lt;int&gt;();
+unbounded.Writer.TryWrite(42);
+var value = await unbounded.Reader.ReadAsync();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>MemoryCache / DistributedCache — кэширование.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>MemoryCache</strong> — кэширование в памяти приложения.</p>
+            <pre>
+builder.Services.AddMemoryCache();
+app.MapGet("/cache", async (IMemoryCache cache) =>
+{
+    // Получение
+    if (cache.TryGetValue("key", out string value))
+        return value;
+    
+    // Установка с опциями
+    cache.Set("key", "data", new MemoryCacheEntryOptions
+    {
+        AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(10),
+        SlidingExpiration = TimeSpan.FromMinutes(5),
+        Priority = CacheItemPriority.High
+    });
+    
+    return "data";
+});</pre>
+
+            <p><strong>DistributedCache</strong> — распределённый кэш (Redis, SQL Server).</p>
+            <pre>
+// Redis
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost:6379";
+    options.InstanceName = "MyApp";
+});
+
+app.MapGet("/cache", async (IDistributedCache cache) =>
+{
+    var data = await cache.GetStringAsync("key");
+    if (data != null) return data;
+    
+    data = "computed";
+    await cache.SetStringAsync("key", data, new DistributedCacheEntryOptions
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+    });
+    
+    return data;
+});</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>MemoryCache:</strong> в одном экземпляре, данные часто меняются</li>
+                <li><strong>DistributedCache:</strong> несколько экземпляров, общий кэш</li>
+            </ul>
+        </div>
+    </details>
+</section>
+
+</body>
+</html>

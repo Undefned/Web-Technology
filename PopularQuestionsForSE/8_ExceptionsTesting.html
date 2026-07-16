@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 6-10 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+
+
+<!-- ===================== БЛОК 8 ===================== -->
+<section class="section c8">
+    <h2>🧪 8. Исключения. Тестирование <span class="badge">база</span></h2>
+
+    <details>
+        <summary>try / catch / finally — порядок выполнения.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Порядок выполнения:</strong></p>
+            <ol>
+                <li>Выполняется код в <code>try</code></li>
+                <li>Если ошибка — ищем подходящий <code>catch</code></li>
+                <li><code>finally</code> выполняется <strong>всегда</strong> (даже при исключении)</li>
+                <li>Если <code>catch</code> есть — обработка продолжается</li>
+                <li>Если <code>catch</code> нет — исключение передаётся выше</li>
+            </ol>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+try
+{
+    Console.WriteLine("1. try");
+    int x = int.Parse("не число");  // Исключение
+    Console.WriteLine("2. после ошибки (не выполнится)");
+}
+catch (FormatException ex)
+{
+    Console.WriteLine("3. catch FormatException");
+}
+catch (Exception ex)
+{
+    Console.WriteLine("4. catch Exception");
+}
+finally
+{
+    Console.WriteLine("5. finally — всегда");
+}
+
+// Вывод:
+// 1. try
+// 3. catch FormatException
+// 5. finally — всегда</pre>
+
+            <p><strong>Важно:</strong></p>
+            <ul>
+                <li><code>catch</code> без параметров перехватывает <strong>все</strong> исключения</li>
+                <li><code>catch (Exception ex)</code> — перехватывает все</li>
+                <li><code>finally</code> выполняется <strong>даже при return</strong> в try</li>
+                <li>Если исключение в <code>finally</code> — перехватывается внешним блоком</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Когда finally НЕ выполняется?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>finally НЕ выполняется в следующих случаях:</strong></p>
+
+            <ul>
+                <li><strong>Environment.FailFast()</strong> — немедленное завершение процесса</li>
+                <pre>Environment.FailFast("Критическая ошибка");  // finally не выполнится</pre>
+
+                <li><strong>StackOverflowException</strong> — не может быть перехвачен</li>
+                <pre>void Infinite() { Infinite(); }  // StackOverflow → finally не выполнится</pre>
+
+                <li><strong>OutOfMemoryException</strong> — может не выполнить finally</li>
+                <pre>var huge = new byte[long.MaxValue];  // OutOfMemory</pre>
+
+                <li><strong>Аварийное завершение процесса</strong> (Task Manager, kill)</li>
+                <li><strong>Выключение питания / сбой системы</strong></li>
+            </ul>
+
+            <p><strong>Важно:</strong></p>
+            <ul>
+                <li><code>finally</code> выполняется при <strong>обычном</strong> выходе и <strong>исключениях</strong></li>
+                <li>Не полагайтесь на <code>finally</code> в критических операциях</li>
+                <li>Используйте <code>using</code> для освобождения ресурсов (это тоже <code>finally</code>)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>throw vs throw ex — разница (потеря stack trace).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>throw — сохраняет стек вызовов</strong></p>
+            <ul>
+                <li>Перебрасывает исходное исключение</li>
+                <li>Сохраняет <strong>полный стек вызовов</strong></li>
+                <li>Лучше для отладки</li>
+            </ul>
+            <pre>
+try
+{
+    DoWork();
+}
+catch (Exception ex)
+{
+    throw;  // Сохраняет стек (ex не теряется)
+}</pre>
+
+            <p><strong>throw ex — теряет стек вызовов</strong></p>
+            <ul>
+                <li>Создаёт <strong>новое</strong> исключение</li>
+                <li>Теряет исходный стек вызовов</li>
+                <li>Усложняет отладку</li>
+            </ul>
+            <pre>
+try
+{
+    DoWork();
+}
+catch (Exception ex)
+{
+    throw ex;  // ❌ Потеря стека
+}</pre>
+
+            <p><strong>throw new Exception("message", ex) — сохраняет InnerException</strong></p>
+            <pre>
+try
+{
+    DoWork();
+}
+catch (Exception ex)
+{
+    // Сохраняет исходное исключение как InnerException
+    throw new CustomException("Ошибка", ex);
+}</pre>
+
+            <p><strong>Сравнение:</strong></p>
+            <pre>
+// throw — стек полностью сохраняется
+try { throw new Exception("Test"); }
+catch (Exception ex) { throw; }
+
+// throw ex — стек обрезается
+try { throw new Exception("Test"); }
+catch (Exception ex) { throw ex; }  // Исходный стек потерян</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Когда создавать своё исключение.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Создавайте своё исключение когда:</strong></p>
+            <ul>
+                <li><strong>Встроенных исключений недостаточно</strong> для описания ошибки</li>
+                <li>Нужно передать <strong>дополнительную информацию</strong> об ошибке</li>
+                <li>Ошибка относится к <strong>бизнес-логике</strong> приложения</li>
+                <li>Нужно <strong>отличить</strong> ошибку приложения от системной</li>
+                <li>Библиотека / API для других разработчиков</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Создание собственного исключения
+public class InsufficientFundsException : Exception
+{
+    public decimal Balance { get; }
+    public decimal RequestedAmount { get; }
+    
+    public InsufficientFundsException(decimal balance, decimal requested)
+        : base($"Недостаточно средств: баланс {balance}, запрошено {requested}")
+    {
+        Balance = balance;
+        RequestedAmount = requested;
+    }
+    
+    public InsufficientFundsException(decimal balance, decimal requested, Exception inner)
+        : base($"Недостаточно средств", inner)
+    {
+        Balance = balance;
+        RequestedAmount = requested;
+    }
+}
+
+// Использование
+public void Withdraw(decimal amount)
+{
+    if (amount > _balance)
+    {
+        throw new InsufficientFundsException(_balance, amount);
+    }
+}
+
+// Перехват
+try
+{
+    account.Withdraw(1000);
+}
+catch (InsufficientFundsException ex)
+{
+    Console.WriteLine($"Баланс: {ex.Balance}, Запрошено: {ex.RequestedAmount}");
+}</pre>
+
+            <p><strong>Правила:</strong></p>
+            <ul>
+                <li>Наследуйте от <code>Exception</code></li>
+                <li>Добавляйте параметры для контекста</li>
+                <li>Реализуйте <code>serializable</code> конструкторы</li>
+                <li>Используйте суффикс <code>Exception</code> в имени</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Unit-тесты vs Интеграционные тесты — разница.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Unit-тесты (Модульные):</strong></p>
+            <ul>
+                <li>Проверяют <strong>отдельный модуль</strong> (класс, метод)</li>
+                <li>Изолированы от внешних зависимостей (mock, stub)</li>
+                <li>Быстрые (миллисекунды)</li>
+                <li>Много (сотни/тысячи)</li>
+                <li>Легко поддерживать</li>
+                <li>Пример: тест метода расчёта скидки</li>
+            </ul>
+
+            <p><strong>Интеграционные тесты:</strong></p>
+            <ul>
+                <li>Проверяют <strong>взаимодействие</strong> между компонентами</li>
+                <li>Используют реальные зависимости (БД, API, файлы)</li>
+                <li>Медленнее (секунды)</li>
+                <li>Меньше (десятки)</li>
+                <li>Сложнее в поддержке</li>
+                <li>Пример: тест взаимодействия с БД</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Unit-тесты</th>
+                    <th>Интеграционные тесты</th>
+                </tr>
+                <tr>
+                    <td>Область</td>
+                    <td>Один модуль</td>
+                    <td>Несколько модулей</td>
+                </tr>
+                <tr>
+                    <td>Зависимости</td>
+                    <td>Mock/Stub</td>
+                    <td>Реальные</td>
+                </tr>
+                <tr>
+                    <td>Скорость</td>
+                    <td>Быстрые</td>
+                    <td>Медленные</td>
+                </tr>
+                <tr>
+                    <td>Количество</td>
+                    <td>Много</td>
+                    <td>Мало</td>
+                </tr>
+                <tr>
+                    <td>Сложность</td>
+                    <td>Низкая</td>
+                    <td>Высокая</td>
+                </tr>
+                <tr>
+                    <td>Пример</td>
+                    <td>Тест математической функции</td>
+                    <td>Тест сохранения в БД</td>
+                </tr>
+            </table>
+
+            <p><strong>Пирамида тестирования:</strong></p>
+            <ul>
+                <li><strong>Основа:</strong> Unit-тесты (много, быстро)</li>
+                <li><strong>Середина:</strong> Интеграционные тесты (средне)</li>
+                <li><strong>Верх:</strong> End-to-End тесты (мало, медленно)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>AAA — Arrange, Act, Assert.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>AAA</strong> — шаблон написания тестов.</p>
+
+            <p><strong>1. Arrange (Подготовка)</strong></p>
+            <ul>
+                <li>Создание объектов</li>
+                <li>Настройка зависимостей (mock)</li>
+                <li>Подготовка данных</li>
+            </ul>
+
+            <p><strong>2. Act (Действие)</strong></p>
+            <ul>
+                <li>Вызов тестируемого метода</li>
+                <li>Выполнение операции</li>
+            </ul>
+
+            <p><strong>3. Assert (Проверка)</strong></p>
+            <ul>
+                <li>Проверка результатов</li>
+                <li>Сравнение с ожидаемым</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+[Fact]
+public void CalculateDiscount_ValidCustomer_ReturnsCorrectDiscount()
+{
+    // Arrange
+    var customer = new Customer { IsVip = true };
+    var calculator = new DiscountCalculator();
+    decimal price = 100m;
+    
+    // Act
+    decimal discount = calculator.Calculate(customer, price);
+    
+    // Assert
+    Assert.Equal(20m, discount);  // 20% скидка для VIP
+}
+
+[Fact]
+public void Add_WhenListIsFull_ThrowsException()
+{
+    // Arrange
+    var list = new FixedSizeList(3);
+    list.Add(1);
+    list.Add(2);
+    list.Add(3);
+    
+    // Act & Assert
+    Assert.Throws&lt;InvalidOperationException&gt;(() => list.Add(4));
+}</pre>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Чёткая структура</li>
+                <li>Легко читать</li>
+                <li>Легко поддерживать</li>
+                <li>Стандарт де-факто</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Mock / Stub / Fake — разница.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Stub (Заглушка):</strong></p>
+            <ul>
+                <li>Заменяет зависимость</li>
+                <li>Возвращает <strong>заданные</strong> ответы</li>
+                <li>Не проверяет, как вызвали</li>
+                <li>Простой, минимальный</li>
+            </ul>
+            <pre>
+// Stub — всегда возвращает 5
+class StubCalculator : ICalculator
+{
+    public int Add(int a, int b) => 5;
+}</pre>
+
+            <p><strong>Mock (Имитация):</strong></p>
+            <ul>
+                <li>Заменяет зависимость</li>
+                <li>Позволяет <strong>проверять</strong> вызовы</li>
+                <li>Проверяет, как и сколько раз вызвали</li>
+                <li>Более сложный</li>
+            </ul>
+            <pre>
+// Mock — проверяет вызовы
+var mock = new Mock&lt;ILogger&gt;();
+mock.Setup(x => x.Log(It.IsAny&lt;string&gt;()));
+
+// Act
+service.Process();
+
+// Verify
+mock.Verify(x => x.Log("Processed"), Times.Once);</pre>
+
+            <p><strong>Fake (Фальшивка):</strong></p>
+            <ul>
+                <li>Рабочая <strong>упрощённая</strong> реализация</li>
+                <li>Не подходит для продакшена</li>
+                <li>Имеет реальную логику (упрощённую)</li>
+            </ul>
+            <pre>
+// Fake — упрощённая БД в памяти
+class FakeUserRepository : IUserRepository
+{
+    private List&lt;User&gt; _users = new List&lt;User&gt;();
+    
+    public void Add(User user) => _users.Add(user);
+    public User Get(int id) => _users.FirstOrDefault(u => u.Id == id);
+}</pre>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Тип</th>
+                    <th>Поведение</th>
+                    <th>Проверка</th>
+                    <th>Сложность</th>
+                </tr>
+                <tr>
+                    <td>Stub</td>
+                    <td>Заданное поведение</td>
+                    <td>Нет</td>
+                    <td>Низкая</td>
+                </tr>
+                <tr>
+                    <td>Mock</td>
+                    <td>Настраиваемое</td>
+                    <td>Да</td>
+                    <td>Высокая</td>
+                </tr>
+                <tr>
+                    <td>Fake</td>
+                    <td>Упрощённая логика</td>
+                    <td>Нет</td>
+                    <td>Средняя</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Moq / NSubstitute — популярные фреймворки.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Moq:</strong></p>
+            <ul>
+                <li>Самый популярный фреймворк для моков</li>
+                <li>Использует лямбда-выражения</li>
+                <li>Сильная типизация</li>
+            </ul>
+            <pre>
+var mock = new Mock&lt;IUserRepository&gt;();
+
+// Настройка поведения
+mock.Setup(repo => repo.GetUser(It.IsAny&lt;int&gt;()))
+    .Returns(new User { Id = 1, Name = "Alice" });
+
+mock.Setup(repo => repo.GetUser(10))
+    .Returns((User)null);
+
+mock.Setup(repo => repo.GetUser(It.IsInRange(1, 10, Range.Inclusive)))
+    .Returns(new User { Id = 5 });
+
+// Проверка вызовов
+mock.Verify(repo => repo.GetUser(1), Times.Once);
+mock.Verify(repo => repo.GetUser(It.IsAny&lt;int&gt;()), Times.AtLeastOnce);</pre>
+
+            <p><strong>NSubstitute:</strong></p>
+            <ul>
+                <li>Более лаконичный синтаксис</li>
+                <li>Меньше шаблонного кода</li>
+                <li>Более читаемый</li>
+            </ul>
+            <pre>
+var repo = Substitute.For&lt;IUserRepository&gt;();
+
+// Настройка
+repo.GetUser(Arg.Any&lt;int&gt;()).Returns(new User { Id = 1, Name = "Alice" });
+repo.GetUser(10).Returns((User)null);
+repo.GetUser(Arg.Is&lt;int&gt;(x => x > 5)).Returns(new User { Id = 5 });
+
+// Проверка вызовов
+repo.Received(1).GetUser(1);
+repo.Received().GetUser(Arg.Any&lt;int&gt;());</pre>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Moq</th>
+                    <th>NSubstitute</th>
+                </tr>
+                <tr>
+                    <td>Синтаксис</td>
+                    <td>Многословный</td>
+                    <td>Лаконичный</td>
+                </tr>
+                <tr>
+                    <td>Популярность</td>
+                    <td>Очень высокая</td>
+                    <td>Высокая</td>
+                </tr>
+                <tr>
+                    <td>Сложность</td>
+                    <td>Средняя</td>
+                    <td>Низкая</td>
+                </tr>
+                <tr>
+                    <td>Документация</td>
+                    <td>Отличная</td>
+                    <td>Хорошая</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+</section>

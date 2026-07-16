@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 1-5 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 2 ===================== -->
+<section class="section c2">
+    <h2>📦 2. Типы данных. Память <span class="badge red">100%</span></h2>
+
+    <details>
+        <summary>Значимые (value) vs ссылочные (reference) — разница?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Значимые типы (Value Types):</strong></p>
+            <ul>
+                <li>Хранят <strong>данные напрямую</strong></li>
+                <li>Размещаются в <strong>стеке</strong> (или inline внутри объектов)</li>
+                <li>При присваивании создается <strong>копия</strong> данных</li>
+                <li>Не поддерживают наследование (кроме интерфейсов)</li>
+                <li>Освобождаются при выходе из области видимости</li>
+                <li><strong>Примеры:</strong> <code>int</code>, <code>bool</code>, <code>DateTime</code>, <code>struct</code>, <code>enum</code></li>
+            </ul>
+
+            <p><strong>Ссылочные типы (Reference Types):</strong></p>
+            <ul>
+                <li>Хранят <strong>ссылку</strong> на данные в куче</li>
+                <li>Размещаются в <strong>куче (Heap)</strong></li>
+                <li>При присваивании копируется <strong>ссылка</strong> (не данные)</li>
+                <li>Поддерживают наследование</li>
+                <li>Управляются <strong>сборщиком мусора (GC)</strong></li>
+                <li><strong>Примеры:</strong> <code>string</code>, <code>class</code>, <code>array</code>, <code>delegate</code></li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr><th>Характеристика</th><th>Значимые</th><th>Ссылочные</th></tr>
+                <tr><td>Хранение</td><td>Стек</td><td>Куча</td></tr>
+                <tr><td>Передача</td><td>По значению (копия)</td><td>По ссылке</td></tr>
+                <tr><td>Наследование</td><td>Нет</td><td>Да</td></tr>
+                <tr><td>Значение по умолчанию</td><td>0, false, null (для Nullable)</td><td>null</td></tr>
+                <tr><td>Управление памятью</td><td>Автоматически (стек)</td><td>Сборщик мусора</td></tr>
+                <tr><td>Размер</td><td>Обычно до 16 байт</td><td>Любой</td></tr>
+                <tr><td>Примеры</td><td>int, bool, struct</td><td>string, class, array</td></tr>
+            </table>
+
+            <p><strong>Важные нюансы:</strong></p>
+            <ul>
+                <li>Строка (<code>string</code>) — ссылочный тип, но ведёт себя как значимый (иммутабельность)</li>
+                <li>Массивы — всегда ссылочный тип, даже если содержат значимые типы</li>
+                <li>Структуры (<code>struct</code>) — значимые, но могут иметь методы и интерфейсы</li>
+                <li>Значимые типы могут храниться в куче, если они являются полями класса</li>
+            </ul>
+
+            <p><strong>Демонстрация разницы:</strong></p>
+            <pre>
+// Значимый тип
+int a = 10;
+int b = a;      // Копия значения
+b = 20;         // a всё ещё 10
+
+// Ссылочный тип
+var list1 = new List&lt;int&gt; { 1, 2, 3 };
+var list2 = list1;          // Копия ссылки
+list2.Add(4);               // list1 тоже изменился! {1, 2, 3, 4}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Stack vs Heap — где что хранится?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Стек (Stack):</strong></p>
+            <ul>
+                <li><strong>Что хранит:</strong> значимые типы, ссылки на объекты в куче, параметры методов, локальные переменные</li>
+                <li><strong>Принцип работы:</strong> LIFO (Last In, First Out)</li>
+                <li><strong>Размер:</strong> ограничен (~1 МБ для Windows)</li>
+                <li><strong>Скорость:</strong> очень быстрый</li>
+                <li><strong>Управление:</strong> автоматическое (при входе/выходе из метода)</li>
+                <li><strong>Пример:</strong> <code>int x = 5;</code> — x в стеке</li>
+            </ul>
+
+            <p><strong>Куча (Heap):</strong></p>
+            <ul>
+                <li><strong>Что хранит:</strong> объекты ссылочных типов, строки, массивы</li>
+                <li><strong>Принцип работы:</strong> неупорядоченное хранилище</li>
+                <li><strong>Размер:</strong> ограничен только системной памятью</li>
+                <li><strong>Скорость:</strong> медленнее стека</li>
+                <li><strong>Управление:</strong> сборщиком мусора (GC)</li>
+                <li><strong>Пример:</strong> <code>var s = "Hello";</code> — ссылка в стеке, строка в куче</li>
+            </ul>
+
+            <p><strong>Визуализация:</strong></p>
+            <pre>
+void Method()
+{
+    int x = 5;                    // x в СТЕКЕ
+    string s = "Hello";           // ссылка s в СТЕКЕ, "Hello" в КУЧЕ
+    var obj = new Person();       // ссылка obj в СТЕКЕ, объект Person в КУЧЕ
+    int[] arr = new int[10];      // ссылка arr в СТЕКЕ, массив в КУЧЕ
+}</pre>
+
+            <p><strong>Когда объект из значимого типа попадает в кучу:</strong></p>
+            <ul>
+                <li>Boxing (упаковка): <code>object o = 5;</code></li>
+                <li>Как поле ссылочного типа: <code>class MyClass { int x; }</code> — x будет в куче</li>
+                <li>В замыканиях (closures) — переменные захватываются и попадают в кучу</li>
+            </ul>
+
+            <p><strong>StackOverflowException:</strong></p>
+            <ul>
+                <li>Возникает при рекурсии без выхода</li>
+                <li>Стек переполняется (например, бесконечная рекурсия)</li>
+                <li>Решение: использовать итерацию или увеличить стек (редко)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>class vs struct — 7 отличий.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>#</th>
+                    <th>Характеристика</th>
+                    <th><code>class</code></th>
+                    <th><code>struct</code></th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td><strong>Тип</strong></td>
+                    <td>Ссылочный</td>
+                    <td>Значимый</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>Хранение</strong></td>
+                    <td>Куча (Heap)</td>
+                    <td>Стек (или inline)</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><strong>Наследование</strong></td>
+                    <td>Да (кроме sealed)</td>
+                    <td>Нет (неявно sealed)</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td><strong>Конструктор без параметров</strong></td>
+                    <td>Можно определить</td>
+                    <td>Всегда есть (нельзя заменить)</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td><strong>Финализатор (~)</strong></td>
+                    <td>Да</td>
+                    <td>Нет</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td><strong>Инициализация полей</strong></td>
+                    <td>Да</td>
+                    <td>Нет (кроме static и const)</td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td><strong>Присваивание</strong></td>
+                    <td>Копируется ссылка</td>
+                    <td>Копируются данные</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда использовать struct:</strong></p>
+            <ul>
+                <li>Объект <strong>маленький</strong> (≤ 16 байт)</li>
+                <li>Объект <strong>неизменяемый</strong> (immutable)</li>
+                <li>Часто создаётся и уничтожается (большая нагрузка на GC)</li>
+                <li>Не требует наследования</li>
+                <li>Логически является <strong>одним значением</strong> (Point, DateTime, Color)</li>
+            </ul>
+
+            <p><strong>Когда использовать class:</strong></p>
+            <ul>
+                <li>Объект <strong>большой</strong> (> 16 байт)</li>
+                <li>Объект <strong>изменяемый</strong></li>
+                <li>Требуется <strong>наследование</strong></li>
+                <li>Объект содержит другие ссылочные типы</li>
+                <li>Логически является <strong>сущностью</strong> (Person, Order, Product)</li>
+            </ul>
+
+            <p><strong>Пример правильного использования struct:</strong></p>
+            <pre>
+public struct Point
+{
+    public int X { get; }
+    public int Y { get; }
+    
+    public Point(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+    
+    public double DistanceTo(Point other)
+    {
+        return Math.Sqrt(Math.Pow(X - other.X, 2) + Math.Pow(Y - other.Y, 2));
+    }
+}
+
+// Использование
+Point p1 = new Point(0, 0);
+Point p2 = new Point(3, 4);
+double dist = p1.DistanceTo(p2);  // 5.0</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>record (C# 9) — чем отличается от class?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>record</strong> — ссылочный тип с value-семантикой (поведение как у значимых типов).</p>
+
+            <p><strong>Ключевые отличия от class:</strong></p>
+            <ul>
+                <li><strong>Сравнение по значению:</strong> <code>Equals()</code> сравнивает свойства, а не ссылки</li>
+                <li><strong>Неизменяемость:</strong> свойства <code>init</code> (можно установить только при создании)</li>
+                <li><strong>Автоматический ToString():</strong> выводит все свойства</li>
+                <li><strong>Deconstruct:</strong> автоматическая деконструкция</li>
+                <li><strong>with выражение:</strong> копирование с изменением</li>
+                <li><strong>Позиционный синтаксис:</strong> короткое определение</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// Позиционный синтаксис (C# 9)
+public record Person(string Name, int Age);
+
+// Эквивалент с явным объявлением
+public record Person
+{
+    public string Name { get; init; }
+    public int Age { get; init; }
+    
+    public Person(string name, int age)
+    {
+        Name = name;
+        Age = age;
+    }
+    
+    public void Deconstruct(out string name, out int age)
+    {
+        name = Name;
+        age = Age;
+    }
+}
+
+// Использование
+var p1 = new Person("Alice", 30);
+var p2 = new Person("Alice", 30);
+
+Console.WriteLine(p1 == p2);  // True (сравнение по значению)
+Console.WriteLine(p1);        // Person { Name = Alice, Age = 30 }
+
+// Копирование с изменением
+var p3 = p1 with { Age = 31 };
+Console.WriteLine(p3);        // Person { Name = Alice, Age = 31 }
+
+// Деконструкция
+var (name, age) = p1;</pre>
+
+            <p><strong>Когда использовать record:</strong></p>
+            <ul>
+                <li>DTO (Data Transfer Objects)</li>
+                <li>Value Objects в DDD</li>
+                <li>Immutable данные</li>
+                <li>Объекты, где важна value-семантика</li>
+            </ul>
+
+            <p><strong>record vs struct:</strong></p>
+            <ul>
+                <li><code>record</code> — ссылочный (куча), но с value-семантикой</li>
+                <li><code>struct</code> — значимый (стек)</li>
+                <li><code>record struct</code> (C# 10) — значимый с value-семантикой</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>string — ссылочный, но ведёт себя как значимый. Почему?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>string — ссылочный тип</strong> (хранится в куче), но имеет поведение, характерное для значимых типов из-за <strong>иммутабельности</strong> (неизменяемости).</p>
+
+            <p><strong>Иммутабельность строк:</strong></p>
+            <ul>
+                <li>Строку <strong>нельзя изменить</strong> после создания</li>
+                <li>Любая операция (конкатенация, замена, вставка) создаёт <strong>новую строку</strong> в куче</li>
+                <li>Старая строка остаётся в памяти до сборки мусора</li>
+                <li>Это безопасно для многопоточности (thread-safe)</li>
+            </ul>
+
+            <p><strong>Почему это поведение похоже на значимые типы:</strong></p>
+            <ul>
+                <li>При присваивании копируется ссылка, но изменить исходную строку нельзя</li>
+                <li>Сравнение <code>==</code> сравнивает <strong>значение</strong>, а не ссылку (перегрузка оператора)</li>
+                <li>Поведение интуитивно понятно (работаем со строкой как со значением)</li>
+            </ul>
+
+            <p><strong>Демонстрация:</strong></p>
+            <pre>
+string s1 = "Hello";
+string s2 = s1;              // s2 ссылается на ту же строку
+s2 = s2.ToUpper();           // Создаётся НОВАЯ строка "HELLO"
+Console.WriteLine(s1);       // "Hello" — не изменилась!
+Console.WriteLine(s2);       // "HELLO"
+
+// Память: две разные строки в куче</pre>
+
+            <p><strong>Последствия иммутабельности:</strong></p>
+            <ul>
+                <li><strong>Плохо:</strong> много операций со строками → много мусора → нагрузка на GC</li>
+                <li><strong>Решение:</strong> использовать <code>StringBuilder</code> для частых изменений</li>
+                <li><strong>Хорошо:</strong> безопасность в многопоточных сценариях</li>
+                <li><strong>Хорошо:</strong> можно использовать как ключ в <code>Dictionary</code></li>
+            </ul>
+
+            <p><strong>Пример проблемы:</strong></p>
+            <pre>
+// Плохо — много аллокаций
+string result = "";
+for (int i = 0; i &lt; 10000; i++)
+{
+    result += i;  // Каждая итерация создаёт новую строку
+}
+
+// Хорошо — одна строка
+var sb = new StringBuilder();
+for (int i = 0; i &lt; 10000; i++)
+{
+    sb.Append(i);
+}
+string result = sb.ToString();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Boxing и Unboxing — что это, влияние на производительность?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Boxing (упаковка):</strong> преобразование значимого типа в ссылочный.</p>
+            <ul>
+                <li>Значение копируется из стека в кучу</li>
+                <li>Создаётся объект-обёртка</li>
+                <li>Происходит <strong>неявно</strong></li>
+            </ul>
+            
+            <p><strong>Unboxing (распаковка):</strong> обратное преобразование из ссылочного в значимый.</p>
+            <ul>
+                <li>Значение извлекается из кучи</li>
+                <li>Требует <strong>явного</strong> приведения</li>
+                <li>Может выбросить <code>InvalidCastException</code></li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+int i = 42;
+object obj = i;        // Boxing: int → object (куча)
+int j = (int)obj;      // Unboxing: object → int
+
+// Неявный Boxing
+ArrayList list = new ArrayList();
+list.Add(10);          // int упаковывается в object
+list.Add("Hello");     // строка и так ссылочный тип
+
+// Boxing в коллекциях
+List&lt;object&gt; objects = new List&lt;object&gt;();
+objects.Add(42);       // Boxing
+objects.Add(3.14);     // Boxing</pre>
+
+            <p><strong>Влияние на производительность:</strong></p>
+            <ul>
+                <li><strong>Память:</strong> упакованный объект занимает больше места (заголовок + данные)</li>
+                <li><strong>Скорость:</strong> копирование в кучу и обратно требует времени</li>
+                <li><strong>GC:</strong> упакованные объекты создают мусор → нагрузка на сборщик</li>
+                <li><strong>Ошибки:</strong> распаковка неправильного типа → исключение</li>
+            </ul>
+
+            <p><strong>Как избежать Boxing:</strong></p>
+            <ul>
+                <li>Использовать <strong>обобщённые коллекции</strong> вместо необобщённых</li>
+                <li>Использовать <code>IEquatable&lt;T&gt;</code> вместо <code>Equals(object)</code></li>
+                <li>Избегать передачи значимых типов как <code>object</code></li>
+                <li>Использовать <code>Span&lt;T&gt;</code> и <code>Memory&lt;T&gt;</code></li>
+            </ul>
+
+            <p><strong>Пример проблемы с производительностью:</strong></p>
+            <pre>
+// Плохо — много Boxing
+var list = new ArrayList();
+for (int i = 0; i &lt; 1000000; i++)
+{
+    list.Add(i);  // Каждый раз Boxing
+}
+
+// Хорошо — нет Boxing
+var list = new List&lt;int&gt;();
+for (int i = 0; i &lt; 1000000; i++)
+{
+    list.Add(i);  // int без упаковки
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>ref / out / in / ref readonly — различия?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Ключевое слово</th>
+                    <th>Описание</th>
+                    <th>Инициализация</th>
+                    <th>Может изменяться</th>
+                </tr>
+                <tr>
+                    <td><code>ref</code></td>
+                    <td>Передача по ссылке</td>
+                    <td>Должна быть</td>
+                    <td>Да</td>
+                </tr>
+                <tr>
+                    <td><code>out</code></td>
+                    <td>Передача по ссылке для возврата</td>
+                    <td>Не обязательна</td>
+                    <td>Да (метод обязан присвоить)</td>
+                </tr>
+                <tr>
+                    <td><code>in</code></td>
+                    <td>Передача по ссылке только для чтения</td>
+                    <td>Должна быть</td>
+                    <td>Нет</td>
+                </tr>
+                <tr>
+                    <td><code>ref readonly</code></td>
+                    <td>Возврат ссылки только для чтения</td>
+                    <td>—</td>
+                    <td>Нет (для возвращаемых значений)</td>
+                </tr>
+            </table>
+
+            <p><strong>ref:</strong></p>
+            <ul>
+                <li>Переменная ДОЛЖНА быть инициализирована до вызова</li>
+                <li>Метод может изменять значение</li>
+                <li>Используется для изменения значимых типов в методе</li>
+            </ul>
+            <pre>
+void Increment(ref int x) { x++; }
+int a = 5;
+Increment(ref a);  // a = 6</pre>
+
+            <p><strong>out:</strong></p>
+            <ul>
+                <li>Переменную МОЖНО не инициализировать</li>
+                <li>Метод ОБЯЗАН присвоить значение</li>
+                <li>Используется для возврата нескольких значений</li>
+            </ul>
+            <pre>
+void GetCoordinates(out int x, out int y) { x = 10; y = 20; }
+GetCoordinates(out int x, out int y);  // x = 10, y = 20</pre>
+
+            <p><strong>in:</strong></p>
+            <ul>
+                <li>Передаёт по ссылке, но НЕ даёт изменять</li>
+                <li>Повышает производительность для больших структур</li>
+                <li>Метод не может изменить параметр</li>
+            </ul>
+            <pre>
+void Print(in LargeStruct data) { Console.WriteLine(data.X); }
+var data = new LargeStruct();
+Print(in data);</pre>
+
+            <p><strong>ref readonly (возврат):</strong></p>
+            <ul>
+                <li>Возвращает ссылку на данные</li>
+                <li>Вызывающий не может изменить данные</li>
+                <li>Избегает копирования больших структур</li>
+            </ul>
+            <pre>
+private LargeStruct _data;
+public ref readonly LargeStruct GetData() => ref _data;
+// Нельзя: GetData().X = 5;</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>const vs readonly — разница?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th><code>const</code></th>
+                    <th><code>readonly</code></th>
+                </tr>
+                <tr>
+                    <td><strong>Время инициализации</strong></td>
+                    <td>Компиляция</td>
+                    <td>Runtime (в конструкторе)</td>
+                </tr>
+                <tr>
+                    <td><strong>Инициализация</strong></td>
+                    <td>Только при объявлении</td>
+                    <td>При объявлении ИЛИ в конструкторе</td>
+                </tr>
+                <tr>
+                    <td><strong>Может быть нестатическим</strong></td>
+                    <td>Нет (всегда static)</td>
+                    <td>Да</td>
+                </tr>
+                <tr>
+                    <td><strong>Поддерживаемые типы</strong></td>
+                    <td>Примитивы, string, enum</td>
+                    <td>Любые</td>
+                </tr>
+                <tr>
+                    <td><strong>Можно использовать с reference типами</strong></td>
+                    <td>Только string и null</td>
+                    <td>Любые</td>
+                </tr>
+                <tr>
+                    <td><strong>Значение подставляется</strong></td>
+                    <td>На этапе компиляции</td>
+                    <td>На этапе выполнения</td>
+                </tr>
+            </table>
+
+            <p><strong>const:</strong></p>
+            <ul>
+                <li>Значение <strong>встраивается</strong> во все места использования</li>
+                <li>Если изменить const в библиотеке, нужно перекомпилировать все зависимости</li>
+                <li>Не может быть вычислено в рантайме</li>
+                <li>Используется для математических констант, строковых литералов</li>
+            </ul>
+
+            <p><strong>readonly:</strong></p>
+            <ul>
+                <li>Значение вычисляется <strong>в рантайме</strong></li>
+                <li>Может быть разным для разных экземпляров</li>
+                <li>Можно использовать с любыми типами</li>
+                <li>Для ссылочных типов запрещает менять ССЫЛКУ (но не данные объекта)</li>
+                <li>Используется для конфигурации, зависимостей</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+public class Config
+{
+    // const — всегда статический, значение на этапе компиляции
+    public const double Pi = 3.14159265359;
+    public const string AppName = "MyApp";
+    
+    // readonly — можно установить в конструкторе
+    public readonly int MaxRetries;
+    public readonly Guid InstanceId;
+    public readonly List&lt;string&gt; Items;  // ссылка неизменна, но содержимое можно менять
+    
+    public Config(int maxRetries)
+    {
+        MaxRetries = maxRetries;
+        InstanceId = Guid.NewGuid();      // вычисляется в рантайме
+        Items = new List&lt;string&gt;();       // можно менять Items.Add()
+        // const нельзя использовать в конструкторе
+    }
+}</pre>
+
+            <p><strong>Где использовать:</strong></p>
+            <ul>
+                <li><strong>const:</strong> значения, известные на этапе компиляции (Pi, AppName, ConnectionString?)</li>
+                <li><strong>readonly:</strong> значения, вычисляемые в рантайме (Id, зависимости, конфигурация)</li>
+                <li><strong>static readonly:</strong> для инициализации один раз при старте</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Nullable типы (int?) — что это?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><code>int?</code> — это синтаксический сахар для <strong><code>Nullable&lt;int&gt;</code></strong>.</p>
+            
+            <p><strong>Что такое Nullable&lt;T&gt;:</strong></p>
+            <ul>
+                <li>Это <strong>структура</strong> (значимый тип)</li>
+                <li>Содержит два поля: <code>bool HasValue</code> и <code>T Value</code></li>
+                <li>Позволяет значимым типам принимать значение <code>null</code></li>
+                <li>Работает только для значимых типов</li>
+            </ul>
+
+            <p><strong>Структура Nullable&lt;T&gt;:</strong></p>
+            <pre>
+public struct Nullable&lt;T&gt; where T : struct
+{
+    private bool _hasValue;
+    private T _value;
+    
+    public bool HasValue => _hasValue;
+    public T Value => _hasValue ? _value : throw new InvalidOperationException();
+    
+    public Nullable(T value)
+    {
+        _value = value;
+        _hasValue = true;
+    }
+    
+    public T GetValueOrDefault() => _value ?? default(T);
+    public T GetValueOrDefault(T defaultValue) => _hasValue ? _value : defaultValue;
+}</pre>
+
+            <p><strong>Использование:</strong></p>
+            <pre>
+int? nullableInt = null;
+int? nullableInt2 = 42;
+
+// Проверка
+if (nullableInt.HasValue)
+{
+    Console.WriteLine(nullableInt.Value);
+}
+
+// Безопасное извлечение
+int value = nullableInt ?? 0;  // null-coalescing
+int value2 = nullableInt.GetValueOrDefault();
+
+// Pattern matching (C# 7+)
+if (nullableInt is int val)
+{
+    Console.WriteLine(val);
+}</pre>
+
+            <p><strong>Операторы для Nullable:</strong></p>
+            <ul>
+                <li><code>??</code> — null-coalescing (возвращает значение или default)</li>
+                <li><code>??=</code> — null-coalescing assignment (C# 8)</li>
+                <li><code>?.</code> — null-conditional operator (для ссылочных типов)</li>
+                <li><code>Value</code> — выбрасывает исключение если null</li>
+                <li><code>GetValueOrDefault()</code> — безопасное получение</li>
+            </ul>
+
+            <p><strong>Nullable reference types (C# 8+):</strong></p>
+            <ul>
+                <li>Отдельная фича для ссылочных типов</li>
+                <li>Помогает избежать <code>NullReferenceException</code></li>
+                <li>Использует аннотации <code>?</code> и <code>!</code></li>
+                <li>Включается в проекте: <code>&lt;Nullable&gt;enable&lt;/Nullable&gt;</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Операторы ?. (null-conditional) и ?? (null-coalescing).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>?. (null-conditional operator):</strong></p>
+            <ul>
+                <li>Обращается к члену объекта ТОЛЬКО если объект != null</li>
+                <li>Возвращает <code>null</code> если объект null</li>
+                <li>Поддерживает цепочки вызовов</li>
+                <li>Работает с полями, свойствами, методами, индексами</li>
+            </ul>
+
+            <p><strong>?? (null-coalescing operator):</strong></p>
+            <ul>
+                <li>Возвращает левый операнд, если он не null</li>
+                <li>Иначе возвращает правый операнд</li>
+                <li>Работает со ссылочными типами и Nullable</li>
+            </ul>
+
+            <p><strong>??= (null-coalescing assignment, C# 8):</strong></p>
+            <ul>
+                <li>Присваивает правый операнд если левый null</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+Person person = null;
+
+// Без ?. — нужно проверять
+string name = person != null ? person.Name : null;
+
+// С ?.
+string name = person?.Name;  // null
+
+// Цепочки
+string city = person?.Address?.City;  // null если что-то null
+
+// Вызов методов
+person?.Speak();  // вызовет только если не null
+
+// С индексами
+var first = list?[0];
+
+// ?? — значение по умолчанию
+string name = person?.Name ?? "Unknown";
+
+// ??= — присвоение, если null
+List&lt;string&gt; items = null;
+items ??= new List&lt;string&gt;();
+items.Add("Hello");  // items уже не null</pre>
+
+            <p><strong>Комбинация ?. и ??:</strong></p>
+            <pre>
+string name = person?.Name ?? "Unknown";
+int age = person?.Age ?? 0;
+var address = person?.Address?.City ?? "Not specified";</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>var vs dynamic — отличия?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>var — статическая типизация:</strong></p>
+            <ul>
+                <li>Тип определяется <strong>компилятором</strong></li>
+                <li>Тип <strong>фиксирован</strong> после определения</li>
+                <li>Ошибки типов выявляются <strong>на этапе компиляции</strong></li>
+                <li>IntelliSense работает полностью</li>
+                <li>Требует инициализации при объявлении</li>
+                <li>Не может быть полем класса</li>
+            </ul>
+
+            <p><strong>dynamic — динамическая типизация:</strong></p>
+            <ul>
+                <li>Тип определяется <strong>в рантайме</strong></li>
+                <li>Тип может <strong>меняться</strong> во время выполнения</li>
+                <li>Ошибки типов возникают <strong>при выполнении</strong></li>
+                <li>IntelliSense работает ограниченно</li>
+                <li>Не требует инициализации</li>
+                <li>Может быть полем класса</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <pre>
+// var — статический
+var x = 10;        // int
+// x = "Hello";    // Ошибка компиляции: неявное преобразование
+Console.WriteLine(x.GetType());  // System.Int32
+
+// dynamic — динамический
+dynamic y = 10;    // int
+y = "Hello";       // OK — в рантайме
+y = new Person();  // OK
+y.SomeMethod();    // Ошибка будет только при выполнении (RuntimeBinderException)
+Console.WriteLine(y.GetType());  // System.String (после присвоения)
+
+// dynamic с COM-объектами
+dynamic excel = Activator.CreateInstance(Type.GetTypeFromProgID("Excel.Application"));
+excel.Visible = true;  // Работает без рефлексии</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>var:</strong> всегда, если тип очевиден (LINQ, сложные типы)</li>
+                <li><strong>dynamic:</strong> при работе с COM-объектами, JSON без строгой типизации, Reflection</li>
+                <li><strong>Избегайте dynamic:</strong> в критическом коде, где важна производительность и безопасность типов</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Span&lt;T&gt; и Memory&lt;T&gt; — зачем, когда использовать?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Span&lt;T&gt;:</strong></p>
+            <ul>
+                <li>Представление <strong>непрерывной области памяти</strong></li>
+                <li>Не выделяет память (zero-allocation)</li>
+                <li>Может ссылаться на массив, стек, неуправляемую память</li>
+                <li>Только <code>ref struct</code> — не может быть полем класса</li>
+                <li>Живёт только в стеке</li>
+                <li>Очень быстрый</li>
+            </ul>
+
+            <p><strong>Memory&lt;T&gt;:</strong></p>
+            <ul>
+                <li>Аналогично <code>Span</code>, но может быть полем класса</li>
+                <li>Может использоваться в асинхронных методах</li>
+                <li>Безопасный (можно передавать между методами)</li>
+                <li>Чуть медленнее <code>Span</code></li>
+            </ul>
+
+            <p><strong>Использование:</strong></p>
+            <pre>
+// Span — создание из массива
+int[] array = new int[] { 1, 2, 3, 4, 5 };
+Span&lt;int&gt; span = array.AsSpan(1, 3);  // { 2, 3, 4 }
+span[0] = 10;  // array[1] = 10
+
+// Span — без аллокаций
+string text = "Hello World";
+ReadOnlySpan&lt;char&gt; slice = text.AsSpan(6, 5);  // "World"
+
+// Memory — для асинхронных операций
+Memory&lt;byte&gt; memory = new byte[1024];
+await WriteAsync(memory);
+
+// Парсинг без выделений
+ReadOnlySpan&lt;char&gt; number = "42".AsSpan();
+int value = int.Parse(number);  // Без создания строки</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>Span:</strong> для синхронной обработки данных (парсинг, срезы, преобразования)</li>
+                <li><strong>Memory:</strong> для асинхронных операций (чтение/запись в файлы, сети)</li>
+                <li><strong>Избегайте:</strong> если не нужна максимальная производительность</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>unsafe код — когда разрешён, риски?</summary>
+        <div class="answer">
+            <p><strong>unsafe</strong> — код, работающий с <strong>указателями</strong> и напрямую с памятью.</p>
+
+            <p><strong>Когда разрешён:</strong></p>
+            <ul>
+                <li>Включена опция компилятора <code>/unsafe</code></li>
+                <li>Код помечен ключевым словом <code>unsafe</code></li>
+                <li>Используется в блоке <code>unsafe { ... }</code></li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+unsafe void Example()
+{
+    int x = 10;
+    int* ptr = &amp;x;           // Получение адреса
+    *ptr = 20;               // Изменение через указатель
+    
+    // Работа с массивами
+    int[] arr = new int[10];
+    fixed (int* p = arr)     // Закрепление массива
+    {
+        p[0] = 42;
+    }
+    
+    // Структуры с указателями
+    var data = new MyStruct();
+    MyStruct* pData = &amp;data;
+    pData->Field = 5;
+}</pre>
+
+            <p><strong>Риски:</strong></p>
+            <ul>
+                <li><strong>Потеря безопасности типов</strong> — компилятор не проверяет типы</li>
+                <li><strong>Повреждение памяти</strong> — можно записать данные в произвольное место</li>
+                <li><strong>Buffer overflow</strong> — выход за границы массивов</li>
+                <li><strong>AccessViolationException</strong> — доступ к недопустимой памяти</li>
+                <li><strong>Не верифицируемый код</strong> — не проходит проверку CLR</li>
+                <li><strong>Несовместимость</strong> — не работает в некоторых средах (например, Unity WebGL)</li>
+            </ul>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Взаимодействие с неуправляемым кодом (P/Invoke)</li>
+                <li>Высокопроизводительные вычисления (обработка изображений, аудио)</li>
+                <li>Работа с большими объёмами данных без копирования</li>
+                <li>Встроенные алгоритмы (криптография, сжатие)</li>
+            </ul>
+
+            <p><strong>Альтернативы unsafe:</strong></p>
+            <ul>
+                <li><code>Span&lt;T&gt;</code> и <code>Memory&lt;T&gt;</code></li>
+                <li><code>Marshal</code> и <code>MarshalAs</code></li>
+                <li><code>GCHandle</code> для закрепления объектов</li>
+                <li><code>Buffer</code> для низкоуровневой работы с памятью</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>decimal vs float vs double — когда что использовать?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Тип</th>
+                    <th>Размер</th>
+                    <th>Точность</th>
+                    <th>Диапазон</th>
+                    <th>Применение</th>
+                </tr>
+                <tr>
+                    <td><code>float</code></td>
+                    <td>4 байта</td>
+                    <td>~7 цифр</td>
+                    <td>±1.5e-45 … ±3.4e38</td>
+                    <td>Графика, 3D, быстрые расчёты</td>
+                </tr>
+                <tr>
+                    <td><code>double</code></td>
+                    <td>8 байт</td>
+                    <td>~15-16 цифр</td>
+                    <td>±5e-324 … ±1.7e308</td>
+                    <td>Научные расчёты, по умолчанию</td>
+                </tr>
+                <tr>
+                    <td><code>decimal</code></td>
+                    <td>16 байт</td>
+                    <td>~28-29 цифр</td>
+                    <td>±1e-28 … ±7.9e28</td>
+                    <td><strong>Финансовые расчёты</strong></td>
+                </tr>
+            </table>
+
+            <p><strong>Ключевые отличия:</strong></p>
+            <ul>
+                <li><strong>float/double:</strong> двоичное представление → <strong>ошибки округления</strong></li>
+                <li><strong>decimal:</strong> десятичное представление → <strong>точность</strong> для денежных операций</li>
+                <li><strong>decimal</strong> медленнее, но точен</li>
+                <li><strong>float/double</strong> быстрее, но есть погрешности</li>
+            </ul>
+
+            <p><strong>Примеры ошибок округления:</strong></p>
+            <pre>
+double d = 0.1 + 0.2;
+Console.WriteLine(d);  // 0.30000000000000004 (не 0.3!)
+
+decimal m = 0.1m + 0.2m;
+Console.WriteLine(m);  // 0.3 (точно)</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>decimal:</strong> деньги, налоги, проценты, любые точные расчёты</li>
+                <li><strong>double:</strong> научные расчёты, физика, математика, по умолчанию для дробных</li>
+                <li><strong>float:</strong> графика, игры, когда нужна скорость и память</li>
+            </ul>
+
+            <p><strong>Сравнение производительности:</strong></p>
+            <ul>
+                <li><code>float</code> — самый быстрый, наименьшая точность</li>
+                <li><code>double</code> — быстрый, достаточно точный</li>
+                <li><code>decimal</code> — самый медленный (~20-50x медленнее double)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Что такое выравнивание (alignment) в памяти?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Выравнивание</strong> — размещение данных в памяти по адресам, кратным их размеру.</p>
+
+            <p><strong>Зачем это нужно:</strong></p>
+            <ul>
+                <li><strong>Производительность:</strong> процессор может читать выровненные данные за одну операцию</li>
+                <li><strong>Невыровненные данные:</strong> процессор делает два чтения и комбинирует результат</li>
+                <li><strong>На некоторых архитектурах</strong> (ARM) невыровненный доступ приводит к исключению</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <ul>
+                <li><code>byte</code> (1 байт) — не требует выравнивания</li>
+                <li><code>short</code> (2 байта) — должен быть по адресу кратному 2</li>
+                <li><code>int</code> (4 байта) — по адресу кратному 4</li>
+                <li><code>long</code> (8 байт) — по адресу кратному 8</li>
+            </ul>
+
+            <p><strong>Управление выравниванием:</strong></p>
+            <pre>
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+struct UnalignedStruct
+{
+    byte b;   // 1 байт
+    int i;    // 4 байта — будет на смещении 1 (не выровнено)
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 4)]
+struct AlignedStruct
+{
+    byte b;   // 1 байт + 3 байта padding
+    int i;    // 4 байта — на смещении 4 (выровнено)
+}</pre>
+
+            <p><strong>Размер структур с учётом выравнивания:</strong></p>
+            <pre>
+struct Struct1
+{
+    byte b;   // 1 байт
+    int i;    // 4 байта
+    // Размер = 8 байт (1 + 3 padding + 4)
+}
+
+struct Struct2
+{
+    int i;    // 4 байта
+    byte b;   // 1 байт
+    // Размер = 8 байт (4 + 1 + 3 padding)
+}</pre>
+
+            <p><strong>Как управлять:</strong></p>
+            <ul>
+                <li><code>StructLayout.Sequential</code> — сохраняет порядок, добавляет padding</li>
+                <li><code>StructLayout.Explicit</code> — ручное управление через <code>FieldOffset</code></li>
+                <li><code>StructLayout.Auto</code> — CLR оптимизирует порядок</li>
+                <li><code>Pack</code> — минимальное выравнивание (1, 2, 4, 8)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>StructLayout — Explicit, Auto, Sequential.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>LayoutKind.Sequential:</strong></p>
+            <ul>
+                <li>Поля располагаются в порядке объявления</li>
+                <li>Добавляет padding для выравнивания</li>
+                <li>Используется для P/Invoke (взаимодействие с C/C++)</li>
+                <li>По умолчанию для структур</li>
+            </ul>
+
+            <p><strong>LayoutKind.Explicit:</strong></p>
+            <ul>
+                <li>Явное указание смещения каждого поля через <code>FieldOffset</code></li>
+                <li>Позволяет создавать объединения (union)</li>
+                <li>Несколько полей могут занимать одну область памяти</li>
+                <li>Используется для низкоуровневых оптимизаций</li>
+            </ul>
+
+            <p><strong>LayoutKind.Auto:</strong></p>
+            <ul>
+                <li>CLR сама оптимизирует порядок полей</li>
+                <li>Улучшает производительность и уменьшает размер</li>
+                <li>По умолчанию для классов</li>
+                <li>Нельзя использовать с P/Invoke</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// Sequential — порядок объявления
+[StructLayout(LayoutKind.Sequential)]
+struct Point
+{
+    public int X;  // offset 0
+    public int Y;  // offset 4
+    public int Z;  // offset 8
+}
+
+// Explicit — union (объединение)
+[StructLayout(LayoutKind.Explicit)]
+struct Union
+{
+    [FieldOffset(0)] public int IntValue;    // 4 байта
+    [FieldOffset(0)] public float FloatValue; // те же 4 байта
+    [FieldOffset(0)] public byte Byte0;      // первый байт
+    [FieldOffset(1)] public byte Byte1;      // второй байт
+    [FieldOffset(2)] public byte Byte2;      // третий байт
+    [FieldOffset(3)] public byte Byte3;      // четвёртый байт
+}
+
+// Использование union
+var u = new Union();
+u.IntValue = 0x12345678;
+Console.WriteLine(u.Byte0);  // 0x78 (младший байт)</pre>
+        </div>
+    </details>
+</section>

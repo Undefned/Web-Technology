@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 6-10 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+
+
+<!-- ===================== БЛОК 10 ===================== -->
+<section class="section c10">
+    <h2>💾 10. Базы данных. SQL. Индексы <span class="badge red">100%</span></h2>
+
+    <details>
+        <summary>Реляционные vs Нереляционные БД — плюсы/минусы.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Реляционные БД (SQL):</strong></p>
+            <ul>
+                <li>Структурированные данные в таблицах</li>
+                <li>Связи между таблицами (Foreign Key)</li>
+                <li>Язык запросов: <strong>SQL</strong></li>
+                <li>ACID транзакции</li>
+                <li>Строгая схема (миграции)</li>
+                <li>Примеры: PostgreSQL, MySQL, SQL Server, Oracle</li>
+            </ul>
+
+            <p><strong>Плюсы:</strong></p>
+            <ul>
+                <li>Целостность данных (Foreign Key, Constraints)</li>
+                <li>Сложные запросы (JOIN, GROUP BY)</li>
+                <li>Транзакции (ACID)</li>
+                <li>Стандартизированный язык (SQL)</li>
+            </ul>
+
+            <p><strong>Минусы:</strong></p>
+            <ul>
+                <li>Жёсткая схема</li>
+                <li>Масштабирование (сложное горизонтальное)</li>
+                <li>Производительность при больших данных</li>
+            </ul>
+
+            <p><strong>Нереляционные БД (NoSQL):</strong></p>
+            <ul>
+                <li>Документы, ключ-значение, графы, колонки</li>
+                <li>Гибкая схема (schemaless)</li>
+                <li>Язык запросов: свой (MongoDB Query, etc.)</li>
+                <li>BASE транзакции (Eventually Consistent)</li>
+                <li>Примеры: MongoDB, Redis, Cassandra, Elasticsearch</li>
+            </ul>
+
+            <p><strong>Плюсы:</strong></p>
+            <ul>
+                <li>Гибкая схема (легко менять)</li>
+                <li>Горизонтальное масштабирование</li>
+                <li>Высокая производительность</li>
+                <li>Разные модели данных (документы, графы)</li>
+            </ul>
+
+            <p><strong>Минусы:</strong></p>
+            <ul>
+                <li>Нет жёстких связей</li>
+                <li>Меньше гарантий целостности</li>
+                <li>Сложные запросы (JOIN) труднее</li>
+                <li>Разные языки запросов</li>
+            </ul>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>SQL:</strong> финансовые данные, транзакции, строгие связи</li>
+                <li><strong>NoSQL:</strong> большие данные, высокая нагрузка, гибкая схема</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Первичный ключ (PK) vs Внешний ключ (FK).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Первичный ключ (Primary Key):</strong></p>
+            <ul>
+                <li>Уникально идентифицирует запись в таблице</li>
+                <li>Не может быть NULL</li>
+                <li>Только один на таблицу</li>
+                <li>Автоматически индексируется</li>
+            </ul>
+            <pre>
+CREATE TABLE Users (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    Name NVARCHAR(100)
+);</pre>
+
+            <p><strong>Внешний ключ (Foreign Key):</strong></p>
+            <ul>
+                <li>Ссылается на первичный ключ другой таблицы</li>
+                <li>Обеспечивает <strong>целостность</strong> ссылок</li>
+                <li>Может быть NULL</li>
+                <li>Может быть несколько на таблицу</li>
+            </ul>
+            <pre>
+CREATE TABLE Orders (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL,
+    Total DECIMAL(18,2),
+    FOREIGN KEY (UserId) REFERENCES Users(Id)
+);</pre>
+
+            <p><strong>Каскадные операции:</strong></p>
+            <pre>
+FOREIGN KEY (UserId) REFERENCES Users(Id)
+    ON DELETE CASCADE  -- При удалении пользователя удалить заказы
+    ON UPDATE CASCADE  -- При изменении Id обновить UserId</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>JOIN: INNER, LEFT, RIGHT, FULL, CROSS — разница.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>INNER JOIN:</strong> только совпадающие записи в обеих таблицах.</p>
+            <pre>
+SELECT Users.Name, Orders.Total
+FROM Users
+INNER JOIN Orders ON Users.Id = Orders.UserId;</pre>
+
+            <p><strong>LEFT JOIN:</strong> все записи из левой таблицы, совпадающие из правой (NULL если нет).</p>
+            <pre>
+SELECT Users.Name, Orders.Total
+FROM Users
+LEFT JOIN Orders ON Users.Id = Orders.UserId;
+-- Все пользователи, даже без заказов</pre>
+
+            <p><strong>RIGHT JOIN:</strong> все записи из правой таблицы, совпадающие из левой.</p>
+            <pre>
+SELECT Users.Name, Orders.Total
+FROM Users
+RIGHT JOIN Orders ON Users.Id = Orders.UserId;
+-- Все заказы, даже без пользователей</pre>
+
+            <p><strong>FULL JOIN:</strong> все записи из обеих таблиц.</p>
+            <pre>
+SELECT Users.Name, Orders.Total
+FROM Users
+FULL JOIN Orders ON Users.Id = Orders.UserId;</pre>
+
+            <p><strong>CROSS JOIN:</strong> декартово произведение (все комбинации).</p>
+            <pre>
+SELECT Users.Name, Products.Name
+FROM Users
+CROSS JOIN Products;
+-- Каждый пользователь с каждым товаром</pre>
+
+            <p><strong>Визуализация:</strong></p>
+            <ul>
+                <li>INNER: только пересечение</li>
+                <li>LEFT: вся левая + пересечение</li>
+                <li>RIGHT: вся правая + пересечение</li>
+                <li>FULL: все записи из обоих</li>
+                <li>CROSS: все комбинации</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Агрегатные функции: COUNT, SUM, AVG, MAX, MIN.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>COUNT — количество записей</strong></p>
+            <pre>
+SELECT COUNT(*) FROM Users;  -- Все записи
+SELECT COUNT(DISTINCT City) FROM Users;  -- Уникальные города
+SELECT COUNT(Email) FROM Users;  -- Не NULL</pre>
+
+            <p><strong>SUM — сумма</strong></p>
+            <pre>
+SELECT SUM(Total) FROM Orders;
+SELECT SUM(DISTINCT Total) FROM Orders;  -- Уникальные суммы</pre>
+
+            <p><strong>AVG — среднее</strong></p>
+            <pre>
+SELECT AVG(Total) FROM Orders;
+SELECT AVG(DISTINCT Total) FROM Orders;</pre>
+
+            <p><strong>MAX — максимум</strong></p>
+            <pre>
+SELECT MAX(Total) FROM Orders;
+SELECT MAX(Date) FROM Orders;  -- Самая поздняя дата</pre>
+
+            <p><strong>MIN — минимум</strong></p>
+            <pre>
+SELECT MIN(Total) FROM Orders;</pre>
+
+            <p><strong>С GROUP BY:</strong></p>
+            <pre>
+SELECT UserId, COUNT(*) as OrderCount, SUM(Total) as TotalSum
+FROM Orders
+GROUP BY UserId
+HAVING COUNT(*) > 5;  -- Только с > 5 заказов</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>GROUP BY и HAVING — фильтрация групп.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>GROUP BY</strong> — группировка записей по одному или нескольким столбцам.</p>
+            <pre>
+-- Количество заказов по пользователям
+SELECT UserId, COUNT(*) as OrderCount
+FROM Orders
+GROUP BY UserId;
+
+-- Средняя сумма заказа по пользователям
+SELECT UserId, AVG(Total) as AvgOrder
+FROM Orders
+GROUP BY UserId;</pre>
+
+            <p><strong>HAVING</strong> — фильтрация сгруппированных результатов (аналог WHERE для групп).</p>
+            <pre>
+-- Пользователи с > 5 заказами
+SELECT UserId, COUNT(*) as OrderCount
+FROM Orders
+GROUP BY UserId
+HAVING COUNT(*) > 5;
+
+-- Пользователи со средней суммой > 1000
+SELECT UserId, AVG(Total) as AvgOrder
+FROM Orders
+GROUP BY UserId
+HAVING AVG(Total) > 1000;</pre>
+
+            <p><strong>WHERE vs HAVING:</strong></p>
+            <ul>
+                <li><strong>WHERE:</strong> фильтрует строки до группировки</li>
+                <li><strong>HAVING:</strong> фильтрует группы после группировки</li>
+            </ul>
+            <pre>
+-- WHERE фильтрует до группировки
+SELECT UserId, COUNT(*) as OrderCount
+FROM Orders
+WHERE Total > 100  -- Только заказы > 100
+GROUP BY UserId
+HAVING COUNT(*) > 5;  -- Только пользователи с > 5 такими заказами</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Индексы — B-Tree, структура, когда использовать.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Индекс</strong> — структура данных для быстрого поиска записей.</p>
+
+            <p><strong>Структура B-Tree:</strong></p>
+            <ul>
+                <li>Сбалансированное дерево</li>
+                <li>Корень, внутренние узлы, листья</li>
+                <li>Сложность поиска: <strong>O(log n)</strong></li>
+                <li>Поддерживает поиск, вставку, удаление</li>
+            </ul>
+
+            <p><strong>Когда использовать индексы:</strong></p>
+            <ul>
+                <li>✅ Часто в <code>WHERE</code> (фильтрация)</li>
+                <li>✅ Часто в <code>JOIN</code> (связи)</li>
+                <li>✅ Часто в <code>ORDER BY</code> (сортировка)</li>
+                <li>✅ Часто в <code>GROUP BY</code> (группировка)</li>
+                <li>❌ Маленькие таблицы (до 1000 записей)</li>
+                <li>❌ Редко используемые столбцы</li>
+                <li>❌ Столбцы, которые часто обновляются</li>
+            </ul>
+
+            <p><strong>Когда НЕ использовать:</strong></p>
+            <ul>
+                <li>Маленькие таблицы</li>
+                <li>Столбцы, которые редко используются в WHERE</li>
+                <li>Столбцы с низкой селективностью (например, boolean)</li>
+                <li>Таблицы с частыми вставками/обновлениями (индекс замедляет)</li>
+            </ul>
+
+            <p><strong>Создание индекса:</strong></p>
+            <pre>
+CREATE INDEX IX_Users_Email ON Users(Email);
+
+-- Составной индекс
+CREATE INDEX IX_Orders_UserId_Date ON Orders(UserId, OrderDate);
+
+-- Уникальный индекс
+CREATE UNIQUE INDEX UX_Users_Email ON Users(Email);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Кластеризованный vs Некластеризованный индекс — разница.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Кластеризованный индекс (Clustered Index):</strong></p>
+            <ul>
+                <li>Определяет <strong>физический порядок</strong> данных в таблице</li>
+                <li>Только <strong>один</strong> на таблицу</li>
+                <li>По умолчанию = Primary Key</li>
+                <li>Данные хранятся <strong>в листьях</strong> дерева</li>
+                <li>Поиск — O(log n)</li>
+            </ul>
+
+            <p><strong>Некластеризованный индекс (Non-Clustered Index):</strong></p>
+            <ul>
+                <li>Не влияет на физический порядок данных</li>
+                <li>Может быть <strong>много</strong> на таблицу</li>
+                <li>Листья содержат <strong>ссылки</strong> на данные</li>
+                <li>Поиск — O(log n) + дополнительный поиск по ссылке</li>
+                <li>Медленнее, чем кластеризованный</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Кластеризованный</th>
+                    <th>Некластеризованный</th>
+                </tr>
+                <tr>
+                    <td>Количество</td>
+                    <td>Только 1</td>
+                    <td>Много</td>
+                </tr>
+                <tr>
+                    <td>Порядок данных</td>
+                    <td>Физический</td>
+                    <td>Не влияет</td>
+                </tr>
+                <tr>
+                    <td>Листья</td>
+                    <td>Данные</td>
+                    <td>Ссылки на данные</td>
+                </tr>
+                <tr>
+                    <td>Скорость поиска</td>
+                    <td>Быстрее</td>
+                    <td>Медленнее</td>
+                </tr>
+                <tr>
+                    <td>По умолчанию</td>
+                    <td>Primary Key</td>
+                    <td>—</td>
+                </tr>
+            </table>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+-- Кластеризованный (по умолчанию на PK)
+CREATE TABLE Users (
+    Id INT PRIMARY KEY,  -- Clustered Index
+    Name NVARCHAR(100)
+);
+
+-- Некластеризованный
+CREATE NONCLUSTERED INDEX IX_Users_Name ON Users(Name);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>ACID — расшифровка, примеры.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>ACID</strong> — свойства транзакций в реляционных БД.</p>
+
+            <p><strong>A — Atomicity (Атомарность)</strong></p>
+            <ul>
+                <li>Транзакция выполняется полностью или не выполняется совсем</li>
+                <li>При ошибке — <strong>откат (Rollback)</strong></li>
+                <li>Пример: перевод денег — списать и зачислить должны оба выполниться</li>
+            </ul>
+
+            <p><strong>C — Consistency (Согласованность)</strong></p>
+            <ul>
+                <li>Транзакция переводит БД из одного согласованного состояния в другое</li>
+                <li>Не нарушает ограничения (Foreign Key, Unique)</li>
+                <li>Пример: баланс не может стать отрицательным</li>
+            </ul>
+
+            <p><strong>I — Isolation (Изоляция)</strong></p>
+            <ul>
+                <li>Транзакции изолированы друг от друга</li>
+                <li>Промежуточные результаты не видны другим транзакциям</li>
+                <li>Уровни изоляции: Read Uncommitted, Read Committed и т.д.</li>
+                <li>Пример: две транзакции видят согласованное состояние</li>
+            </ul>
+
+            <p><strong>D — Durability (Устойчивость)</strong></p>
+            <ul>
+                <li>После фиксации (Commit) данные сохраняются <strong>навсегда</strong></li>
+                <li>Перезагрузка системы не приводит к потере данных</li>
+                <li>Пример: подтверждённый перевод сохранится даже при сбое</li>
+            </ul>
+
+            <p><strong>Пример транзакции:</strong></p>
+            <pre>
+BEGIN TRANSACTION;
+
+UPDATE Accounts SET Balance = Balance - 100 WHERE Id = 1;
+UPDATE Accounts SET Balance = Balance + 100 WHERE Id = 2;
+
+-- Если ошибка — ROLLBACK
+COMMIT;  -- Только если всё успешно</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Уровни изоляции транзакций: Read Uncommitted, Read Committed, Repeatable Read, Serializable, Snapshot.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Уровни изоляции</strong> определяют, как транзакции видят изменения друг друга.</p>
+
+            <table>
+                <tr>
+                    <th>Уровень</th>
+                    <th>Грязное чтение</th>
+                    <th>Неповторяющееся чтение</th>
+                    <th>Фантомное чтение</th>
+                    <th>Описание</th>
+                </tr>
+                <tr>
+                    <td>Read Uncommitted</td>
+                    <td>✅ Да</td>
+                    <td>✅ Да</td>
+                    <td>✅ Да</td>
+                    <td>Читает незафиксированные данные (грязное чтение)</td>
+                </tr>
+                <tr>
+                    <td>Read Committed</td>
+                    <td>❌ Нет</td>
+                    <td>✅ Да</td>
+                    <td>✅ Да</td>
+                    <td>Читает только зафиксированные данные</td>
+                </tr>
+                <tr>
+                    <td>Repeatable Read</td>
+                    <td>❌ Нет</td>
+                    <td>❌ Нет</td>
+                    <td>✅ Да</td>
+                    <td>Одинаковое чтение в рамках транзакции</td>
+                </tr>
+                <tr>
+                    <td>Serializable</td>
+                    <td>❌ Нет</td>
+                    <td>❌ Нет</td>
+                    <td>❌ Нет</td>
+                    <td>Полная изоляция (самый строгий)</td>
+                </tr>
+                <tr>
+                    <td>Snapshot</td>
+                    <td>❌ Нет</td>
+                    <td>❌ Нет</td>
+                    <td>❌ Нет</td>
+                    <td>Снимок данных на момент начала транзакции</td>
+                </tr>
+            </table>
+
+            <p><strong>Проблемы:</strong></p>
+            <ul>
+                <li><strong>Грязное чтение:</strong> чтение незафиксированных данных</li>
+                <li><strong>Неповторяющееся чтение:</strong> разное чтение при повторном запросе</li>
+                <li><strong>Фантомное чтение:</strong> появление новых записей</li>
+            </ul>
+
+            <p><strong>Пример в SQL:</strong></p>
+            <pre>
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+BEGIN TRANSACTION;
+SELECT * FROM Users WHERE Id = 1;  -- Видит только зафиксированные данные
+COMMIT;</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>DELETE vs TRUNCATE — разница.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>DELETE</th>
+                    <th>TRUNCATE</th>
+                </tr>
+                <tr>
+                    <td>Скорость</td>
+                    <td>Медленно (построчно)</td>
+                    <td>Быстро (вся таблица)</td>
+                </tr>
+                <tr>
+                    <td>Логирование</td>
+                    <td>Построчное</td>
+                    <td>Минимальное</td>
+                </tr>
+                <tr>
+                    <td>WHERE</td>
+                    <td>✅ Можно</td>
+                    <td>❌ Нельзя</td>
+                </tr>
+                <tr>
+                    <td>Триггеры</td>
+                    <td>✅ Вызываются</td>
+                    <td>❌ Не вызываются</td>
+                </tr>
+                <tr>
+                    <td>Сброс Identity</td>
+                    <td>❌ Нет</td>
+                    <td>✅ Да</td>
+                </tr>
+                <tr>
+                    <td>Можно откатить</td>
+                    <td>✅ Да</td>
+                    <td>✅ Да</td>
+                </tr>
+                <tr>
+                    <td>Использование</td>
+                    <td>Удаление части данных</td>
+                    <td>Очистка всей таблицы</td>
+                </tr>
+            </table>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+-- DELETE — удаление части данных
+DELETE FROM Users WHERE Active = 0;
+
+-- DELETE с JOIN
+DELETE FROM Orders
+FROM Orders o
+INNER JOIN Users u ON o.UserId = u.Id
+WHERE u.Active = 0;
+
+-- TRUNCATE — очистка всей таблицы
+TRUNCATE TABLE Logs;</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>DELETE:</strong> удаление части данных, нужно WHERE</li>
+                <li><strong>TRUNCATE:</strong> быстрая очистка таблицы, сброс Identity</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Оконные функции: ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Оконные функции</strong> — выполняют вычисления по группе строк без GROUP BY.</p>
+
+            <p><strong>ROW_NUMBER — нумерация строк</strong></p>
+            <pre>
+SELECT 
+    Name,
+    Salary,
+    ROW_NUMBER() OVER (ORDER BY Salary DESC) as Rank
+FROM Employees;</pre>
+
+            <p><strong>RANK — с пропусками при связях</strong></p>
+            <pre>
+SELECT 
+    Name,
+    Salary,
+    RANK() OVER (ORDER BY Salary DESC) as Rank
+FROM Employees;
+-- 1, 2, 2, 4 (если два одинаковых — пропуск)</pre>
+
+            <p><strong>DENSE_RANK — без пропусков</strong></p>
+            <pre>
+SELECT 
+    Name,
+    Salary,
+    DENSE_RANK() OVER (ORDER BY Salary DESC) as Rank
+FROM Employees;
+-- 1, 2, 2, 3 (без пропусков)</pre>
+
+            <p><strong>LAG — предыдущее значение</strong></p>
+            <pre>
+SELECT 
+    Date,
+    Amount,
+    LAG(Amount, 1) OVER (ORDER BY Date) as PrevAmount,
+    Amount - LAG(Amount, 1) OVER (ORDER BY Date) as Diff
+FROM Sales;</pre>
+
+            <p><strong>LEAD — следующее значение</strong></p>
+            <pre>
+SELECT 
+    Date,
+    Amount,
+    LEAD(Amount, 1) OVER (ORDER BY Date) as NextAmount
+FROM Sales;</pre>
+
+            <p><strong>С PARTITION BY (группировка):</strong></p>
+            <pre>
+-- Ранги в каждой группе (по отделам)
+SELECT 
+    Name,
+    Department,
+    Salary,
+    ROW_NUMBER() OVER (PARTITION BY Department ORDER BY Salary DESC) as RankInDept
+FROM Employees;</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>CTE (Common Table Expression) — WITH ... AS.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>CTE</strong> — временный именованный результат запроса.</p>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Улучшает читаемость</li>
+                <li>Позволяет рекурсивные запросы</li>
+                <li>Можно использовать несколько раз</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+-- Простой CTE
+WITH UserOrders AS (
+    SELECT UserId, COUNT(*) as OrderCount
+    FROM Orders
+    GROUP BY UserId
+)
+SELECT u.Name, uo.OrderCount
+FROM Users u
+INNER JOIN UserOrders uo ON u.Id = uo.UserId;
+
+-- Рекурсивный CTE (иерархия)
+WITH EmployeeHierarchy AS (
+    -- Базовый случай (руководители)
+    SELECT Id, Name, ManagerId, 0 as Level
+    FROM Employees
+    WHERE ManagerId IS NULL
+    
+    UNION ALL
+    
+    -- Рекурсивный случай (подчинённые)
+    SELECT e.Id, e.Name, e.ManagerId, eh.Level + 1
+    FROM Employees e
+    INNER JOIN EmployeeHierarchy eh ON e.ManagerId = eh.Id
+)
+SELECT * FROM EmployeeHierarchy
+ORDER BY Level, Name;</pre>
+
+            <p><strong>Множественные CTE:</strong></p>
+            <pre>
+WITH
+ActiveUsers AS (
+    SELECT * FROM Users WHERE Active = 1
+),
+UserOrders AS (
+    SELECT au.Id, COUNT(o.Id) as OrderCount
+    FROM ActiveUsers au
+    LEFT JOIN Orders o ON au.Id = o.UserId
+    GROUP BY au.Id
+)
+SELECT * FROM UserOrders;</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>План выполнения запроса (Execution Plan) — как читать.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Execution Plan</strong> — стратегия выполнения SQL-запроса.</p>
+
+            <p><strong>Как получить:</strong></p>
+            <pre>
+-- В SQL Server
+SET SHOWPLAN_TEXT ON;  -- Текстовый план
+SET SHOWPLAN_XML ON;   -- XML план
+
+-- Через SSMS
+-- Включить "Include Actual Execution Plan" (Ctrl+M)
+
+-- В PostgreSQL
+EXPLAIN ANALYZE SELECT * FROM Users WHERE Id = 1;</pre>
+
+            <p><strong>Основные операции (читаем справа налево, снизу вверх):</strong></p>
+            <ul>
+                <li><strong>Table Scan:</strong> чтение всей таблицы (плохо для больших таблиц)</li>
+                <li><strong>Clustered Index Scan:</strong> чтение кластеризованного индекса</li>
+                <li><strong>Index Seek:</strong> поиск по индексу (быстро)</li>
+                <li><strong>Key Lookup:</strong> поиск по ключу (медленно)</li>
+                <li><strong>Join:</strong> соединение таблиц</li>
+                <li><strong>Hash Match:</strong> соединение через хэш-таблицу</li>
+                <li><strong>Nested Loops:</strong> соединение через вложенные циклы</li>
+            </ul>
+
+            <p><strong>На что обращать внимание:</strong></p>
+            <ul>
+                <li><strong>Cost (стоимость):</strong> процент от общего времени</li>
+                <li><strong>Rows (строки):</strong> ожидаемое vs фактическое количество</li>
+                <li><strong>Warnings (предупреждения):</strong> отсутствующие индексы</li>
+                <li><strong>Index Scans:</strong> вместо Seeks (медленно)</li>
+                <li><strong>Key Lookups:</strong> дополнительные запросы</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Оптимизация запросов: WHERE по индексированным полям, избегать SELECT *.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Советы по оптимизации:</strong></p>
+
+            <p><strong>1. Используйте индексы в WHERE</strong></p>
+            <pre>
+-- ❌ Плохо (без индекса на Email)
+SELECT * FROM Users WHERE Email = 'test@example.com';
+
+-- ✅ Хорошо (индекс на Email)
+CREATE INDEX IX_Users_Email ON Users(Email);</pre>
+
+            <p><strong>2. Избегайте SELECT * (указывайте только нужные поля)</strong></p>
+            <pre>
+-- ❌ Плохо — все поля
+SELECT * FROM Users WHERE Id = 1;
+
+-- ✅ Хорошо — только нужные
+SELECT Id, Name, Email FROM Users WHERE Id = 1;</pre>
+
+            <p><strong>3. Используйте индексы для сортировки</strong></p>
+            <pre>
+-- Индекс на OrderDate ускорит сортировку
+SELECT * FROM Orders
+ORDER BY OrderDate DESC;</pre>
+
+            <p><strong>4. Избегайте функций в WHERE</strong></p>
+            <pre>
+-- ❌ Плохо (индекс не используется)
+SELECT * FROM Users WHERE YEAR(CreatedDate) = 2023;
+
+-- ✅ Хорошо (используется индекс)
+SELECT * FROM Users 
+WHERE CreatedDate >= '2023-01-01' AND CreatedDate < '2024-01-01';</pre>
+
+            <p><strong>5. Используйте EXISTS вместо COUNT для проверки наличия</strong></p>
+            <pre>
+-- ❌ Плохо
+IF (SELECT COUNT(*) FROM Users WHERE Active = 1) > 0
+
+-- ✅ Хорошо
+IF EXISTS (SELECT 1 FROM Users WHERE Active = 1)</pre>
+
+            <p><strong>6. Используйте TOP/LIMIT для больших результатов</strong></p>
+            <pre>
+-- SQL Server
+SELECT TOP 100 * FROM Users ORDER BY CreatedDate;
+
+-- PostgreSQL
+SELECT * FROM Users ORDER BY CreatedDate LIMIT 100;</pre>
+        </div>
+    </details>
+</section>

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 11-18 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 16 ===================== -->
+<section class="section c16">
+    <h2>🧮 16. Алгоритмы. Структуры данных <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Big O нотация — что это, примеры.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Big O</strong> — нотация для оценки сложности алгоритмов.</p>
+
+            <table>
+                <tr>
+                    <th>Обозначение</th>
+                    <th>Название</th>
+                    <th>Пример</th>
+                </tr>
+                <tr>
+                    <td>O(1)</td>
+                    <td>Константная</td>
+                    <td>Доступ по индексу в массиве</td>
+                </tr>
+                <tr>
+                    <td>O(log n)</td>
+                    <td>Логарифмическая</td>
+                    <td>Бинарный поиск, B-Tree</td>
+                </tr>
+                <tr>
+                    <td>O(n)</td>
+                    <td>Линейная</td>
+                    <td>Проход по массиву</td>
+                </tr>
+                <tr>
+                    <td>O(n log n)</td>
+                    <td>Линейно-логарифмическая</td>
+                    <td>Быстрая сортировка, слиянием</td>
+                </tr>
+                <tr>
+                    <td>O(n²)</td>
+                    <td>Квадратичная</td>
+                    <td>Пузырьковая сортировка</td>
+                </tr>
+                <tr>
+                    <td>O(2ⁿ)</td>
+                    <td>Экспоненциальная</td>
+                    <td>Факториал, перебор</td>
+                </tr>
+            </table>
+
+            <p><strong>Сложность коллекций .NET:</strong></p>
+            <ul>
+                <li><code>Dictionary</code> — O(1) (средняя)</li>
+                <li><code>List.Add</code> — O(1) амортизированно</li>
+                <li><code>List.Insert</code> — O(n)</li>
+                <li><code>Array</code> — O(1) по индексу</li>
+                <li><code>LinkedList</code> — O(1) вставка, O(n) поиск</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Бинарный поиск — суть, сложность, реализация.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Бинарный поиск</strong> — поиск в отсортированном массиве.</p>
+
+            <p><strong>Сложность:</strong> O(log n)</p>
+
+            <p><strong>Алгоритм:</strong></p>
+            <ol>
+                <li>Найти средний элемент</li>
+                <li>Если искомый < средний → искать слева</li>
+                <li>Если искомый > средний → искать справа</li>
+                <li>Повторять пока не найден</li>
+            </ol>
+
+            <p><strong>Реализация:</strong></p>
+            <pre>
+public int BinarySearch(int[] arr, int target)
+{
+    int left = 0;
+    int right = arr.Length - 1;
+    
+    while (left <= right)
+    {
+        int mid = left + (right - left) / 2;  // Избегаем переполнения
+        
+        if (arr[mid] == target)
+            return mid;
+        else if (arr[mid] < target)
+            left = mid + 1;
+        else
+            right = mid - 1;
+    }
+    
+    return -1;  // Не найден
+}
+
+// Рекурсивная версия
+public int BinarySearchRecursive(int[] arr, int target, int left, int right)
+{
+    if (left > right) return -1;
+    
+    int mid = left + (right - left) / 2;
+    
+    if (arr[mid] == target) return mid;
+    if (arr[mid] < target) return BinarySearchRecursive(arr, target, mid + 1, right);
+    return BinarySearchRecursive(arr, target, left, mid - 1);
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Хэш-таблица — внутреннее устройство, сложность.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Хэш-таблица</strong> — структура данных для быстрого поиска по ключу.</p>
+
+            <p><strong>Внутреннее устройство:</strong></p>
+            <ul>
+                <li>Массив <strong>buckets</strong> (корзин)</li>
+                <li><strong>Хэш-функция</strong> преобразует ключ в индекс корзины</li>
+                <li>Коллизии разрешаются цепочками (linked list)</li>
+                <li>При переполнении размер увеличивается (rehashing)</li>
+            </ul>
+
+            <p><strong>Сложность:</strong></p>
+            <ul>
+                <li>Поиск, вставка, удаление: O(1) в среднем</li>
+                <li>Худший случай (коллизии): O(n)</li>
+            </ul>
+
+            <p><strong>Пример в C#:</strong></p>
+            <pre>
+// Dictionary — хэш-таблица
+var dict = new Dictionary&lt;string, int&gt;();
+dict.Add("key1", 42);
+dict.Add("key2", 100);
+
+// Внутреннее устройство (упрощённо)
+class HashTable&lt;K, V&gt;
+{
+    private struct Entry { K key; V value; int next; }
+    private Entry[] _entries;
+    private int[] _buckets;
+    
+    int GetBucket(K key) => key.GetHashCode() % _buckets.Length;
+    
+    void Add(K key, V value)
+    {
+        int bucket = GetBucket(key);
+        // Проверка существования, добавление в цепочку
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Коллизии хэшей — что это, методы разрешения.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Коллизия</strong> — когда разные ключи дают одинаковый хэш-код.</p>
+
+            <p><strong>Методы разрешения:</strong></p>
+
+            <p><strong>1. Цепочки (Chaining) — используется в .NET</strong></p>
+            <ul>
+                <li>Каждая корзина содержит <strong>список</strong> элементов</li>
+                <li>При коллизии элемент добавляется в список</li>
+                <li>Поиск — проход по списку (O(n) в худшем)</li>
+            </ul>
+
+            <p><strong>2. Открытая адресация (Open Addressing)</strong></p>
+            <ul>
+                <li>При коллизии ищем <strong>свободную</strong> корзину</li>
+                <li>Линейное, квадратичное или двойное хэширование</li>
+                <li>Удаление сложнее (нужны маркеры)</li>
+            </ul>
+
+            <p><strong>Как уменьшить коллизии:</strong></p>
+            <ul>
+                <li>Хорошая хэш-функция (равномерное распределение)</li>
+                <li>Большой размер таблицы (load factor)</li>
+                <li>Перехеширование при переполнении</li>
+                <li>В .NET load factor = 0.72 (при 72% заполнения — увеличение)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Рекурсия — что это, опасности (StackOverflow), хвостовая рекурсия.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Рекурсия</strong> — функция, которая вызывает саму себя.</p>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Факториал рекурсивно
+int Factorial(int n)
+{
+    if (n <= 1) return 1;  // Базовый случай
+    return n * Factorial(n - 1);  // Рекурсивный случай
+}</pre>
+
+            <p><strong>Опасности:</strong></p>
+            <ul>
+                <li><strong>StackOverflowException</strong> — при глубокой рекурсии</li>
+                <li>Каждый вызов занимает стек (1 МБ)</li>
+                <li>Бесконечная рекурсия → падение</li>
+            </ul>
+
+            <p><strong>Хвостовая рекурсия (Tail Recursion):</strong></p>
+            <ul>
+                <li>Рекурсивный вызов — последняя операция</li>
+                <li>Компилятор <strong>может</strong> оптимизировать (не всегда)</li>
+                <li>В C# — только в .NET Framework (не в .NET Core)</li>
+            </ul>
+            <pre>
+// Хвостовая рекурсия
+int FactorialTail(int n, int acc = 1)
+{
+    if (n <= 1) return acc;
+    return FactorialTail(n - 1, n * acc);  // Последняя операция — вызов
+}</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Деревья, графы (обход)</li>
+                <li>Разделяй и властвуй (быстрая сортировка)</li>
+                <li>Когда глубина не превышает 100-1000</li>
+            </ul>
+            <p><strong>Альтернативы:</strong> итерация, стек, очередь.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Стек и Очередь — структуры, где применяются.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Стек (Stack) — LIFO (Last In, First Out)</strong></p>
+            <ul>
+                <li>Последний добавленный — первый извлечённый</li>
+                <li>Операции: <code>Push</code>, <code>Pop</code>, <code>Peek</code></li>
+                <li>Применение: Undo/Redo, парсинг (скобки), DFS, вызовы функций</li>
+            </ul>
+            <pre>
+var stack = new Stack&lt;string&gt;();
+stack.Push("Первый");
+stack.Push("Второй");
+Console.WriteLine(stack.Pop());  // "Второй"</pre>
+
+            <p><strong>Очередь (Queue) — FIFO (First In, First Out)</strong></p>
+            <ul>
+                <li>Первый добавленный — первый извлечённый</li>
+                <li>Операции: <code>Enqueue</code>, <code>Dequeue</code>, <code>Peek</code></li>
+                <li>Применение: обработка задач, BFS, буферы, сообщения</li>
+            </ul>
+            <pre>
+var queue = new Queue&lt;string&gt;();
+queue.Enqueue("Первый");
+queue.Enqueue("Второй");
+Console.WriteLine(queue.Dequeue());  // "Первый"</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Односвязный vs Двусвязный список — разница.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Односвязный список (Singly Linked List):</strong></p>
+            <ul>
+                <li>Каждый узел хранит данные + ссылку на <strong>следующий</strong> узел</li>
+                <li>Память: меньше (одна ссылка)</li>
+                <li>Обход: только вперёд</li>
+                <li>Удаление: нужно знать предыдущий узел</li>
+            </ul>
+
+            <p><strong>Двусвязный список (Doubly Linked List):</strong></p>
+            <ul>
+                <li>Каждый узел хранит данные + ссылки на <strong>следующий</strong> и <strong>предыдущий</strong> узлы</li>
+                <li>Память: больше (две ссылки)</li>
+                <li>Обход: вперёд и назад</li>
+                <li>Удаление: проще (есть ссылка на предыдущий)</li>
+            </ul>
+
+            <p><strong>В .NET:</strong></p>
+            <ul>
+                <li><code>LinkedList&lt;T&gt;</code> — двусвязный список</li>
+                <li>Вставка/удаление в середине — O(1)</li>
+                <li>Доступ по индексу — O(n)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Деревья: бинарное дерево, AVL, красно-чёрное — базово.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Бинарное дерево:</strong></p>
+            <ul>
+                <li>Каждый узел имеет до 2 детей (левый, правый)</li>
+                <li>Сложность поиска: O(log n) в среднем, O(n) в худшем</li>
+            </ul>
+
+            <p><strong>AVL-дерево (сбалансированное):</strong></p>
+            <ul>
+                <li>Баланс: разница высоты поддеревьев ≤ 1</li>
+                <li>Сложность: O(log n) всегда</li>
+                <li>Медленнее вставка/удаление (балансировка)</li>
+            </ul>
+
+            <p><strong>Красно-чёрное дерево (Red-Black Tree):</strong></p>
+            <ul>
+                <li>Сбалансированное дерево с цветами узлов (красный/чёрный)</li>
+                <li>Используется в .NET: <code>SortedDictionary</code>, <code>SortedSet</code></li>
+                <li>Сложность: O(log n)</li>
+                <li>Быстрее вставка/удаление чем AVL</li>
+            </ul>
+
+            <p><strong>Применение в .NET:</strong></p>
+            <ul>
+                <li><code>Dictionary</code> — хэш-таблица (не дерево)</li>
+                <li><code>SortedDictionary</code> — красно-чёрное дерево</li>
+                <li><code>SortedSet</code> — красно-чёрное дерево</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Графы — обход в ширину (BFS) и в глубину (DFS) — суть.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Граф</strong> — структура с вершинами (nodes) и рёбрами (edges).</p>
+
+            <p><strong>BFS (Breadth-First Search) — обход в ширину</strong></p>
+            <ul>
+                <li>Использует <strong>очередь</strong> (Queue)</li>
+                <li>Сначала посещает все соседние вершины</li>
+                <li>Находит кратчайший путь (в невзвешенном графе)</li>
+                <li>Применение: поиск кратчайшего пути, социальные сети</li>
+            </ul>
+            <pre>
+void BFS(Graph graph, Node start)
+{
+    var visited = new HashSet&lt;Node&gt;();
+    var queue = new Queue&lt;Node&gt;();
+    queue.Enqueue(start);
+    visited.Add(start);
+    
+    while (queue.Count > 0)
+    {
+        var node = queue.Dequeue();
+        Console.WriteLine(node.Value);
+        
+        foreach (var neighbor in node.Neighbors)
+        {
+            if (!visited.Contains(neighbor))
+            {
+                visited.Add(neighbor);
+                queue.Enqueue(neighbor);
+            }
+        }
+    }
+}</pre>
+
+            <p><strong>DFS (Depth-First Search) — обход в глубину</strong></p>
+            <ul>
+                <li>Использует <strong>стек</strong> (Stack) или рекурсию</li>
+                <li>Идёт как можно глубже, затем возвращается</li>
+                <li>Применение: поиск пути, топологическая сортировка, игры</li>
+            </ul>
+            <pre>
+void DFS(Graph graph, Node start)
+{
+    var visited = new HashSet&lt;Node&gt;();
+    var stack = new Stack&lt;Node&gt;();
+    stack.Push(start);
+    
+    while (stack.Count > 0)
+    {
+        var node = stack.Pop();
+        if (visited.Contains(node)) continue;
+        visited.Add(node);
+        Console.WriteLine(node.Value);
+        
+        foreach (var neighbor in node.Neighbors)
+        {
+            if (!visited.Contains(neighbor))
+                stack.Push(neighbor);
+        }
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Сортировки: быстрая (QuickSort), слиянием (MergeSort).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>QuickSort (Быстрая сортировка):</strong></p>
+            <ul>
+                <li>Сложность: O(n log n) в среднем, O(n²) в худшем</li>
+                <li>Разделяй и властвуй</li>
+                <li>Выбирает опорный элемент (pivot)</li>
+                <li>Разбивает на меньшие и большие</li>
+                <li>Рекурсивно сортирует части</li>
+                <li>Используется в .NET: <code>Array.Sort</code>, <code>List.Sort</code></li>
+            </ul>
+            <pre>
+void QuickSort(int[] arr, int left, int right)
+{
+    if (left >= right) return;
+    int pivot = Partition(arr, left, right);
+    QuickSort(arr, left, pivot - 1);
+    QuickSort(arr, pivot + 1, right);
+}
+
+int Partition(int[] arr, int left, int right)
+{
+    int pivot = arr[right];
+    int i = left - 1;
+    for (int j = left; j < right; j++)
+    {
+        if (arr[j] <= pivot)
+        {
+            i++;
+            (arr[i], arr[j]) = (arr[j], arr[i]);
+        }
+    }
+    (arr[i + 1], arr[right]) = (arr[right], arr[i + 1]);
+    return i + 1;
+}</pre>
+
+            <p><strong>MergeSort (Сортировка слиянием):</strong></p>
+            <ul>
+                <li>Сложность: O(n log n) всегда</li>
+                <li>Разделяй и властвуй</li>
+                <li>Делит массив пополам</li>
+                <li>Рекурсивно сортирует половинки</li>
+                <li>Сливает отсортированные половинки</li>
+                <li>Стабильная сортировка</li>
+                <li>Требует дополнительной памяти O(n)</li>
+            </ul>
+            <pre>
+int[] MergeSort(int[] arr)
+{
+    if (arr.Length <= 1) return arr;
+    int mid = arr.Length / 2;
+    var left = MergeSort(arr[0..mid]);
+    var right = MergeSort(arr[mid..]);
+    return Merge(left, right);
+}
+
+int[] Merge(int[] left, int[] right)
+{
+    var result = new int[left.Length + right.Length];
+    int i = 0, j = 0, k = 0;
+    while (i < left.Length && j < right.Length)
+        result[k++] = left[i] <= right[j] ? left[i++] : right[j++];
+    while (i < left.Length) result[k++] = left[i++];
+    while (j < right.Length) result[k++] = right[j++];
+    return result;
+}</pre>
+        </div>
+    </details>
+</section>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 11-18 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 11 ===================== -->
+<section class="section c11">
+    <h2>🔗 11. ORM: Entity Framework Core и Dapper <span class="badge red">100%</span></h2>
+
+    <details>
+        <summary>Entity Framework Core — Code First vs Database First.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Code First:</strong></p>
+            <ul>
+                <li>Сначала пишутся <strong>классы C#</strong></li>
+                <li>БД создаётся <strong>автоматически</strong> из моделей</li>
+                <li>Миграции для обновления схемы</li>
+                <li>Полный контроль над кодом</li>
+                <li>Подходит для новых проектов</li>
+            </ul>
+            <pre>
+// Модель
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+// DbContext
+public class AppDbContext : DbContext
+{
+    public DbSet&lt;User&gt; Users { get; set; }
+}
+
+// Миграции
+dotnet ef migrations add InitialCreate
+dotnet ef database update</pre>
+
+            <p><strong>Database First:</strong></p>
+            <ul>
+                <li>Сначала создаётся <strong>БД</strong></li>
+                <li>Генерируются <strong>классы</strong> из существующей БД</li>
+                <li>Подходит для существующих БД</li>
+                <li>Меньше контроля над кодом</li>
+            </ul>
+            <pre>
+// Scaffold из существующей БД
+dotnet ef dbcontext scaffold "ConnectionString" Microsoft.EntityFrameworkCore.SqlServer
+    -o Models
+    -f</pre>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Code First</th>
+                    <th>Database First</th>
+                </tr>
+                <tr>
+                    <td>Начало</td>
+                    <td>Код → БД</td>
+                    <td>БД → Код</td>
+                </tr>
+                <tr>
+                    <td>Контроль</td>
+                    <td>Полный (код)</td>
+                    <td>Ограниченный (БД)</td>
+                </tr>
+                <tr>
+                    <td>Миграции</td>
+                    <td>Автоматические</td>
+                    <td>Ручные (или генерируются)</td>
+                </tr>
+                <tr>
+                    <td>Подходит для</td>
+                    <td>Новые проекты</td>
+                    <td>Существующие БД</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Миграции (Migrations) — Add-Migration, Update-Database.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Миграции</strong> — управление изменениями схемы БД.</p>
+
+            <p><strong>Команды:</strong></p>
+            <pre>
+// Создать миграцию
+dotnet ef migrations add AddUserTable
+
+// Обновить БД
+dotnet ef database update
+
+// Откатить к предыдущей миграции
+dotnet ef database update PreviousMigrationName
+
+// Удалить последнюю миграцию
+dotnet ef migrations remove
+
+// Сгенерировать SQL-скрипт
+dotnet ef migrations script</pre>
+
+            <p><strong>Пример миграции:</strong></p>
+            <pre>
+public partial class AddUserTable : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.CreateTable(
+            name: "Users",
+            columns: table => new
+            {
+                Id = table.Column&lt;int&gt;(nullable: false)
+                    .Annotation("SqlServer:Identity", "1, 1"),
+                Name = table.Column&lt;string&gt;(nullable: false),
+                Email = table.Column&lt;string&gt;(nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_Users", x => x.Id);
+            });
+    }
+    
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropTable(name: "Users");
+    }
+}</pre>
+
+            <p><strong>В продакшене:</strong></p>
+            <ul>
+                <li>Никогда не применяйте миграции автоматически</li>
+                <li>Генерируйте SQL-скрипты и применяйте вручную</li>
+                <li>Используйте <code>EnsureCreated()</code> только для тестов</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>AsNoTracking() — когда использовать (только чтение).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><code>AsNoTracking()</code> — отключает отслеживание изменений для запроса.</p>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>Только чтение</strong> (отображение данных)</li>
+                <li>Отчёты и аналитика</li>
+                <li>API для получения данных</li>
+                <li>Высоконагруженные запросы</li>
+                <li>Объекты, которые не будут изменяться</li>
+            </ul>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Выше производительность (меньше накладных расходов)</li>
+                <li>Меньше потребление памяти</li>
+                <li>Быстрее выполнение запросов</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// ❌ Без AsNoTracking — отслеживание (медленнее)
+var users = context.Users.ToList();
+
+// ✅ С AsNoTracking — только чтение (быстрее)
+var users = context.Users
+    .AsNoTracking()
+    .ToList();
+
+// AsNoTrackingWithIdentityResolution (EF Core 5+)
+// Убирает дубликаты при связях
+var orders = context.Orders
+    .Include(o => o.User)
+    .AsNoTrackingWithIdentityResolution()
+    .ToList();</pre>
+
+            <p><strong>Когда НЕ использовать:</strong></p>
+            <ul>
+                <li>Данные будут изменяться и сохраняться</li>
+                <li>Нужен ChangeTracker для обновлений</li>
+                <li>Каскадные обновления</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Include() / ThenInclude() — Eager Loading.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Eager Loading</strong> — загрузка связанных данных в одном запросе.</p>
+
+            <p><strong>Include()</strong> — загрузка навигационного свойства (один уровень).</p>
+            <pre>
+// Загружаем пользователей с их заказами
+var users = context.Users
+    .Include(u => u.Orders)
+    .ToList();
+
+// Загружаем заказы с пользователями
+var orders = context.Orders
+    .Include(o => o.User)
+    .ToList();</pre>
+
+            <p><strong>ThenInclude()</strong> — загрузка вложенных свойств (несколько уровней).</p>
+            <pre>
+// Загружаем пользователей → заказы → товары в заказе
+var users = context.Users
+    .Include(u => u.Orders)
+        .ThenInclude(o => o.Items)
+            .ThenInclude(i => i.Product)
+    .ToList();
+
+// Альтернативный синтаксис
+var users2 = context.Users
+    .Include("Orders.Items.Product")
+    .ToList();</pre>
+
+            <p><strong>Сравнение подходов:</strong></p>
+            <table>
+                <tr>
+                    <th>Подход</th>
+                    <th>Запросов к БД</th>
+                    <th>Когда использовать</th>
+                </tr>
+                <tr>
+                    <td>Eager (Include)</td>
+                    <td>1-2 запроса</td>
+                    <td>Данные нужны сразу</td>
+                </tr>
+                <tr>
+                    <td>Lazy (по умолчанию)</td>
+                    <td>1 + N запросов</td>
+                    <td>Редко используемые связи</td>
+                </tr>
+                <tr>
+                    <td>Explicit (Load)</td>
+                    <td>По запросу</td>
+                    <td>Тонкий контроль</td>
+                </tr>
+            </table>
+
+            <p><strong>Внимание:</strong> чрезмерное использование Include() может привести к большим запросам (N+1 проблема).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Lazy Loading — прокси, когда опасно (N+1 проблема).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Lazy Loading</strong> — загрузка связанных данных только при обращении к ним.</p>
+
+            <p><strong>Настройка:</strong></p>
+            <pre>
+// Включение Lazy Loading
+builder.Services.AddDbContext&lt;AppDbContext&gt;(options =>
+    options.UseLazyLoadingProxies()
+           .UseSqlServer(connectionString));
+
+// Модель с виртуальными свойствами
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    
+    public virtual ICollection&lt;Order&gt; Orders { get; set; }
+}</pre>
+
+            <p><strong>N+1 проблема:</strong></p>
+            <pre>
+// ❌ Lazy Loading — N+1 запросов
+var users = context.Users.ToList();  // 1 запрос
+foreach (var user in users)
+{
+    // Каждый раз новый запрос (N запросов)
+    foreach (var order in user.Orders)
+    {
+        Console.WriteLine(order.Total);
+    }
+}
+// Итого: 1 + N запросов (медленно)
+
+// ✅ Eager Loading — 1 запрос
+var users = context.Users
+    .Include(u => u.Orders)
+    .ToList();
+foreach (var user in users)
+{
+    foreach (var order in user.Orders)
+    {
+        Console.WriteLine(order.Total);
+    }
+}
+// Итого: 1 запрос (быстро)</pre>
+
+            <p><strong>Когда опасно:</strong></p>
+            <ul>
+                <li>В циклах с большим количеством записей</li>
+                <li>В высоконагруженных API</li>
+                <li>При сериализации (JSON) — может загрузить всю БД</li>
+                <li>Когда не знаете о существовании Lazy Loading</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>IQueryable vs IEnumerable в EF — критично.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>IQueryable — выполнение в БД</strong></p>
+            <ul>
+                <li>Строит SQL-запрос</li>
+                <li>Фильтрация на стороне сервера</li>
+                <li>Используйте для фильтрации</li>
+            </ul>
+            <pre>
+// ✅ IQueryable — фильтрация в БД
+IQueryable&lt;User&gt; query = context.Users;
+var users = query
+    .Where(u => u.Age > 18)
+    .OrderBy(u => u.Name)
+    .Take(10)
+    .ToList();
+// SQL: SELECT * FROM Users WHERE Age > 18 ORDER BY Name OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY</pre>
+
+            <p><strong>IEnumerable — выполнение в памяти</strong></p>
+            <ul>
+                <li>Все данные загружаются в память</li>
+                <li>Фильтрация на клиенте</li>
+                <li>Используйте только после ToList()</li>
+            </ul>
+            <pre>
+// ❌ IEnumerable — все данные в память
+IEnumerable&lt;User&gt; users = context.Users;
+var result = users
+    .Where(u => u.Age > 18)
+    .OrderBy(u => u.Name)
+    .Take(10)
+    .ToList();
+// SQL: SELECT * FROM Users (все записи!)
+// Фильтрация, сортировка в .NET</pre>
+
+            <p><strong>Правила:</strong></p>
+            <ul>
+                <li>Всегда используйте <code>IQueryable</code> для фильтрации в БД</li>
+                <li>Превращайте в <code>IEnumerable</code> только после <code>ToList()</code></li>
+                <li>Никогда не вызывайте <code>ToList()</code> до <code>Where()</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Транзакции в EF — BeginTransaction, SaveChanges.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Транзакции</strong> — гарантируют атомарность операций.</p>
+
+            <p><strong>1. Автоматическая транзакция (SaveChanges)</strong></p>
+            <pre>
+// Одна транзакция
+context.Users.Add(new User { Name = "Alice" });
+context.Orders.Add(new Order { UserId = 1, Total = 100 });
+await context.SaveChangesAsync();  // Всё или ничего</pre>
+
+            <p><strong>2. Явная транзакция (BeginTransaction)</strong></p>
+            <pre>
+using var transaction = await context.Database.BeginTransactionAsync();
+try
+{
+    context.Users.Add(new User { Name = "Alice" });
+    await context.SaveChangesAsync();
+    
+    context.Orders.Add(new Order { UserId = 1, Total = 100 });
+    await context.SaveChangesAsync();
+    
+    await transaction.CommitAsync();  // Подтверждаем
+}
+catch
+{
+    await transaction.RollbackAsync();  // Откатываем
+    throw;
+}</pre>
+
+            <p><strong>3. Транзакция с сохранением точек</strong></p>
+            <pre>
+using var transaction = await context.Database.BeginTransactionAsync();
+await transaction.CreateSavepointAsync("BeforeData");
+
+try
+{
+    // Действия
+    await context.SaveChangesAsync();
+}
+catch
+{
+    // Откат к точке
+    await transaction.RollbackToSavepointAsync("BeforeData");
+}</pre>
+
+            <p><strong>4. Распределённые транзакции (несколько БД)</strong></p>
+            <pre>
+using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+try
+{
+    await context1.SaveChangesAsync();
+    await context2.SaveChangesAsync();
+    scope.Complete();  // Две БД в одной транзакции
+}
+catch
+{
+    // Автоматический откат
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Dapper — микро-ORM, когда использовать.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Dapper</strong> — лёгкая ORM от Stack Overflow.</p>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Максимальная производительность (близко к ADO.NET)</li>
+                <li>Маленький размер (без тяжеловесных функций)</li>
+                <li>Полный контроль над SQL</li>
+                <li>Поддержка raw SQL, хранимых процедур</li>
+                <li>Без сложных конфигураций</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// Подключение
+using var connection = new SqlConnection(connectionString);
+
+// Простой запрос
+var users = connection.Query&lt;User&gt;("SELECT * FROM Users WHERE Active = 1").ToList();
+
+// Параметризованный запрос
+var user = connection.QueryFirstOrDefault&lt;User&gt;(
+    "SELECT * FROM Users WHERE Id = @Id",
+    new { Id = 5 }
+);
+
+// Сложный запрос
+var orders = connection.Query&lt;Order, User, Order&gt;(
+    @"SELECT o.*, u.* 
+      FROM Orders o
+      INNER JOIN Users u ON o.UserId = u.Id
+      WHERE o.Total > @MinTotal",
+    (order, user) =>
+    {
+        order.User = user;
+        return order;
+    },
+    new { MinTotal = 1000 }
+).ToList();
+
+// Хранимая процедура
+var result = connection.Query&lt;User&gt;(
+    "sp_GetUsers",
+    new { Active = true },
+    commandType: CommandType.StoredProcedure
+);</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>Dapper:</strong> производительность критична, сложные запросы, микросервисы</li>
+                <li><strong>EF Core:</strong> сложные связи, удобство разработки, CRUD-приложения</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>EF vs Dapper — производительность, удобство, когда что выбирать.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Entity Framework Core</th>
+                    <th>Dapper</th>
+                </tr>
+                <tr>
+                    <td>Производительность</td>
+                    <td>Медленнее (обёртка)</td>
+                    <td>Быстрее (почти как ADO.NET)</td>
+                </tr>
+                <tr>
+                    <td>Удобство</td>
+                    <td>Высокое (LINQ, миграции)</td>
+                    <td>Низкое (ручной SQL)</td>
+                </tr>
+                <tr>
+                    <td>Сложные запросы</td>
+                    <td>Ограниченные (LINQ)</td>
+                    <td>Полный контроль (SQL)</td>
+                </tr>
+                <tr>
+                    <td>Миграции</td>
+                    <td>Автоматические</td>
+                    <td>Нет (ручные)</td>
+                </tr>
+                <tr>
+                    <td>Отслеживание изменений</td>
+                    <td>Да (ChangeTracker)</td>
+                    <td>Нет</td>
+                </tr>
+                <tr>
+                    <td>Связи (Include)</td>
+                    <td>Автоматические</td>
+                    <td>Ручные (JOIN)</td>
+                </tr>
+                <tr>
+                    <td>Размер</td>
+                    <td>Тяжёлый</td>
+                    <td>Лёгкий</td>
+                </tr>
+                <tr>
+                    <td>Где использовать</td>
+                    <td>CRUD, бизнес-приложения</td>
+                    <td>Отчёты, микросервисы, производительность</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда выбрать EF Core:</strong></p>
+            <ul>
+                <li>Новый проект с типовыми CRUD-операциями</li>
+                <li>Сложная бизнес-логика с множеством связей</li>
+                <li>Команда не знает SQL на высоком уровне</li>
+                <li>Нужны миграции и отслеживание изменений</li>
+            </ul>
+
+            <p><strong>Когда выбрать Dapper:</strong></p>
+            <ul>
+                <li>Высокая производительность критична</li>
+                <li>Сложные запросы с оптимизациями</li>
+                <li>Микросервисная архитектура</li>
+                <li>Команда хорошо знает SQL</li>
+                <li>Работа с существующей БД</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Query Tracking — отслеживание изменений, когда отключать.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Change Tracking</strong> — отслеживание изменений объектов для SaveChanges.</p>
+
+            <p><strong>По умолчанию:</strong> включено (объекты отслеживаются).</p>
+            <pre>
+// Отслеживание включено
+var user = context.Users.Find(1);
+user.Name = "New Name";
+context.SaveChanges();  // UPDATE в БД</pre>
+
+            <p><strong>Отключение отслеживания:</strong></p>
+            <pre>
+// 1. AsNoTracking() для конкретного запроса
+var users = context.Users.AsNoTracking().ToList();
+
+// 2. AsNoTrackingWithIdentityResolution() (EF Core 5+)
+var users = context.Users
+    .AsNoTrackingWithIdentityResolution()
+    .ToList();
+
+// 3. Глобальное отключение
+context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+var users = context.Users.ToList();  // Без отслеживания</pre>
+
+            <p><strong>Когда отключать:</strong></p>
+            <ul>
+                <li>Только чтение (API, отчёты)</li>
+                <li>Большие объёмы данных</li>
+                <li>Высоконагруженные запросы</li>
+                <li>Объекты, которые не будут изменяться</li>
+            </ul>
+
+            <p><strong>Когда включено:</strong></p>
+            <ul>
+                <li>Данные будут изменяться</li>
+                <li>Нужны каскадные обновления</li>
+                <li>Работа с связями (загрузка связанных данных)</li>
+            </ul>
+
+            <p><strong>Производительность:</strong></p>
+            <ul>
+                <li>Отслеживание создаёт накладные расходы</li>
+                <li>Для 1000+ записей — заметная разница</li>
+                <li>Всегда отключайте для больших выборок</li>
+            </ul>
+        </div>
+    </details>
+</section>

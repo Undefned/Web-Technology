@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 11-18 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 14 ===================== -->
+<section class="section c14">
+    <h2>🐳 14. Docker. CI/CD. Брокеры <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Docker — что это, зачем нужен.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Docker</strong> — платформа для контейнеризации приложений.</p>
+
+            <p><strong>Что такое контейнер:</strong></p>
+            <ul>
+                <li>Изолированная среда выполнения</li>
+                <li>Включает приложение + зависимости</li>
+                <li>Легче виртуальной машины</li>
+                <li>Один образ — везде работает одинаково</li>
+            </ul>
+
+            <p><strong>Основные понятия:</strong></p>
+            <ul>
+                <li><strong>Image (Образ):</strong> шаблон для контейнера</li>
+                <li><strong>Container:</strong> запущенный экземпляр образа</li>
+                <li><strong>Dockerfile:</strong> инструкции для сборки образа</li>
+                <li><strong>Registry:</strong> хранилище образов (Docker Hub)</li>
+            </ul>
+
+            <p><strong>Зачем нужен:</strong></p>
+            <ul>
+                <li><strong>Одинаковое окружение</strong> (разработка → продакшен)</li>
+                <li><strong>Изоляция</strong> (приложения не мешают друг другу)</li>
+                <li><strong>Масштабирование</strong> (запуск нескольких контейнеров)</li>
+                <li><strong>CI/CD</strong> (автоматизация деплоя)</li>
+            </ul>
+
+            <p><strong>Пример Dockerfile:</strong></p>
+            <pre>
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
+COPY *.csproj .
+RUN dotnet restore
+COPY . .
+RUN dotnet publish -c Release -o out
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/out .
+ENTRYPOINT ["dotnet", "MyApp.dll"]</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Образ (Image) vs Контейнер (Container) — разница.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Образ (Image):</strong></p>
+            <ul>
+                <li><strong>Шаблон</strong> для создания контейнеров</li>
+                <li><strong>Статический</strong> (неизменяемый)</li>
+                <li>Хранится в реестре</li>
+                <li>Содержит слои (layers)</li>
+                <li>Пример: <code>myapp:1.0</code></li>
+            </ul>
+
+            <p><strong>Контейнер (Container):</strong></p>
+            <ul>
+                <li><strong>Экземпляр</strong> образа</li>
+                <li><strong>Динамический</strong> (можно изменять)</li>
+                <li>Запускается на сервере</li>
+                <li>Имеет своё состояние</li>
+                <li>Пример: запущенный контейнер из образа <code>myapp:1.0</code></li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Image (Образ)</th>
+                    <th>Container (Контейнер)</th>
+                </tr>
+                <tr>
+                    <td>Состояние</td>
+                    <td>Статический</td>
+                    <td>Динамический</td>
+                </tr>
+                <tr>
+                    <td>Изменяемость</td>
+                    <td>Неизменяемый</td>
+                    <td>Можно изменять</td>
+                </tr>
+                <tr>
+                    <td>Хранение</td>
+                    <td>Registry</td>
+                    <td>Запущен / остановлен</td>
+                </tr>
+                <tr>
+                    <td>Создание</td>
+                    <td>docker build</td>
+                    <td>docker run</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Dockerfile — основные инструкции (FROM, COPY, RUN, CMD).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Основные инструкции Dockerfile:</strong></p>
+
+            <p><strong>FROM</strong> — базовый образ</p>
+            <pre>FROM mcr.microsoft.com/dotnet/aspnet:8.0</pre>
+
+            <p><strong>WORKDIR</strong> — рабочая директория</p>
+            <pre>WORKDIR /app</pre>
+
+            <p><strong>COPY</strong> — копирование файлов</p>
+            <pre>COPY . .</pre>
+
+            <p><strong>RUN</strong> — выполнение команд (при сборке)</p>
+            <pre>RUN apt-get update && apt-get install -y curl</pre>
+
+            <p><strong>CMD</strong> — команда по умолчанию (может быть переопределена)</p>
+            <pre>CMD ["dotnet", "MyApp.dll"]</pre>
+
+            <p><strong>ENTRYPOINT</strong> — команда запуска (не может быть переопределена)</p>
+            <pre>ENTRYPOINT ["dotnet", "MyApp.dll"]</pre>
+
+            <p><strong>EXPOSE</strong> — открытый порт</p>
+            <pre>EXPOSE 80</pre>
+
+            <p><strong>ENV</strong> — переменные окружения</p>
+            <pre>ENV ASPNETCORE_ENVIRONMENT=Production</pre>
+
+            <p><strong>ARG</strong> — аргументы сборки</p>
+            <pre>ARG VERSION=1.0</pre>
+
+            <p><strong>Пример полного Dockerfile:</strong></p>
+            <pre>
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG VERSION=1.0
+WORKDIR /src
+COPY ["MyApp.csproj", "."]
+RUN dotnet restore
+COPY . .
+RUN dotnet build -c Release --no-restore
+RUN dotnet publish -c Release -o /app --no-restore -p:Version=${VERSION}
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+COPY --from=build /app .
+ENV ASPNETCORE_URLS=http://*:8080
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "MyApp.dll"]</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Docker Compose — для чего.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Docker Compose</strong> — инструмент для запуска многоконтейнерных приложений.</p>
+
+            <p><strong>Зачем нужен:</strong></p>
+            <ul>
+                <li>Запуск нескольких сервисов (API + БД + Redis)</li>
+                <li>Управление зависимостями</li>
+                <li>Одна команда: <code>docker-compose up</code></li>
+                <li>Конфигурация в YAML</li>
+            </ul>
+
+            <p><strong>Пример docker-compose.yml:</strong></p>
+            <pre>
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      - ConnectionStrings__Default=Server=db;Database=MyApp;User=sa;Password=Passw0rd!
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app-network
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Passw0rd!
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - app-network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+volumes:
+  sql-data:
+
+networks:
+  app-network:</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Docker vs Виртуальная машина — различия.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Docker (Контейнер)</th>
+                    <th>VM (Виртуальная машина)</th>
+                </tr>
+                <tr>
+                    <td>Запуск</td>
+                    <td>Мгновенно (секунды)</td>
+                    <td>Медленно (минуты)</td>
+                </tr>
+                <tr>
+                    <td>Размер</td>
+                    <td>Маленький (МБ)</td>
+                    <td>Большой (ГБ)</td>
+                </tr>
+                <tr>
+                    <td>Ресурсы</td>
+                    <td>Мало (общая ОС)</td>
+                    <td>Много (полная ОС)</td>
+                </tr>
+                <tr>
+                    <td>Изоляция</td>
+                    <td>Частичная (kernel)</td>
+                    <td>Полная (hypervisor)</td>
+                </tr>
+                <tr>
+                    <td>Портативность</td>
+                    <td>Высокая</td>
+                    <td>Средняя</td>
+                </tr>
+                <tr>
+                    <td>Скорость</td>
+                    <td>Высокая</td>
+                    <td>Низкая</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда использовать Docker:</strong></p>
+            <ul>
+                <li>Микросервисы</li>
+                <li>CI/CD</li>
+                <li>Разработка и тестирование</li>
+                <li>Быстрый старт</li>
+            </ul>
+
+            <p><strong>Когда использовать VM:</strong></p>
+            <ul>
+                <li>Изоляция ядра (безопасность)</li>
+                <li>Требуется полная ОС</li>
+                <li>Совместимость с устаревшим ПО</li>
+                <li>Разные ОС (Windows + Linux)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Брокер сообщений — RabbitMQ, Apache Kafka.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Брокер сообщений</strong> — промежуточный слой для обмена сообщениями между сервисами.</p>
+
+            <p><strong>RabbitMQ:</strong></p>
+            <ul>
+                <li>Очередь сообщений (AMQP)</li>
+                <li>Сложные маршрутизации (Exchanges, Bindings)</li>
+                <li>Гарантии доставки (acknowledgments)</li>
+                <li>Подходит для: микросервисы, задачи в фоне, RPC</li>
+                <li>Пример: отправка email, обработка заказов</li>
+            </ul>
+
+            <p><strong>Apache Kafka:</strong></p>
+            <ul>
+                <li>Распределённый лог (паттерн "журнал")</li>
+                <li>Высокая пропускная способность (миллионы сообщений/сек)</li>
+                <li>Хранение данных на диске</li>
+                <li>Подходит для: стриминг данных, аналитика, event sourcing</li>
+                <li>Пример: логирование, трекинг событий</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>RabbitMQ</th>
+                    <th>Kafka</th>
+                </tr>
+                <tr>
+                    <td>Модель</td>
+                    <td>Очередь</td>
+                    <td>Журнал</td>
+                </tr>
+                <tr>
+                    <td>Скорость</td>
+                    <td>Высокая</td>
+                    <td>Очень высокая</td>
+                </tr>
+                <tr>
+                    <td>Хранение</td>
+                    <td>Пока не обработано</td>
+                    <td>Настраиваемое (дни/месяцы)</td>
+                </tr>
+                <tr>
+                    <td>Повторное чтение</td>
+                    <td>Нет</td>
+                    <td>Да (офсеты)</td>
+                </tr>
+                <tr>
+                    <td>Сложность</td>
+                    <td>Средняя</td>
+                    <td>Высокая</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Очереди сообщений — зачем нужны, паттерны.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Зачем нужны очереди сообщений:</strong></p>
+            <ul>
+                <li><strong>Развязка сервисов</strong> (Decoupling)</li>
+                <li><strong>Асинхронная обработка</strong> (не блокировать пользователя)</li>
+                <li><strong>Отказоустойчивость</strong> (сообщения не теряются)</li>
+                <li><strong>Масштабирование</strong> (несколько потребителей)</li>
+                <li><strong>Балансировка нагрузки</strong> (распределение задач)</li>
+            </ul>
+
+            <p><strong>Паттерны:</strong></p>
+
+            <p><strong>1. Point-to-Point (Очередь)</strong></p>
+            <ul>
+                <li>Один отправитель → Очередь → Один получатель</li>
+                <li>Сообщение удаляется после получения</li>
+            </ul>
+
+            <p><strong>2. Publish-Subscribe (Топик)</strong></p>
+            <ul>
+                <li>Один отправитель → Топик → Множество получателей</li>
+                <li>Каждый получатель получает копию</li>
+            </ul>
+
+            <p><strong>3. Request-Reply (Запрос-ответ)</strong></p>
+            <ul>
+                <li>Отправка запроса → Получение ответа</li>
+                <li>Асинхронный RPC</li>
+            </ul>
+
+            <p><strong>4. Event-Driven (События)</strong></p>
+            <ul>
+                <li>Публикация событий</li>
+                <li>Реакция сервисов на события</li>
+                <li>Event Sourcing, CQRS</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>At-least-once, At-most-once, Exactly-once семантика.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>At-most-once (Не более одного раза)</strong></p>
+            <ul>
+                <li>Сообщение доставляется <strong>максимум один раз</strong></li>
+                <li>Может быть потеряно</li>
+                <li>Быстро, без подтверждений</li>
+                <li>Пример: логи, метрики (потеря допустима)</li>
+            </ul>
+
+            <p><strong>At-least-once (Не менее одного раза)</strong></p>
+            <ul>
+                <li>Сообщение доставляется <strong>как минимум один раз</strong></li>
+                <li>Могут быть дубликаты</li>
+                <li>Требует идемпотентности получателя</li>
+                <li>Пример: заказы, платежи (дубликаты недопустимы)</li>
+            </ul>
+
+            <p><strong>Exactly-once (Ровно один раз)</strong></p>
+            <ul>
+                <li>Сообщение доставляется <strong>точно один раз</strong></li>
+                <li>Сложно реализовать (идеальный случай)</li>
+                <li>Работает в Kafka с транзакциями</li>
+                <li>Пример: финансовые операции</li>
+            </ul>
+
+            <p><strong>Реализация в брокерах:</strong></p>
+            <table>
+                <tr>
+                    <th>Брокер</th>
+                    <th>At-most-once</th>
+                    <th>At-least-once</th>
+                    <th>Exactly-once</th>
+                </tr>
+                <tr>
+                    <td>RabbitMQ</td>
+                    <td>✅</td>
+                    <td>✅ (ack)</td>
+                    <td>❌ (только с доп. кодом)</td>
+                </tr>
+                <tr>
+                    <td>Kafka</td>
+                    <td>✅</td>
+                    <td>✅ (offset commit)</td>
+                    <td>✅ (транзакции)</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Idempotent сервисы — как строить.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Идемпотентность</strong> — одинаковый результат при повторных вызовах.</p>
+
+            <p><strong>Почему важна:</strong></p>
+            <ul>
+                <li>Повторные запросы из-за сетевых проблем</li>
+                <li>At-least-once доставка</li>
+                <li>Ретри клиентов</li>
+            </ul>
+
+            <p><strong>Способы реализации:</strong></p>
+
+            <p><strong>1. Уникальный ID запроса (Idempotency Key)</strong></p>
+            <pre>
+// Клиент
+var requestId = Guid.NewGuid().ToString();
+var response = await httpClient.PostAsync(url, 
+    new { IdempotencyKey = requestId, Data = data });
+
+// Сервер
+public async Task&lt;IActionResult&gt; Process(ProcessRequest request)
+{
+    if (await _cache.ExistsAsync(request.IdempotencyKey))
+        return Ok("Already processed");
+    
+    await ProcessData(request.Data);
+    await _cache.SetAsync(request.IdempotencyKey, "done", TimeSpan.FromHours(24));
+    return Ok("Processed");
+}</pre>
+
+            <p><strong>2. Версионирование</strong></p>
+            <pre>
+// Использование ETag или версии ресурса
+PUT /api/users/5 HTTP/1.1
+If-Match: "123456789"</pre>
+
+            <p><strong>3. Обработка дубликатов</strong></p>
+            <pre>
+// В БД — проверка уникальности
+CREATE TABLE ProcessedRequests (
+    IdempotencyKey VARCHAR(36) PRIMARY KEY,
+    ProcessedAt DATETIME
+);
+
+-- При вставке — уникальность обеспечивает идемпотентность</pre>
+
+            <p><strong>4. Обновление ресурсов</strong></p>
+            <pre>
+// PUT — идемпотентен по определению
+PUT /api/users/5
+{ "name": "Alice" }  // Повторный вызов даёт тот же результат</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Circuit Breaker — паттерн для распределённых систем.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Circuit Breaker (Предохранитель)</strong> — защита от cascading failures.</p>
+
+            <p><strong>Состояния:</strong></p>
+            <ul>
+                <li><strong>Closed (Закрыт):</strong> запросы проходят, счётчик ошибок растёт</li>
+                <li><strong>Open (Открыт):</strong> запросы блокируются (fail fast)</li>
+                <li><strong>Half-Open (Полуоткрыт):</strong> пробные запросы для восстановления</li>
+            </ul>
+
+            <p><strong>Пример с Polly:</strong></p>
+            <pre>
+using Polly;
+
+var policy = Policy
+    .Handle&lt;HttpRequestException&gt;()
+    .CircuitBreakerAsync(
+        exceptionsAllowedBeforeBreaking: 3,
+        durationOfBreak: TimeSpan.FromSeconds(30),
+        onBreak: (ex, timespan) => Console.WriteLine($"Circuit open: {timespan}"),
+        onReset: () => Console.WriteLine("Circuit closed"),
+        onHalfOpen: () => Console.WriteLine("Circuit half-open")
+    );
+
+// Использование
+var result = await policy.ExecuteAsync(async () =>
+{
+    var response = await httpClient.GetAsync("https://api.example.com");
+    return await response.Content.ReadAsStringAsync();
+});</pre>
+
+            <p><strong>Реализация вручную:</strong></p>
+            <pre>
+public class CircuitBreaker
+{
+    private int _failureCount = 0;
+    private DateTime _lastFailure;
+    private CircuitState _state = CircuitState.Closed;
+    
+    public async Task&lt;T&gt; ExecuteAsync&lt;T&gt;(Func&lt;Task&lt;T&gt;&gt; action)
+    {
+        if (_state == CircuitState.Open)
+        {
+            if (DateTime.Now - _lastFailure > TimeSpan.FromSeconds(30))
+                _state = CircuitState.HalfOpen;
+            else
+                throw new CircuitOpenException();
+        }
+        
+        try
+        {
+            var result = await action();
+            if (_state == CircuitState.HalfOpen)
+                _state = CircuitState.Closed;
+            _failureCount = 0;
+            return result;
+        }
+        catch
+        {
+            _failureCount++;
+            _lastFailure = DateTime.Now;
+            if (_failureCount >= 3)
+                _state = CircuitState.Open;
+            throw;
+        }
+    }
+}</pre>
+        </div>
+    </details>
+</section>

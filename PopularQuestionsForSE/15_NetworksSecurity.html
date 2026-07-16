@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 11-18 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+    
+<!-- ===================== БЛОК 15 ===================== -->
+<section class="section c15">
+    <h2>🔐 15. Сети. Безопасность <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Модель OSI — основные уровни (L4, L7).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>OSI (Open Systems Interconnection)</strong> — 7 уровней сетевой модели.</p>
+
+            <p><strong>1. Физический (Physical)</strong> — биты, кабели, разъёмы</p>
+            <p><strong>2. Канальный (Data Link)</strong> — Ethernet, MAC-адреса</p>
+            <p><strong>3. Сетевой (Network)</strong> — IP, маршрутизация</p>
+            <p><strong>4. Транспортный (Transport)</strong> — TCP, UDP (L4)</p>
+            <p><strong>5. Сеансовый (Session)</strong> — управление сессиями</p>
+            <p><strong>6. Представления (Presentation)</strong> — шифрование, кодирование</p>
+            <p><strong>7. Прикладной (Application)</strong> — HTTP, FTP, SMTP (L7)</p>
+
+            <p><strong>Для разработчика важны:</strong></p>
+            <ul>
+                <li><strong>L4 (Transport):</strong> TCP/UDP — порты, надёжность</li>
+                <li><strong>L7 (Application):</strong> HTTP/HTTPS — API, веб</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>TCP vs UDP — отличия, когда использовать.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>TCP</th>
+                    <th>UDP</th>
+                </tr>
+                <tr>
+                    <td>Надёжность</td>
+                    <td>Да (гарантирует доставку)</td>
+                    <td>Нет (может потерять пакеты)</td>
+                </tr>
+                <tr>
+                    <td>Порядок</td>
+                    <td>Да (сохраняет порядок)</td>
+                    <td>Нет (пакеты могут приходить вразнобой)</td>
+                </tr>
+                <tr>
+                    <td>Скорость</td>
+                    <td>Медленнее</td>
+                    <td>Быстрее</td>
+                </tr>
+                <tr>
+                    <td>Соединение</td>
+                    <td>С установлением соединения</td>
+                    <td>Без соединения</td>
+                </tr>
+                <tr>
+                    <td>Размер заголовка</td>
+                    <td>20 байт</td>
+                    <td>8 байт</td>
+                </tr>
+                <tr>
+                    <td>Примеры</td>
+                    <td>HTTP/HTTPS, FTP, SSH</td>
+                    <td>DNS, VoIP, стриминг, игры</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>TCP:</strong> данные важны, порядок важен (веб, файлы, БД)</li>
+                <li><strong>UDP:</strong> скорость важна, потеря допустима (голос, видео, игры)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>TCP Handshake (3-way handshake) — как устанавливается соединение.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>3-way handshake</strong> — установка TCP-соединения.</p>
+
+            <p><strong>Шаги:</strong></p>
+            <ol>
+                <li><strong>SYN (Client → Server):</strong> клиент отправляет SYN (seq=x)</li>
+                <li><strong>SYN-ACK (Server → Client):</strong> сервер отвечает SYN-ACK (seq=y, ack=x+1)</li>
+                <li><strong>ACK (Client → Server):</strong> клиент отправляет ACK (seq=x+1, ack=y+1)</li>
+            </ol>
+
+            <p><strong>Схема:</strong></p>
+            <pre>
+Client                     Server
+  |                          |
+  |------ SYN (seq=x) ----->|
+  |                          |
+  |<-- SYN-ACK (seq=y, ack=x+1)|
+  |                          |
+  |------ ACK (seq=x+1, ack=y+1) ->|
+  |                          |
+  |======= Соединение установлено =======|</pre>
+
+            <p><strong>Завершение соединения (4-way handshake):</strong></p>
+            <ol>
+                <li><strong>FIN (Client → Server):</strong> клиент закрывает соединение</li>
+                <li><strong>ACK (Server → Client):</strong> сервер подтверждает</li>
+                <li><strong>FIN (Server → Client):</strong> сервер закрывает</li>
+                <li><strong>ACK (Client → Server):</strong> клиент подтверждает</li>
+            </ol>
+        </div>
+    </details>
+
+    <details>
+        <summary>HTTP vs HTTPS — разница, TLS/SSL.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>HTTP (HyperText Transfer Protocol):</strong></p>
+            <ul>
+                <li>Передача данных в открытом виде</li>
+                <li>Порт 80</li>
+                <li>Нет шифрования</li>
+                <li>Уязвим для перехвата</li>
+            </ul>
+
+            <p><strong>HTTPS (HTTP Secure):</strong></p>
+            <ul>
+                <li>HTTP + TLS/SSL шифрование</li>
+                <li>Порт 443</li>
+                <li>Защита данных</li>
+                <li>Требуется сертификат</li>
+            </ul>
+
+            <p><strong>TLS (Transport Layer Security):</strong></p>
+            <ul>
+                <li>Протокол шифрования</li>
+                <li>Заменяет SSL (устаревший)</li>
+                <li>Асимметричное шифрование для обмена ключами</li>
+                <li>Симметричное шифрование для данных</li>
+            </ul>
+
+            <p><strong>Процесс установки HTTPS:</strong></p>
+            <ol>
+                <li>Клиент подключается к серверу</li>
+                <li>Сервер отправляет сертификат (публичный ключ)</li>
+                <li>Клиент проверяет сертификат (CA)</li>
+                <li>Клиент генерирует session key</li>
+                <li>Клиент шифрует ключ публичным ключом сервера</li>
+                <li>Сервер расшифровывает ключ приватным ключом</li>
+                <li>Дальше используется симметричное шифрование</li>
+            </ol>
+        </div>
+    </details>
+
+    <details>
+        <summary>SQL-инъекции — как защититься (параметризованные запросы).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>SQL-инъекция</strong> — внедрение SQL-кода в запрос через пользовательский ввод.</p>
+
+            <p><strong>Пример уязвимости:</strong></p>
+            <pre>
+// ❌ Уязвимый код
+string query = $"SELECT * FROM Users WHERE Email = '{email}' AND Password = '{password}'";
+var cmd = new SqlCommand(query, connection);
+
+// Злоумышленник вводит:
+// email = admin' --
+// password = anything
+// SQL: SELECT * FROM Users WHERE Email = 'admin' --' AND Password = 'anything'
+// Получает доступ без пароля</pre>
+
+            <p><strong>Защита:</strong></p>
+
+            <p><strong>1. Параметризованные запросы (основной способ)</strong></p>
+            <pre>
+// ✅ Безопасный код
+string query = "SELECT * FROM Users WHERE Email = @Email AND Password = @Password";
+var cmd = new SqlCommand(query, connection);
+cmd.Parameters.AddWithValue("@Email", email);
+cmd.Parameters.AddWithValue("@Password", password);</pre>
+
+            <p><strong>2. Использование ORM (EF Core, Dapper)</strong></p>
+            <pre>
+// EF Core — автоматическая защита
+var user = await context.Users
+    .FirstOrDefaultAsync(u => u.Email == email && u.Password == password);
+
+// Dapper — параметры
+var user = await connection.QueryFirstOrDefaultAsync&lt;User&gt;(
+    "SELECT * FROM Users WHERE Email = @Email",
+    new { Email = email });</pre>
+
+            <p><strong>3. Ограничение прав БД</strong></p>
+            <ul>
+                <li>Минимальные права для приложения</li>
+                <li>Только SELECT, INSERT, UPDATE в нужных таблицах</li>
+                <li>Запрет DDL (CREATE, DROP, ALTER)</li>
+            </ul>
+
+            <p><strong>4. Валидация ввода</strong></p>
+            <ul>
+                <li>Проверка типов (int, email, guid)</li>
+                <li>Экранирование специальных символов</li>
+                <li>Белые списки (white-lists)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>CORS — зачем нужен, как настроить в ASP.NET Core.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>CORS (Cross-Origin Resource Sharing)</strong> — политика безопасности браузера.</p>
+
+            <p><strong>Зачем нужен:</strong></p>
+            <ul>
+                <li>Браузер блокирует запросы к другому домену</li>
+                <li>Защита от CSRF-атак</li>
+                <li>API должно разрешать кросс-доменные запросы</li>
+            </ul>
+
+            <p><strong>Настройка в ASP.NET Core:</strong></p>
+            <pre>
+// Program.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// Добавление CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+    
+    options.AddPolicy("AllowSpecific", policy =>
+    {
+        policy.WithOrigins("https://example.com", "https://localhost:3000")
+              .WithMethods("GET", "POST", "PUT")
+              .WithHeaders("Authorization", "Content-Type")
+              .AllowCredentials();
+    });
+});
+
+var app = builder.Build();
+
+// Использование CORS
+app.UseCors("AllowAll");
+// или
+app.UseCors("AllowSpecific");
+
+app.MapControllers();
+
+// Контроллер с CORS
+[EnableCors("AllowSpecific")]
+[ApiController]
+[Route("api/users")]
+public class UsersController : ControllerBase
+{
+    // ...
+}
+
+// Отключение CORS для метода
+[DisableCors]
+[HttpGet("test")]
+public IActionResult Test() { }</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>JWT — структура, подпись, срок жизни.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>JWT (JSON Web Token)</strong> — структура:</p>
+            <pre>header.payload.signature</pre>
+
+            <p><strong>Header (Заголовок)</strong></p>
+            <pre>
+{
+  "alg": "HS256",  // Алгоритм подписи
+  "typ": "JWT"     // Тип токена
+}</pre>
+
+            <p><strong>Payload (Данные)</strong></p>
+            <pre>
+{
+  "sub": "1234567890",   // Subject (ID пользователя)
+  "name": "John Doe",
+  "iat": 1516239022,     // Issued At (время создания)
+  "exp": 1516242622,     // Expiration (время истечения)
+  "aud": "myapp",        // Audience (кому предназначен)
+  "iss": "auth-server",  // Issuer (кто создал)
+  "role": "admin"        // Custom claims
+}</pre>
+
+            <p><strong>Signature (Подпись)</strong></p>
+            <ul>
+                <li>Создаётся из header + payload + секретный ключ</li>
+                <li>Обеспечивает целостность (нельзя подделать)</li>
+                <li>Проверяется на сервере</li>
+            </ul>
+            <pre>
+HMACSHA256(
+  base64UrlEncode(header) + "." + base64UrlEncode(payload),
+  secret
+)</pre>
+
+            <p><strong>Срок жизни токена:</strong></p>
+            <ul>
+                <li><strong>Access Token:</strong> короткий (15-60 минут)</li>
+                <li><strong>Refresh Token:</strong> долгий (дни, месяцы)</li>
+                <li><strong>JWT включает exp:</strong> сервер проверяет срок</li>
+                <li><strong>Нельзя отозвать</strong> до истечения (если нет чёрного списка)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>OWASP Top 10 — базовое понимание.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>OWASP Top 10</strong> — список наиболее критичных уязвимостей веб-приложений.</p>
+
+            <p><strong>Топ 10 (2021):</strong></p>
+
+            <p><strong>1. Broken Access Control</strong> — нарушение контроля доступа</p>
+            <ul>
+                <li>Пользователь может получить доступ к чужим данным</li>
+                <li>Решение: проверка прав на сервере</li>
+            </ul>
+
+            <p><strong>2. Cryptographic Failures</strong> — ошибки шифрования</p>
+            <ul>
+                <li>Хранение паролей в открытом виде</li>
+                <li>Решение: HTTPS, bcrypt, шифрование</li>
+            </ul>
+
+            <p><strong>3. Injection</strong> — SQL, NoSQL, OS инъекции</p>
+            <ul>
+                <li>Внедрение вредоносного кода</li>
+                <li>Решение: параметризованные запросы, валидация</li>
+            </ul>
+
+            <p><strong>4. Insecure Design</strong> — небезопасный дизайн</p>
+            <ul>
+                <li>Архитектурные ошибки</li>
+                <li>Решение: Threat Modeling, безопасный дизайн</li>
+            </ul>
+
+            <p><strong>5. Security Misconfiguration</strong> — небезопасная конфигурация</p>
+            <ul>
+                <li>Дефолтные пароли, открытые порты</li>
+                <li>Решение: безопасная конфигурация</li>
+            </ul>
+
+            <p><strong>6. Vulnerable and Outdated Components</strong> — уязвимые компоненты</p>
+            <ul>
+                <li>Старые версии библиотек</li>
+                <li>Решение: обновление зависимостей</li>
+            </ul>
+
+            <p><strong>7. Identification and Authentication Failures</strong> — ошибки аутентификации</p>
+            <ul>
+                <li>Слабые пароли, отсутствие 2FA</li>
+                <li>Решение: сильные пароли, 2FA, OAuth</li>
+            </ul>
+
+            <p><strong>8. Software and Data Integrity Failures</strong> — ошибки целостности</p>
+            <ul>
+                <li>Подделка данных</li>
+                <li>Решение: подписи, контрольные суммы</li>
+            </ul>
+
+            <p><strong>9. Security Logging and Monitoring Failures</strong> — ошибки логирования</p>
+            <ul>
+                <li>Отсутствие логов атак</li>
+                <li>Решение: логирование, мониторинг</li>
+            </ul>
+
+            <p><strong>10. Server-Side Request Forgery</strong> — подделка запросов</p>
+            <ul>
+                <li>SSRF — внутренние запросы</li>
+                <li>Решение: валидация URL</li>
+            </ul>
+        </div>
+    </details>
+</section>

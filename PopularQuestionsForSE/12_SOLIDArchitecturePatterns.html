@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 11-18 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<!-- ===================== БЛОК 12 ===================== -->
+<section class="section c12">
+    <h2>📐 12. SOLID. Архитектурные паттерны <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>S — Single Responsibility (единственная ответственность).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>SRP:</strong> У класса должна быть только одна причина для изменения.</p>
+
+            <p><strong>Пример нарушения:</strong></p>
+            <pre>
+// ❌ Нарушение — класс делает всё
+public class UserService
+{
+    public void CreateUser(User user) { /* БД */ }
+    public void SendEmail(string email) { /* Email */ }
+    public void LogActivity(string message) { /* Лог */ }
+    public void ValidateUser(User user) { /* Валидация */ }
+}</pre>
+
+            <p><strong>Исправление:</strong></p>
+            <pre>
+// ✅ Каждый класс отвечает за одну вещь
+public class UserService
+{
+    private readonly IUserRepository _repository;
+    private readonly IEmailService _emailService;
+    private readonly ILogger _logger;
+    private readonly IUserValidator _validator;
+    
+    public UserService(IUserRepository repository, IEmailService emailService, 
+                       ILogger logger, IUserValidator validator)
+    {
+        _repository = repository;
+        _emailService = emailService;
+        _logger = logger;
+        _validator = validator;
+    }
+    
+    public void CreateUser(User user)
+    {
+        _validator.Validate(user);
+        _repository.Add(user);
+        _emailService.SendWelcome(user.Email);
+        _logger.Log($"User {user.Id} created");
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>O — Open/Closed (открыт для расширения, закрыт для изменения).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>OCP:</strong> Классы открыты для расширения, но закрыты для модификации.</p>
+
+            <p><strong>Пример нарушения:</strong></p>
+            <pre>
+// ❌ Нарушение — нужно менять при добавлении нового типа
+public class DiscountCalculator
+{
+    public decimal Calculate(decimal price, string type)
+    {
+        if (type == "Regular") return price * 0.9m;
+        if (type == "VIP") return price * 0.8m;
+        if (type == "Employee") return price * 0.7m;
+        return price;
+    }
+}</pre>
+
+            <p><strong>Исправление:</strong></p>
+            <pre>
+// ✅ Открыт для расширения
+public interface IDiscountStrategy
+{
+    decimal Apply(decimal price);
+}
+
+public class RegularDiscount : IDiscountStrategy
+{
+    public decimal Apply(decimal price) => price * 0.9m;
+}
+
+public class VIPDiscount : IDiscountStrategy
+{
+    public decimal Apply(decimal price) => price * 0.8m;
+}
+
+public class DiscountCalculator
+{
+    public decimal Calculate(decimal price, IDiscountStrategy strategy)
+    {
+        return strategy.Apply(price);
+    }
+}
+
+// Добавление нового типа без изменения существующего кода
+public class HolidayDiscount : IDiscountStrategy
+{
+    public decimal Apply(decimal price) => price * 0.5m;
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>L — Liskov Substitution (подстановка Барбары Лисков).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>LSP:</strong> Объекты производного класса должны заменять объекты базового класса без изменения поведения.</p>
+
+            <p><strong>Пример нарушения:</strong></p>
+            <pre>
+// ❌ Нарушение — производный класс не может заменить базовый
+public class Rectangle
+{
+    public int Width { get; set; }
+    public int Height { get; set; }
+    
+    public int Area() => Width * Height;
+}
+
+public class Square : Rectangle
+{
+    public new int Width 
+    {
+        set { base.Width = base.Height = value; }
+    }
+    
+    public new int Height
+    {
+        set { base.Width = base.Height = value; }
+    }
+}
+
+// Ожидание сломается
+void Test(Rectangle rect)
+{
+    rect.Width = 4;
+    rect.Height = 5;
+    Console.WriteLine(rect.Area());  // Ожидаем 20, но Square даст 25
+}</pre>
+
+            <p><strong>Исправление:</strong></p>
+            <pre>
+// ✅ Правильное проектирование
+public abstract class Shape
+{
+    public abstract int Area();
+}
+
+public class Rectangle : Shape
+{
+    public int Width { get; set; }
+    public int Height { get; set; }
+    
+    public override int Area() => Width * Height;
+}
+
+public class Square : Shape
+{
+    public int Side { get; set; }
+    public override int Area() => Side * Side;
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>I — Interface Segregation (разделение интерфейсов).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>ISP:</strong> Интерфейсы должны быть маленькими и специфичными.</p>
+
+            <p><strong>Пример нарушения:</strong></p>
+            <pre>
+// ❌ Нарушение — интерфейс слишком большой
+public interface IEmployee
+{
+    void Work();
+    void Eat();
+    void Sleep();
+    void Code();
+    void Manage();
+    void Test();
+    void Deploy();
+}
+
+public class Developer : IEmployee
+{
+    public void Work() { }
+    public void Eat() { }
+    public void Sleep() { }
+    public void Code() { }
+    public void Manage() { throw new NotImplementedException(); }  // ❌
+    public void Test() { }
+    public void Deploy() { }
+}</pre>
+
+            <p><strong>Исправление:</strong></p>
+            <pre>
+// ✅ Разделение интерфейсов
+public interface IWorker { void Work(); }
+public interface IDeveloper { void Code(); void Test(); }
+public interface IManager { void Manage(); }
+public interface IDeployer { void Deploy(); }
+
+public class Developer : IWorker, IDeveloper, IDeployer
+{
+    public void Work() { Code(); Test(); Deploy(); }
+    public void Code() { }
+    public void Test() { }
+    public void Deploy() { }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>D — Dependency Inversion (инверсия зависимостей).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>DIP:</strong> Зависимости должны быть от абстракций, а не от конкретных реализаций.</p>
+
+            <p><strong>Пример нарушения:</strong></p>
+            <pre>
+// ❌ Нарушение — зависит от конкретной реализации
+public class UserService
+{
+    private SqlUserRepository _repository = new SqlUserRepository();  // Жёсткая связь
+    
+    public void Save(User user)
+    {
+        _repository.Save(user);
+    }
+}</pre>
+
+            <p><strong>Исправление:</strong></p>
+            <pre>
+// ✅ Инверсия зависимостей
+public interface IUserRepository
+{
+    void Save(User user);
+}
+
+public class SqlUserRepository : IUserRepository
+{
+    public void Save(User user) { /* SQL */ }
+}
+
+public class UserService
+{
+    private readonly IUserRepository _repository;
+    
+    public UserService(IUserRepository repository)
+    {
+        _repository = repository;
+    }
+    
+    public void Save(User user)
+    {
+        _repository.Save(user);
+    }
+}
+
+// Тестирование с моком
+var mock = new Mock&lt;IUserRepository&gt;();
+var service = new UserService(mock.Object);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>IoC (Inversion of Control) — что это, зачем.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>IoC (Инверсия управления)</strong> — принцип, при котором управление передаётся внешнему контейнеру.</p>
+
+            <p><strong>Проблема:</strong></p>
+            <pre>
+// ❌ Без IoC — класс создаёт свои зависимости
+public class OrderService
+{
+    private EmailService _email = new EmailService();  // Жёсткая связь
+    private Logger _logger = new Logger();
+    
+    public void ProcessOrder(Order order)
+    {
+        _logger.Log("Processing");
+        // ...
+        _email.Send("Order processed");
+    }
+}</pre>
+
+            <p><strong>Решение (IoC):</strong></p>
+            <pre>
+// ✅ С IoC — зависимости передаются извне
+public class OrderService
+{
+    private readonly IEmailService _email;
+    private readonly ILogger _logger;
+    
+    public OrderService(IEmailService email, ILogger logger)
+    {
+        _email = email;
+        _logger = logger;
+    }
+    
+    public void ProcessOrder(Order order)
+    {
+        _logger.Log("Processing");
+        // ...
+        _email.Send("Order processed");
+    }
+}</pre>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Слабая связанность</li>
+                <li>Легкое тестирование (моки)</li>
+                <li>Гибкость (легко заменить реализации)</li>
+                <li>Упрощение поддержки кода</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>DI (Dependency Injection) — конструкторная, свойств, методовая.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>1. Constructor Injection (рекомендуется)</strong></p>
+            <ul>
+                <li>Зависимости передаются через конструктор</li>
+                <li>Объект всегда в валидном состоянии</li>
+                <li>Легко тестировать</li>
+            </ul>
+            <pre>
+public class OrderService
+{
+    private readonly IEmailService _email;
+    private readonly ILogger _logger;
+    
+    public OrderService(IEmailService email, ILogger logger)
+    {
+        _email = email;
+        _logger = logger;
+    }
+}</pre>
+
+            <p><strong>2. Property Injection (для опциональных зависимостей)</strong></p>
+            <ul>
+                <li>Зависимости через публичные свойства</li>
+                <li>Для опциональных или второстепенных зависимостей</li>
+            </ul>
+            <pre>
+public class OrderService
+{
+    public ILogger Logger { get; set; }  // Необязательная зависимость
+    
+    public void Process()
+    {
+        Logger?.Log("Processing");
+    }
+}</pre>
+
+            <p><strong>3. Method Injection (для временных зависимостей)</strong></p>
+            <ul>
+                <li>Зависимости передаются в метод</li>
+                <li>Для параметров, которые меняются каждый вызов</li>
+            </ul>
+            <pre>
+public class OrderService
+{
+    public void Process(Order order, IEmailService email)
+    {
+        email.Send("Order " + order.Id);
+    }
+}</pre>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Тип</th>
+                    <th>Когда использовать</th>
+                    <th>Сложность</th>
+                </tr>
+                <tr>
+                    <td>Constructor</td>
+                    <td>Всегда для обязательных зависимостей</td>
+                    <td>Низкая</td>
+                </tr>
+                <tr>
+                    <td>Property</td>
+                    <td>Опциональные зависимости</td>
+                    <td>Средняя</td>
+                </tr>
+                <tr>
+                    <td>Method</td>
+                    <td>Временные или изменяющиеся зависимости</td>
+                    <td>Низкая</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Cohesion (связность) vs Coupling (сцепление) — разница.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Cohesion (Связность)</strong> — насколько хорошо элементы внутри модуля связаны друг с другом.</p>
+            <ul>
+                <li><strong>Высокая связность:</strong> все элементы модуля работают вместе для одной цели (хорошо)</li>
+                <li><strong>Низкая связность:</strong> элементы модуля делают разные, несвязанные вещи (плохо)</li>
+            </ul>
+
+            <p><strong>Coupling (Сцепление)</strong> — насколько модули зависят друг от друга.</p>
+            <ul>
+                <li><strong>Низкое сцепление:</strong> модули слабо зависят друг от друга (хорошо)</li>
+                <li><strong>Высокое сцепление:</strong> модули сильно зависят друг от друга (плохо)</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// ❌ Низкая связность (модуль делает всё)
+public class Utility
+{
+    public void CalculateDiscount() { }
+    public void SendEmail() { }
+    public void LogError() { }
+}
+
+// ✅ Высокая связность (модуль делает одно)
+public class DiscountCalculator
+{
+    public decimal Calculate(decimal price) { }
+}</pre>
+
+            <p><strong>Цель:</strong></p>
+            <ul>
+                <li><strong>Высокая связность</strong> внутри модулей</li>
+                <li><strong>Низкое сцепление</strong> между модулями</li>
+                <li>Легче поддерживать, тестировать, изменять</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Паттерны GoF: Singleton, Factory, Abstract Factory, Builder.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Singleton (Одиночка)</strong></p>
+            <ul>
+                <li>Гарантирует один экземпляр класса</li>
+                <li>Глобальная точка доступа</li>
+                <li>Антипаттерн для тестирования</li>
+            </ul>
+            <pre>
+public sealed class Singleton
+{
+    private static readonly Singleton _instance = new();
+    private Singleton() { }
+    public static Singleton Instance => _instance;
+}</pre>
+
+            <p><strong>Factory Method (Фабричный метод)</strong></p>
+            <ul>
+                <li>Создаёт объект, позволяя наследникам выбирать тип</li>
+            </ul>
+            <pre>
+public abstract class Creator
+{
+    public abstract IProduct CreateProduct();
+}</pre>
+
+            <p><strong>Abstract Factory (Абстрактная фабрика)</strong></p>
+            <ul>
+                <li>Создаёт семейства связанных объектов</li>
+            </ul>
+            <pre>
+public interface IUIFactory
+{
+    IButton CreateButton();
+    IWindow CreateWindow();
+}</pre>
+
+            <p><strong>Builder (Строитель)</strong></p>
+            <ul>
+                <li>Пошаговое создание сложных объектов</li>
+            </ul>
+            <pre>
+var builder = new FluentBuilder();
+builder
+    .SetName("Product")
+    .SetPrice(100)
+    .SetCategory("Electronics")
+    .Build();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Паттерны: Strategy, Observer, Decorator, Adapter, Facade.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Strategy (Стратегия)</strong></p>
+            <ul>
+                <li>Выбор алгоритма во время выполнения</li>
+            </ul>
+            <pre>
+public interface ISortStrategy { void Sort(List&lt;int&gt; list); }
+public class QuickSort : ISortStrategy { ... }
+public class MergeSort : ISortStrategy { ... }</pre>
+
+            <p><strong>Observer (Наблюдатель)</strong></p>
+            <ul>
+                <li>Уведомление об изменениях (события)</li>
+            </ul>
+            <pre>
+public class Publisher
+{
+    public event EventHandler OnChange;
+    public void Change() => OnChange?.Invoke(this, EventArgs.Empty);
+}</pre>
+
+            <p><strong>Decorator (Декоратор)</strong></p>
+            <ul>
+                <li>Добавление функциональности без изменения класса</li>
+            </ul>
+            <pre>
+public interface IComponent { void Operation(); }
+public class Decorator : IComponent
+{
+    private readonly IComponent _component;
+    public Decorator(IComponent comp) => _component = comp;
+    public void Operation() { _component.Operation(); /* Доп. логика */ }
+}</pre>
+
+            <p><strong>Adapter (Адаптер)</strong></p>
+            <ul>
+                <li>Адаптация интерфейсов разных систем</li>
+            </ul>
+            <pre>
+public class LegacyService { public string GetData() => "Legacy"; }
+public class Adapter : INewService
+{
+    private readonly LegacyService _legacy = new();
+    public string GetNewData() => _legacy.GetData();
+}</pre>
+
+            <p><strong>Facade (Фасад)</strong></p>
+            <ul>
+                <li>Упрощённый интерфейс для сложной подсистемы</li>
+            </ul>
+            <pre>
+public class Facade
+{
+    public void DoWork()
+    {
+        new SubSystem1().Do();
+        new SubSystem2().Do();
+        new SubSystem3().Do();
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Паттерны: Repository, Unit of Work.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Repository (Репозиторий)</strong></p>
+            <ul>
+                <li>Абстракция над хранилищем данных</li>
+                <li>CRUD операции для сущностей</li>
+            </ul>
+            <pre>
+public interface IRepository&lt;T&gt; where T : class
+{
+    Task&lt;T&gt; GetByIdAsync(int id);
+    Task&lt;IEnumerable&lt;T&gt;&gt; GetAllAsync();
+    Task AddAsync(T entity);
+    void Update(T entity);
+    void Delete(T entity);
+}
+
+public class UserRepository : IRepository&lt;User&gt;
+{
+    private readonly AppDbContext _context;
+    public UserRepository(AppDbContext context) => _context = context;
+    
+    public async Task&lt;User&gt; GetByIdAsync(int id)
+        => await _context.Users.FindAsync(id);
+}</pre>
+
+            <p><strong>Unit of Work (Единица работы)</strong></p>
+            <ul>
+                <li>Группировка операций в транзакцию</li>
+                <li>Координация нескольких репозиториев</li>
+            </ul>
+            <pre>
+public interface IUnitOfWork : IDisposable
+{
+    IUserRepository Users { get; }
+    IOrderRepository Orders { get; }
+    Task&lt;int&gt; SaveChangesAsync();
+}
+
+public class UnitOfWork : IUnitOfWork
+{
+    private readonly AppDbContext _context;
+    private IUserRepository _users;
+    private IOrderRepository _orders;
+    
+    public IUserRepository Users 
+        => _users ??= new UserRepository(_context);
+    
+    public IOrderRepository Orders 
+        => _orders ??= new OrderRepository(_context);
+    
+    public async Task&lt;int&gt; SaveChangesAsync()
+        => await _context.SaveChangesAsync();
+}
+
+// Использование
+using var uow = new UnitOfWork();
+var user = await uow.Users.GetByIdAsync(1);
+var order = new Order { UserId = user.Id };
+await uow.Orders.AddAsync(order);
+await uow.SaveChangesAsync();  // Одна транзакция</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Clean Architecture / Onion Architecture — базово.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Clean Architecture</strong> — архитектура с чёткими слоями и зависимостями, направленными к центру.</p>
+
+            <p><strong>Слои (от внешнего к внутреннему):</strong></p>
+            <ul>
+                <li><strong>Presentation (UI):</strong> контроллеры, UI</li>
+                <li><strong>Application:</strong> бизнес-логика, DTO, валидация</li>
+                <li><strong>Domain:</strong> сущности, интерфейсы репозиториев</li>
+                <li><strong>Infrastructure:</strong> БД, внешние сервисы, реализация репозиториев</li>
+            </ul>
+
+            <p><strong>Структура:</strong></p>
+            <pre>
+// Domain Layer
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+}
+
+public interface IUserRepository
+{
+    Task&lt;User&gt; GetByIdAsync(int id);
+}
+
+// Application Layer
+public class UserService
+{
+    private readonly IUserRepository _repository;
+    public UserService(IUserRepository repository) => _repository = repository;
+    
+    public async Task&lt;UserDto&gt; GetUserAsync(int id)
+    {
+        var user = await _repository.GetByIdAsync(id);
+        return new UserDto { Id = user.Id, Name = user.Name };
+    }
+}
+
+// Infrastructure Layer
+public class SqlUserRepository : IUserRepository
+{
+    private readonly AppDbContext _context;
+    public SqlUserRepository(AppDbContext context) => _context = context;
+    
+    public async Task&lt;User&gt; GetByIdAsync(int id)
+        => await _context.Users.FindAsync(id);
+}
+
+// Presentation Layer (ASP.NET Core)
+[ApiController]
+[Route("api/users")]
+public class UsersController : ControllerBase
+{
+    private readonly UserService _service;
+    public UsersController(UserService service) => _service = service;
+    
+    [HttpGet("{id}")]
+    public async Task&lt;IActionResult&gt; Get(int id)
+        => Ok(await _service.GetUserAsync(id));
+}</pre>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Независимость от внешних фреймворков</li>
+                <li>Легко тестировать бизнес-логику</li>
+                <li>Гибкость (легко менять БД или UI)</li>
+                <li>Чёткое разделение ответственности</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Микросервисы vs Монолит — плюсы/минусы, когда выбирать.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Монолит:</strong></p>
+            <ul>
+                <li>Всё приложение в одной сборке</li>
+                <li>Одна БД, один деплой</li>
+                <li>Простая разработка на старте</li>
+                <li>Сложное масштабирование</li>
+                <li>Одна технология</li>
+            </ul>
+
+            <p><strong>Микросервисы:</strong></p>
+            <ul>
+                <li>Много маленьких сервисов</li>
+                <li>Каждый сервис — отдельная БД</li>
+                <li>Сложная разработка</li>
+                <li>Гибкое масштабирование</li>
+                <li>Разные технологии</li>
+            </ul>
+
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Монолит</th>
+                    <th>Микросервисы</th>
+                </tr>
+                <tr>
+                    <td>Разработка</td>
+                    <td>Простая</td>
+                    <td>Сложная</td>
+                </tr>
+                <tr>
+                    <td>Масштабирование</td>
+                    <td>Сложное</td>
+                    <td>Простое</td>
+                </tr>
+                <tr>
+                    <td>Деплой</td>
+                    <td>Один</td>
+                    <td>Много</td>
+                </tr>
+                <tr>
+                    <td>Команда</td>
+                    <td>Маленькая</td>
+                    <td>Большая</td>
+                </tr>
+                <tr>
+                    <td>Производительность</td>
+                    <td>Лучше (локальные вызовы)</td>
+                    <td>Хуже (сетевые вызовы)</td>
+                </tr>
+                <tr>
+                    <td>Технологии</td>
+                    <td>Одна</td>
+                    <td>Разные</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда выбирать:</strong></p>
+            <ul>
+                <li><strong>Монолит:</strong> стартап, маленькая команда, простые требования</li>
+                <li><strong>Микросервисы:</strong> большая команда, высокие нагрузки, сложная бизнес-логика</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>DDD (Domain-Driven Design) — Entity, Value Object, Aggregate.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Entity (Сущность)</strong></p>
+            <ul>
+                <li>Имеет идентичность (Id)</li>
+                <li>Изменяема</li>
+                <li>Пример: User, Order</li>
+            </ul>
+            <pre>
+public class User
+{
+    public int Id { get; private set; }  // Идентичность
+    public string Name { get; set; }
+    public string Email { get; set; }
+}</pre>
+
+            <p><strong>Value Object (Объект-значение)</strong></p>
+            <ul>
+                <li>Нет идентичности</li>
+                <li>Неизменяемый (immutable)</li>
+                <li>Сравнивается по значению</li>
+                <li>Пример: Address, Money, Color</li>
+            </ul>
+            <pre>
+public record Address
+{
+    public string Street { get; init; }
+    public string City { get; init; }
+    public string ZipCode { get; init; }
+}
+
+public record Money
+{
+    public decimal Amount { get; init; }
+    public string Currency { get; init; }
+    
+    public Money Add(Money other)
+    {
+        if (Currency != other.Currency)
+            throw new Exception("Different currencies");
+        return new Money { Amount = Amount + other.Amount, Currency = Currency };
+    }
+}</pre>
+
+            <p><strong>Aggregate (Агрегат)</strong></p>
+            <ul>
+                <li>Группа связанных сущностей</li>
+                <li>Одна корневая сущность (Aggregate Root)</li>
+                <li>Транзакционная граница</li>
+                <li>Пример: Order (корень) + OrderItems</li>
+            </ul>
+            <pre>
+public class Order  // Aggregate Root
+{
+    private List&lt;OrderItem&gt; _items = new();
+    public int Id { get; private set; }
+    public Money Total { get; private set; }
+    public IReadOnlyList&lt;OrderItem&gt; Items => _items;
+    
+    public void AddItem(string productName, Money price, int quantity)
+    {
+        _items.Add(new OrderItem(productName, price, quantity));
+        RecalculateTotal();
+    }
+    
+    private void RecalculateTotal()
+    {
+        Total = _items.Aggregate(new Money(), (sum, item) => sum.Add(item.Price));
+    }
+}
+
+public class OrderItem  // Внутри агрегата
+{
+    public string ProductName { get; }
+    public Money Price { get; }
+    public int Quantity { get; }
+    
+    public OrderItem(string productName, Money price, int quantity)
+    {
+        ProductName = productName;
+        Price = price;
+        Quantity = quantity;
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>CQRS — Command Query Responsibility Segregation.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>CQRS</strong> — разделение операций чтения и записи.</p>
+
+            <p><strong>Принцип:</strong></p>
+            <ul>
+                <li><strong>Command</strong> — изменения (CREATE, UPDATE, DELETE)</li>
+                <li><strong>Query</strong> — чтение (SELECT)</li>
+                <li>Разные модели для чтения и записи</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Command — изменение
+public class CreateOrderCommand
+{
+    public int UserId { get; set; }
+    public List&lt;OrderItemDto&gt; Items { get; set; }
+}
+
+public class CreateOrderCommandHandler
+{
+    public async Task Handle(CreateOrderCommand command)
+    {
+        // Создание заказа в БД
+    }
+}
+
+// Query — чтение
+public class GetOrderQuery
+{
+    public int OrderId { get; set; }
+}
+
+public class GetOrderQueryHandler
+{
+    public async Task&lt;OrderDto&gt; Handle(GetOrderQuery query)
+    {
+        // Чтение из отдельной read-модели (или из кэша)
+    }
+}
+
+// Использование
+await mediator.Send(new CreateOrderCommand { ... });
+var order = await mediator.Send(new GetOrderQuery { OrderId = 1 });</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Сложная бизнес-логика</li>
+                <li>Разные требования к чтению и записи</li>
+                <li>Высокая нагрузка (отдельное масштабирование)</li>
+                <li>Event Sourcing + CQRS (храним события, читаем проекции)</li>
+            </ul>
+
+            <p><strong>Сложности:</strong></p>
+            <ul>
+                <li>Усложнение кода</li>
+                <li>Консистентность (eventual consistency)</li>
+                <li>Больше кода</li>
+            </ul>
+        </div>
+    </details>
+</section>
