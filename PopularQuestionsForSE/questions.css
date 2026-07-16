@@ -114,6 +114,11 @@ h1 {
 .card.c16 { border-left-color: #eab308; }
 .card.c17 { border-left-color: #f43f5e; }
 .card.c18 { border-left-color: #14b8a6; }
+.card.c19 { border-left-color: #0ea5e9; }
+.card.c20 { border-left-color: #8b5cf6; }
+.card.c21 { border-left-color: #06b6d4; }
+.card.c22 { border-left-color: #f59e0b; }
+.card.c23 { border-left-color: #ec4899; }
 
 /* ===== СТИЛИ ДЛЯ СТРАНИЦ С ВОПРОСАМИ ===== */
 .section {
@@ -143,6 +148,16 @@ h1 {
 .section.c16 { border-left-color: #eab308; }
 .section.c17 { border-left-color: #f43f5e; }
 .section.c18 { border-left-color: #14b8a6; }
+.section.c19 { border-left-color: #0ea5e9; }
+.section.c20 { border-left-color: #8b5cf6; }
+.section.c21 { border-left-color: #06b6d4; }
+.section.c22 { border-left-color: #f59e0b; }
+.section.c23 { border-left-color: #ec4899; }
+.card.c19 { border-left-color: #0ea5e9; }
+.card.c20 { border-left-color: #8b5cf6; }
+.card.c21 { border-left-color: #06b6d4; }
+.card.c22 { border-left-color: #f59e0b; }
+.card.c23 { border-left-color: #ec4899; }
 
 .section h2 {
     font-size: 18px;

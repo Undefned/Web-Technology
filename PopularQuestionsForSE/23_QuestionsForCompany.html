@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 19-22, 24 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 23 ===================== -->
+<section class="section c23">
+    <h2>🏢 24. Вопросы от конкретных компаний <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Сбер — особенности собеседования.</summary>
+        <div class="answer">
+            <p><strong>Сбер (SberDevices, СберТех):</strong></p>
+            <ul>
+                <li><strong>Алгоритмы:</strong> обязательно (LeetCode Medium)</li>
+                <li><strong>SQL:</strong> сложные запросы, оконные функции</li>
+                <li><strong>.NET:</strong> глубоко — GC, многопоточность, async/await</li>
+                <li><strong>Архитектура:</strong> микросервисы, Kafka, Kubernetes</li>
+                <li><strong>Безопасность:</strong> JWT, шифрование, защита данных</li>
+                <li><strong>Честность:</strong> проверка на плагиат (код с LeetCode)</li>
+            </ul>
+            
+            <p><strong>Примеры вопросов:</strong></p>
+            <ul>
+                <li>"Как работает GC? Что такое поколения?"</li>
+                <li>"Реализуйте потокобезопасный кэш с TTL"</li>
+                <li>"Как спроектировать систему оплаты?"</li>
+                <li>"Что такое Saga?"</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Тинькофф — особенности собеседования.</summary>
+        <div class="answer">
+            <p><strong>Тинькофф (T-Bank, Тинькофф Инвестиции):</strong></p>
+            <ul>
+                <li><strong>Алгоритмы:</strong> обязательно (LeetCode Medium/Hard)</li>
+                <li><strong>System Design:</strong> обязательно</li>
+                <li><strong>ООП:</strong> глубоко — SOLID, паттерны</li>
+                <li><strong>Финансовые системы:</strong> транзакции, консистентность</li>
+                <li><strong>Data:</strong> PostgreSQL, оптимизация запросов</li>
+                <li><strong>Тестирование:</strong> unit, интеграционные тесты</li>
+            </ul>
+
+            <p><strong>Примеры вопросов:</strong></p>
+            <ul>
+                <li>"Спроектируйте систему для торговли акциями"</li>
+                <li>"Как гарантировать ACID в микросервисах?"</li>
+                <li>"Напишите реализацию ThreadPool"</li>
+                <li>"Что такое Event Sourcing? Когда использовать?"</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Яндекс — особенности собеседования.</summary>
+        <div class="answer">
+            <p><strong>Яндекс (Яндекс.Маркет, Яндекс.Такси, Яндекс.Облако):</strong></p>
+            <ul>
+                <li><strong>Алгоритмы:</strong> обязательно (LeetCode Medium)</li>
+                <li><strong>System Design:</strong> обязательно (нагруженные системы)</li>
+                <li><strong>.NET:</strong> производительность, Memory, GC</li>
+                <li><strong>Распределённые системы:</strong> микросервисы, очереди</li>
+                <li><strong>MongoDB / PostgreSQL:</strong> работа с большими данными</li>
+                <li><strong>Open Source:</strong> часто спрашивают про участие</li>
+            </ul>
+
+            <p><strong>Примеры вопросов:</strong></p>
+            <ul>
+                <li>"Как хранить и обрабатывать 1 млрд событий в день?"</li>
+                <li>"Оптимизируйте медленный SQL запрос"</li>
+                <li>"Что такое LOH? Как избежать фрагментации?"</li>
+                <li>"Как работать с большими файлами в .NET?"</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Ozon — особенности собеседования.</summary>
+        <div class="answer">
+            <p><strong>Ozon (Ozon Tech, Ozon Fintech):</strong></p>
+            <ul>
+                <li><strong>Алгоритмы:</strong> обязательно (LeetCode Easy/Medium)</li>
+                <li><strong>System Design:</strong> обязательно (e-commerce)</li>
+                <li><strong>.NET:</strong> ASP.NET Core, EF Core, многопоточность</li>
+                <li><strong>Data:</strong> PostgreSQL, Redis, Elasticsearch</li>
+                <li><strong>Docker, Kubernetes:</strong> обязательно</li>
+                <li><strong>Тестирование:</strong> unit, интеграционные тесты</li>
+            </ul>
+
+            <p><strong>Примеры вопросов:</strong></p>
+            <ul>
+                <li>"Спроектируйте систему для интернет-магазина"</li>
+                <li>"Как обрабатывать пиковые нагрузки (Black Friday)?"</li>
+                <li>"Что такое Idempotent API?"</li>
+                <li>"Как реализовать Distributed Lock в Redis?"</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>VK (VK Team, VK Cloud) — особенности собеседования.</summary>
+        <div class="answer">
+            <p><strong>VK (VK Group, VK Cloud):</strong></p>
+            <ul>
+                <li><strong>Алгоритмы:</strong> обязательно (LeetCode Medium)</li>
+                <li><strong>System Design:</strong> обязательно (социальные сети, облака)</li>
+                <li><strong>.NET:</strong> глубоко — CLR, GC, производительность</li>
+                <li><strong>Распределённые системы:</strong> микросервисы, Kafka</li>
+                <li><strong>DevOps:</strong> Docker, Kubernetes, CI/CD</li>
+                <li><strong>Open Source:</strong> часто спрашивают про участие</li>
+            </ul>
+
+            <p><strong>Примеры вопросов:</strong></p>
+            <ul>
+                <li>"Спроектируйте систему для социальной сети"</li>
+                <li>"Как работает GC в .NET? Как оптимизировать?"</li>
+                <li>"Что такое Service Discovery?"</li>
+                <li>"Как реализовать Rate Limiting в распределённой системе?"</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Общие советы для всех компаний.</summary>
+        <div class="answer">
+            <p><strong>Подготовка к собеседованию:</strong></p>
+
+            <p><strong>1. Алгоритмы — 30% времени</strong></p>
+            <ul>
+                <li>LeetCode Easy/Medium (50-100 задач)</li>
+                <li>Структуры: HashTable, Lists, Trees, Graphs</li>
+                <li>Сложность: O(n), O(log n), O(n log n)</li>
+            </ul>
+
+            <p><strong>2. System Design — 30% времени</strong></p>
+            <ul>
+                <li>Спроектировать систему (URL shortener, chat, social network)</li>
+                <li>Масштабирование (sharding, replication, caching)</li>
+                <li>Балансировка, очереди, микросервисы</li>
+            </ul>
+
+            <p><strong>3. .NET — 25% времени</strong></p>
+            <ul>
+                <li>Коллекции, LINQ, async/await</li>
+                <li>GC, память, производительность</li>
+                <li>ASP.NET Core, EF Core, DI</li>
+            </ul>
+
+            <p><strong>4. SQL — 10% времени</strong></p>
+            <ul>
+                <li>Сложные запросы (JOIN, GROUP BY, оконные функции)</li>
+                <li>Индексы, оптимизация</li>
+            </ul>
+
+            <p><strong>5. Soft Skills — 5% времени</strong></p>
+            <ul>
+                <li>Расскажите про свои проекты</li>
+                <li>Почему вы хотите работать в этой компании</li>
+                <li>Ваши достижения (кейсы)</li>
+            </ul>
+
+            <p><strong>Практический чек-лист:</strong></p>
+            <ul>
+                <li>☐ Пройти 50 задач на LeetCode</li>
+                <li>☐ Написать REST API + БД + Docker</li>
+                <li>☐ Почитать про System Design (YouTube, книги)</li>
+                <li>☐ Подготовить 3 проекта для рассказа</li>
+                <li>☐ Почитать про компанию (продукты, технологии)</li>
+                <li>☐ Потренироваться отвечать на вопросы вслух</li>
+            </ul>
+        </div>
+    </details>
+</section>

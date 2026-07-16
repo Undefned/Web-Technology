@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 19-22, 24 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 21 ===================== -->
+<section class="section c21">
+    <h2>🚀 21. Дополнительные технологии <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>gRPC — что это, отличие от REST.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>gRPC</strong> — высокопроизводительный RPC-фреймворк от Google.</p>
+
+            <p><strong>Особенности:</strong></p>
+            <ul>
+                <li><strong>Protocol Buffers</strong> (бинарный) — вместо JSON</li>
+                <li>HTTP/2 (мультиплексирование, стриминг)</li>
+                <li>Автоматическая генерация кода (клиент/сервер)</li>
+                <li>В 10 раз быстрее REST</li>
+                <li>Поддерживает стриминг (unary, server-stream, client-stream, bidirectional)</li>
+            </ul>
+
+            <p><strong>Пример .proto файла:</strong></p>
+            <pre>
+syntax = "proto3";
+
+service UserService {
+    rpc GetUser (GetUserRequest) returns (UserResponse);
+    rpc GetUsers (GetUsersRequest) returns (stream UserResponse);
+}
+
+message GetUserRequest {
+    int32 id = 1;
+}
+
+message UserResponse {
+    int32 id = 1;
+    string name = 2;
+    string email = 3;
+}</pre>
+
+            <p><strong>В .NET:</strong></p>
+            <pre>
+// Program.cs
+builder.Services.AddGrpc();
+
+app.MapGrpcService&lt;UserGrpcService&gt;();
+
+public class UserGrpcService : UserService.UserServiceBase
+{
+    public override Task&lt;UserResponse&gt; GetUser(GetUserRequest request, 
+        ServerCallContext context)
+    {
+        var user = _userService.GetUser(request.Id);
+        return Task.FromResult(new UserResponse
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email
+        });
+    }
+}</pre>
+
+            <p><strong>Когда использовать gRPC:</strong></p>
+            <ul>
+                <li>Внутренние микросервисы</li>
+                <li>Высокая нагрузка</li>
+                <li>Стриминг</li>
+                <li>Разные языки (клиент может быть на любом языке)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>SignalR — Real-Time коммуникация.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>SignalR</strong> — библиотека для real-time коммуникации.</p>
+
+            <p><strong>Особенности:</strong></p>
+            <ul>
+                <li>Поддерживает WebSockets (и fallback: Server-Sent Events, Long Polling)</li>
+                <li>Двусторонняя связь (клиент → сервер, сервер → клиент)</li>
+                <li>Автоматическое переподключение</li>
+                <li>Группы (рассылка подписчикам)</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Hub
+public class ChatHub : Hub
+{
+    public async Task SendMessage(string user, string message)
+    {
+        await Clients.All.SendAsync("ReceiveMessage", user, message);
+    }
+    
+    public async Task JoinGroup(string groupName)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+    }
+}
+
+// Program.cs
+builder.Services.AddSignalR();
+app.MapHub&lt;ChatHub&gt;("/chatHub");
+
+// Клиент (JS)
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/chatHub")
+    .build();
+
+connection.on("ReceiveMessage", (user, message) => {
+    console.log(`${user}: ${message}`);
+});
+
+await connection.start();
+await connection.invoke("SendMessage", "Alice", "Hello");</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Чаты</li>
+                <li>Уведомления в реальном времени</li>
+                <li>Онлайн-игры</li>
+                <li>Дашборды (обновление данных)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Redis — кэширование, сессии, Distributed Lock.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Redis</strong> — in-memory база данных (ключ-значение).</p>
+
+            <p><strong>1. Кэширование</strong></p>
+            <pre>
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost:6379";
+});
+
+// Использование
+var data = await cache.GetStringAsync("key");
+if (data == null)
+{
+    data = await ComputeDataAsync();
+    await cache.SetStringAsync("key", data, TimeSpan.FromMinutes(10));
+}</pre>
+
+            <p><strong>2. Сессии (Session)</strong></p>
+            <pre>
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(20);
+    options.Cookie.HttpOnly = true;
+});
+
+// Использование
+HttpContext.Session.SetString("UserId", userId);</pre>
+
+            <p><strong>3. Distributed Lock (блокировка)</strong></p>
+            <ul>
+                <li>Предотвращает одновременное выполнение кода в разных экземплярах</li>
+                <li>Используется для фоновых задач, которые должны выполняться один раз</li>
+            </ul>
+            <pre>
+// Использование RedLock (библиотека)
+var resource = "my-lock-key";
+var expiry = TimeSpan.FromSeconds(30);
+
+using (var lock = await _distributedLock.CreateLockAsync(resource, expiry))
+{
+    if (lock.IsAcquired)
+    {
+        // Критическая секция (выполняется только один экземпляр)
+    }
+}</pre>
+
+            <p><strong>4. Rate Limiting через Redis</strong></p>
+            <ul>
+                <li>Распределённое ограничение запросов</li>
+                <li>Разные экземпляры используют общий счётчик</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Blazor — WebAssembly, Server.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Blazor</strong> — фреймворк для создания веб-UI на C#.</p>
+
+            <p><strong>Blazor WebAssembly:</strong></p>
+            <ul>
+                <li>Код выполняется в браузере (WebAssembly)</li>
+                <li>Полный клиент-сайд</li>
+                <li>Можно работать offline</li>
+                <li>Размер: ~10-20 МБ</li>
+            </ul>
+
+            <p><strong>Blazor Server:</strong></p>
+            <ul>
+                <li>Код выполняется на сервере</li>
+                <li>UI обновляется через SignalR</li>
+                <li>Маленький размер (нет загрузки)</li>
+                <li>Постоянное соединение</li>
+            </ul>
+
+            <p><strong>Пример компонента:</strong></p>
+            <pre>
+@page "/counter"
+
+&lt;h3&gt;Counter&lt;/h3&gt;
+&lt;p&gt;Current count: @currentCount&lt;/p&gt;
+
+&lt;button class="btn btn-primary" @onclick="IncrementCount"&gt;Click me&lt;/button&gt;
+
+@code {
+    private int currentCount = 0;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+}</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li><strong>Blazor Server:</strong> корпоративные приложения, интранет</li>
+                <li><strong>Blazor WASM:</strong> публичные приложения, offline</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>MediatR — CQRS в .NET.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>MediatR</strong> — библиотека для реализации CQRS и паттерна Mediator.</p>
+
+            <p><strong>Зачем:</strong></p>
+            <ul>
+                <li>Разделение команд и запросов (CQRS)</li>
+                <li>Слабая связанность (контроллер не знает о бизнес-логике)</li>
+                <li>Pipeline (логирование, валидация, транзакции)</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Command
+public class CreateOrderCommand : IRequest&lt;int&gt;
+{
+    public int UserId { get; set; }
+    public List&lt;OrderItemDto&gt; Items { get; set; }
+}
+
+// Handler
+public class CreateOrderCommandHandler : IRequestHandler&lt;CreateOrderCommand, int&gt;
+{
+    private readonly IOrderRepository _repository;
+    
+    public CreateOrderCommandHandler(IOrderRepository repository)
+    {
+        _repository = repository;
+    }
+    
+    public async Task&lt;int&gt; Handle(CreateOrderCommand request, CancellationToken ct)
+    {
+        var order = new Order(request.UserId, request.Items);
+        await _repository.AddAsync(order, ct);
+        return order.Id;
+    }
+}
+
+// Query
+public class GetOrderQuery : IRequest&lt;OrderDto&gt;
+{
+    public int OrderId { get; set; }
+}
+
+// Controller
+[ApiController]
+[Route("api/orders")]
+public class OrdersController : ControllerBase
+{
+    private readonly IMediator _mediator;
+    
+    public OrdersController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+    
+    [HttpPost]
+    public async Task&lt;IActionResult&gt; Create(CreateOrderCommand command)
+    {
+        var id = await _mediator.Send(command);
+        return CreatedAtAction(nameof(Get), new { id }, id);
+    }
+    
+    [HttpGet("{id}")]
+    public async Task&lt;IActionResult&gt; Get(int id)
+    {
+        var order = await _mediator.Send(new GetOrderQuery { OrderId = id });
+        return Ok(order);
+    }
+}</pre>
+
+            <p><strong>Pipeline (логгирование, валидация):</strong></p>
+            <pre>
+public class LoggingBehavior&lt;TRequest, TResponse&gt; : IPipelineBehavior&lt;TRequest, TResponse&gt;
+{
+    public async Task&lt;TResponse&gt; Handle(TRequest request, RequestHandlerDelegate&lt;TResponse&gt; next, CancellationToken ct)
+    {
+        _logger.LogInformation("Handling {Request}", typeof(TRequest).Name);
+        var response = await next();
+        _logger.LogInformation("Handled {Request}", typeof(TRequest).Name);
+        return response;
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>FluentValidation — валидация DTO.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>FluentValidation</strong> — библиотека для fluent-валидации.</p>
+
+            <p><strong>Преимущества над Data Annotations:</strong></p>
+            <ul>
+                <li>Более гибкая</li>
+                <li>Сложные правила</li>
+                <li>Разделение логики валидации</li>
+                <li>Интеграция с ASP.NET Core</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public class CreateUserRequest
+{
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public int Age { get; set; }
+    public string Password { get; set; }
+}
+
+public class CreateUserRequestValidator : AbstractValidator&lt;CreateUserRequest&gt;
+{
+    public CreateUserRequestValidator()
+    {
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Name is required")
+            .Length(2, 50).WithMessage("Name must be between 2 and 50 characters");
+        
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email is required")
+            .EmailAddress().WithMessage("Invalid email");
+        
+        RuleFor(x => x.Age)
+            .InclusiveBetween(18, 100).WithMessage("Age must be between 18 and 100");
+        
+        RuleFor(x => x.Password)
+            .NotEmpty().WithMessage("Password is required")
+            .MinimumLength(8).WithMessage("Password must be at least 8 characters")
+            .Matches(@"[A-Z]").WithMessage("Password must contain uppercase letter")
+            .Matches(@"[a-z]").WithMessage("Password must contain lowercase letter")
+            .Matches(@"[0-9]").WithMessage("Password must contain number");
+        
+        // Сложное правило
+        RuleFor(x => x)
+            .Must(x => x.Password != x.Name)
+            .WithMessage("Password cannot be the same as name");
+    }
+}
+
+// В контроллере
+public async Task&lt;IActionResult&gt; Create(CreateUserRequest request)
+{
+    var validator = new CreateUserRequestValidator();
+    var result = await validator.ValidateAsync(request);
+    
+    if (!result.IsValid)
+    {
+        return BadRequest(result.Errors);
+    }
+    
+    // Обработка
+}
+
+// Автоматическая валидация (MediatR Pipeline)
+public class ValidationBehavior&lt;TRequest, TResponse&gt; : IPipelineBehavior&lt;TRequest, TResponse&gt;
+{
+    private readonly IEnumerable&lt;IValidator&lt;TRequest&gt;&gt; _validators;
+    
+    public async Task&lt;TResponse&gt; Handle(TRequest request, RequestHandlerDelegate&lt;TResponse&gt; next, CancellationToken ct)
+    {
+        if (_validators.Any())
+        {
+            var context = new ValidationContext&lt;TRequest&gt;(request);
+            var results = await Task.WhenAll(_validators.Select(v => v.ValidateAsync(context, ct)));
+            var failures = results.SelectMany(r => r.Errors).Where(f => f != null).ToList();
+            
+            if (failures.Any())
+            {
+                throw new ValidationException(failures);
+            }
+        }
+        
+        return await next();
+    }
+}</pre>
+        </div>
+    </details>
+</section>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 19-22, 24 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 20 ===================== -->
+<section class="section c20">
+    <h2>⚙️ 20. DevOps и CI/CD <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Что такое CI/CD? GitHub Actions / GitLab CI.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>CI (Continuous Integration)</strong> — непрерывная интеграция.</p>
+            <ul>
+                <li>Автоматическая сборка после каждого коммита</li>
+                <li>Запуск тестов</li>
+                <li>Быстрое обнаружение ошибок</li>
+            </ul>
+
+            <p><strong>CD (Continuous Delivery / Deployment)</strong> — непрерывная доставка/развёртывание.</p>
+            <ul>
+                <li>Автоматический деплой после успешной сборки</li>
+                <li>Можно настроить разные окружения (Dev, Staging, Prod)</li>
+            </ul>
+
+            <p><strong>GitHub Actions:</strong></p>
+            <pre>
+# .github/workflows/deploy.yml
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0'
+      - run: dotnet restore
+      - run: dotnet build --configuration Release
+      - run: dotnet test
+      - run: dotnet publish -c Release -o ./publish
+      - uses: actions/upload-artifact@v3
+        with:
+          name: app
+          path: ./publish
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: app
+      - name: Deploy to Azure
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'myapp'
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: .</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Docker Compose — для локальной разработки.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Docker Compose</strong> — запуск нескольких контейнеров вместе.</p>
+
+            <p><strong>Зачем:</strong></p>
+            <ul>
+                <li>Локальная разработка (API + БД + Redis)</li>
+                <li>Одна команда: <code>docker-compose up</code></li>
+                <li>Настройка связей между контейнерами</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+    environment:
+      - ConnectionStrings__Default=Server=db;Database=MyApp;User=sa;Password=Passw0rd!
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Passw0rd!
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  sql-data:</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Kubernetes (Pods, Services, Ingress) — базово.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Kubernetes</strong> — оркестратор контейнеров.</p>
+
+            <p><strong>Основные объекты:</strong></p>
+
+            <p><strong>1. Pod</strong> — минимальная единица (один или несколько контейнеров)</p>
+            <ul>
+                <li>Общая сеть, общий том</li>
+                <li>Временный (может быть пересоздан)</li>
+            </ul>
+
+            <p><strong>2. Service</strong> — стабильный адрес для Pod'ов</p>
+            <ul>
+                <li><strong>ClusterIP:</strong> только внутри кластера</li>
+                <li><strong>NodePort:</strong> доступ извне на порт ноды</li>
+                <li><strong>LoadBalancer:</strong> внешний IP (для облаков)</li>
+            </ul>
+
+            <p><strong>3. Ingress</strong> — маршрутизация внешнего трафика</p>
+            <ul>
+                <li>HTTP/HTTPS</li>
+                <li>Маршрутизация по пути/домену</li>
+            </ul>
+
+            <p><strong>4. Deployment</strong> — управление версиями Pod'ов</p>
+            <ul>
+                <li>Масштабирование (replicas)</li>
+                <li>Rolling update (без простоя)</li>
+                <li>Rollback (откат)</li>
+            </ul>
+
+            <p><strong>5. ConfigMap / Secret</strong> — конфигурация</p>
+            <ul>
+                <li><code>ConfigMap</code> — текстовые настройки</li>
+                <li><code>Secret</code> — пароли, ключи (Base64)</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: api
+        image: myapp/api:v1
+        ports:
+        - containerPort: 80
+        env:
+        - name: ConnectionString
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: connection-string</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Helm Charts — управление Kubernetes приложениями.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Helm</strong> — пакетный менеджер для Kubernetes.</p>
+
+            <p><strong>Зачем:</strong></p>
+            <ul>
+                <li>Шаблонизация манифестов</li>
+                <li>Управление версиями приложений</li>
+                <li>Повторное использование конфигураций</li>
+                <li>Одна команда для установки сложного приложения</li>
+            </ul>
+
+            <p><strong>Структура Helm Chart:</strong></p>
+            <pre>
+mychart/
+├── Chart.yaml          # Метаданные (название, версия)
+├── values.yaml         # Значения по умолчанию
+├── templates/          # Шаблоны Kubernetes
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── ingress.yaml
+│   └── _helpers.tpl</pre>
+
+            <p><strong>Пример templates/deployment.yaml:</strong></p>
+            <pre>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.appName }}
+spec:
+  replicas: {{ .Values.replicas }}
+  template:
+    spec:
+      containers:
+      - name: {{ .Values.appName }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        ports:
+        - containerPort: {{ .Values.port }}</pre>
+
+            <p><strong>Команды Helm:</strong></p>
+            <pre>
+helm install myapp ./mychart
+helm upgrade myapp ./mychart
+helm rollback myapp 1
+helm uninstall myapp</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Мониторинг (Prometheus, Grafana) — базово.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Мониторинг</strong> — отслеживание состояния приложений и инфраструктуры.</p>
+
+            <p><strong>Prometheus</strong> — сбор метрик.</p>
+            <ul>
+                <li>Pull-модель (сам опрашивает сервисы)</li>
+                <li>Хранит временные ряды</li>
+                <li>Язык запросов (PromQL)</li>
+                <li>Интеграция с .NET (OpenTelemetry, prometheus-net)</li>
+            </ul>
+
+            <p><strong>Grafana</strong> — визуализация.</p>
+            <ul>
+                <li>Дашборды</li>
+                <li>Alert'ы</li>
+                <li>Поддерживает Prometheus, Elasticsearch, Loki</li>
+            </ul>
+
+            <p><strong>Пример в .NET:</strong></p>
+            <pre>
+// prometheus-net
+app.UseHttpMetrics();
+app.UseMetricServer();
+
+// Или OpenTelemetry
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(metrics =>
+    {
+        metrics
+            .AddAspNetCoreInstrumentation()
+            .AddPrometheusExporter();
+    });</pre>
+
+            <p><strong>Важные метрики:</strong></p>
+            <ul>
+                <li>CPU / Memory (Node, Pod)</li>
+                <li>Request Rate (RPS)</li>
+                <li>Error Rate (5xx)</li>
+                <li>Response Time (P50, P95, P99)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Логирование (ELK, Seq) — базово.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Логирование</strong> — сбор и анализ логов.</p>
+
+            <p><strong>ELK Stack:</strong></p>
+            <ul>
+                <li><strong>Elasticsearch:</strong> хранение и поиск логов</li>
+                <li><strong>Logstash:</strong> обработка логов</li>
+                <li><strong>Kibana:</strong> визуализация</li>
+            </ul>
+
+            <p><strong>Seq:</strong></p>
+            <ul>
+                <li>Простой, удобный для .NET</li>
+                <li>Структурированные логи (JSON)</li>
+                <li>Поддерживает Serilog</li>
+            </ul>
+
+            <p><strong>Пример с Serilog:</strong></p>
+            <pre>
+// Program.cs
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.Seq("http://seq:5341")
+    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(
+        new Uri("http://elasticsearch:9200"))
+    {
+        IndexFormat = "logs-{0:yyyy.MM.dd}"
+    })
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+// В коде
+_logger.LogInformation("User {UserId} logged in", userId);</pre>
+
+            <p><strong>Структурированные логи (JSON):</strong></p>
+            <pre>
+{
+    "Timestamp": "2026-07-17T12:00:00Z",
+    "Level": "Information",
+    "Message": "User 123 logged in",
+    "UserId": 123,
+    "SourceContext": "MyApp.Services.AuthService"
+}</pre>
+        </div>
+    </details>
+</section>

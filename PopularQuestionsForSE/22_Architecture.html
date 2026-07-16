@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 19-22, 24 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 22 ===================== -->
+<section class="section c22">
+    <h2>🏗️ 22. Архитектурные вопросы (System Design) <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Как спроектировать систему? (High-Level Design).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Этапы проектирования:</strong></p>
+
+            <p><strong>1. Сбор требований</strong></p>
+            <ul>
+                <li>Функциональные: что система делает</li>
+                <li>Нефункциональные: нагрузка (RPS), надёжность (SLA), задержки (latency)</li>
+            </ul>
+
+            <p><strong>2. Оценка нагрузки</strong></p>
+            <ul>
+                <li>DAU (Daily Active Users)</li>
+                <li>RPS (Requests Per Second)</li>
+                <li>Хранилище (Storage)</li>
+                <li>Сеть (Bandwidth)</li>
+            </ul>
+
+            <p><strong>3. Выбор архитектуры</strong></p>
+            <ul>
+                <li>Монолит или микросервисы</li>
+                <li>SQL или NoSQL</li>
+                <li>Синхронный или асинхронный обмен</li>
+            </ul>
+
+            <p><strong>4. Проектирование данных</strong></p>
+            <ul>
+                <li>Схема БД</li>
+                <li>Кэширование</li>
+                <li>Индексы</li>
+            </ul>
+
+            <p><strong>5. Масштабирование</strong></p>
+            <ul>
+                <li>Горизонтальное (более экземпляров)</li>
+                <li>Вертикальное (более мощное железо)</li>
+                <li>Sharding (разделение данных)</li>
+                <li>Replication (репликация)</li>
+            </ul>
+
+            <p><strong>6. Надёжность</strong></p>
+            <ul>
+                <li>Отказоустойчивость</li>
+                <li>Резервирование</li>
+                <li>Backup/Restore</li>
+            </ul>
+
+            <p><strong>Пример для системы заказов:</strong></p>
+            <pre>
+API Gateway (Ocelot)
+    ├── Auth Service (JWT)
+    ├── Order Service (PostgreSQL)
+    │   ├── Order → OrderItems (1:N)
+    │   └── Redis (кэш заказов)
+    ├── Payment Service (RabbitMQ)
+    │   └── Payment → Status (pending → completed)
+    ├── Inventory Service (Event Sourcing)
+    │   └── Reserve → Release
+    └── Notification Service (Email, SMS)</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Как масштабировать БД? (Sharding, Replication).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>1. Replication (репликация)</strong></p>
+            <ul>
+                <li>Копирование данных на несколько серверов</li>
+                <li>Master (запись) → Slaves (чтение)</li>
+                <li>Масштабирование чтения</li>
+                <li>Отказоустойчивость</li>
+            </ul>
+            <pre>
+    Master (Write)
+      ├── Slave 1 (Read)
+      ├── Slave 2 (Read)
+      └── Slave 3 (Read)</pre>
+
+            <p><strong>2. Sharding (шардирование)</strong></p>
+            <ul>
+                <li>Разделение данных по разным серверам</li>
+                <li>По ключу: UserId, City, Range</li>
+                <li>Масштабирование записи</li>
+                <li>Сложный запросы (JOIN'ы между шардами)</li>
+            </ul>
+            <pre>
+    Shard 1 (User 1-1000)
+    Shard 2 (User 1001-2000)
+    Shard 3 (User 2001-3000)</pre>
+
+            <p><strong>3. CQRS + Event Sourcing</strong></p>
+            <ul>
+                <li>Отдельные БД для чтения и записи</li>
+                <li>Read DB — оптимизирована для запросов</li>
+                <li>Write DB — транзакционная</li>
+            </ul>
+
+            <p><strong>4. Кэширование</strong></p>
+            <ul>
+                <li>Redis / Memcached</li>
+                <li>Уменьшает нагрузку на БД</li>
+                <li>Cache-Aside, Write-Through, Write-Behind</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Как обработать 1 млн запросов в секунду?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Стратегии для высокой нагрузки:</strong></p>
+
+            <p><strong>1. Балансировка нагрузки (Load Balancing)</strong></p>
+            <ul>
+                <li>Nginx, HAProxy, AWS ELB</li>
+                <li>Распределение запросов между инстансами</li>
+            </ul>
+
+            <p><strong>2. Горизонтальное масштабирование</strong></p>
+            <ul>
+                <li>Больше экземпляров приложения</li>
+                <li>Автоматическое масштабирование (Kubernetes HPA)</li>
+            </ul>
+
+            <p><strong>3. Кэширование</strong></p>
+            <ul>
+                <li>CDN (для статики)</li>
+                <li>Redis / Memcached (для динамики)</li>
+                <li>Cache-Aside, Write-Through</li>
+            </ul>
+
+            <p><strong>4. Асинхронная обработка</strong></p>
+            <ul>
+                <li>Очереди (RabbitMQ, Kafka)</li>
+                <li>Фоновые задачи (BackgroundService)</li>
+                <li>Не блокировать основной поток</li>
+            </ul>
+
+            <p><strong>5. Оптимизация БД</strong></p>
+            <ul>
+                <li>Индексы (правильные)</li>
+                <li>Шардирование (Sharding)</li>
+                <li>Read Replicas</li>
+                <li>NoSQL (для неструктурированных данных)</li>
+            </ul>
+
+            <p><strong>6. Rate Limiting</strong></p>
+            <ul>
+                <li>Защита от DDoS</li>
+                <li>Ограничение клиентов</li>
+            </ul>
+
+            <p><strong>7. Микросервисы</strong></p>
+            <ul>
+                <li>Каждый сервис масштабируется отдельно</li>
+                <li>Слабосвязанные системы</li>
+            </ul>
+
+            <p><strong>8. gRPC вместо REST</strong></p>
+            <ul>
+                <li>В 10 раз быстрее</li>
+                <li>Меньше задержек</li>
+                <li>HTTP/2 стриминг</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Как обеспечить отказоустойчивость? (Resilience).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Стратегии отказоустойчивости:</strong></p>
+
+            <p><strong>1. Retry (повторы)</strong></p>
+            <ul>
+                <li>Повтор при временных ошибках</li>
+                <li>Exponential backoff (задержка растёт)</li>
+                <li>jitter (случайная задержка)</li>
+            </ul>
+
+            <p><strong>2. Circuit Breaker (предохранитель)</strong></p>
+            <ul>
+                <li>Быстрый отказ при проблемах</li>
+                <li>Автоматическое восстановление</li>
+            </ul>
+
+            <p><strong>3. Timeout (тайм-аут)</strong></p>
+            <ul>
+                <li>Ограничение времени ожидания</li>
+                <li>Предотвращение блокировок</li>
+            </ul>
+
+            <p><strong>4. Bulkhead (изоляция)</strong></p>
+            <ul>
+                <li>Ограничение параллельных запросов</li>
+                <li>Изоляция ошибок</li>
+            </ul>
+
+            <p><strong>5. Health Checks</strong></p>
+            <ul>
+                <li>Проверка работоспособности</li>
+                <li>Kubernetes liveness/readiness</li>
+            </ul>
+
+            <p><strong>6. Graceful Shutdown</strong></p>
+            <ul>
+                <li>Корректное завершение</li>
+                <li>Завершение текущих запросов</li>
+            </ul>
+
+            <p><strong>7. Monitoring & Alerting</strong></p>
+            <ul>
+                <li>Отслеживание ошибок</li>
+                <li>Оповещения</li>
+            </ul>
+
+            <p><strong>Пример с Polly:</strong></p>
+            <pre>
+var policy = Policy
+    .Handle&lt;HttpRequestException&gt;()
+    .Or&lt;TimeoutException&gt;()
+    .WaitAndRetryAsync(3, retryAttempt => 
+        TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 1000)))
+    .WrapAsync(Policy
+        .TimeoutAsync(TimeSpan.FromSeconds(5)))
+    .WrapAsync(Policy
+        .CircuitBreakerAsync(3, TimeSpan.FromSeconds(30)));</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Как реализовать Distributed Lock?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Distributed Lock</strong> — блокировка между разными экземплярами.</p>
+
+            <p><strong>Способы реализации:</strong></p>
+
+            <p><strong>1. Redis (RedLock)</strong></p>
+            <pre>
+// Использование RedLock.net
+var resource = "my-lock-key";
+var expiry = TimeSpan.FromSeconds(30);
+
+using (var lock = await _distributedLock.CreateLockAsync(resource, expiry))
+{
+    if (lock.IsAcquired)
+    {
+        // Критическая секция
+    }
+}</pre>
+
+            <p><strong>2. Database (PostgreSQL advisory locks)</strong></p>
+            <pre>
+// PostgreSQL
+SELECT pg_advisory_lock(123456);
+-- Критическая секция
+SELECT pg_advisory_unlock(123456);</pre>
+
+            <p><strong>3. ZooKeeper / Etcd</strong></p>
+            <ul>
+                <li>Распределённые системы</li>
+                <li>Атомарные операции</li>
+            </ul>
+
+            <p><strong>4. AWS DynamoDB (Conditional Update)</strong></p>
+            <pre>
+// Псевдокод
+var result = await db.UpdateItemAsync(new UpdateItemRequest
+{
+    Key = { { "lock_key", new AttributeValue("my-lock") } },
+    UpdateExpression = "SET #ttl = :ttl",
+    ConditionExpression = "attribute_not_exists(#ttl) OR #ttl < :now",
+    ExpressionAttributeNames = new Dictionary&lt;string, string&gt; { { "#ttl", "ttl" } },
+    ExpressionAttributeValues = new Dictionary&lt;string, AttributeValue&gt;
+    {
+        { ":ttl", new AttributeValue { N = (DateTime.UtcNow.AddSeconds(30)).ToString() } },
+        { ":now", new AttributeValue { N = DateTime.UtcNow.ToString() } }
+    }
+});</pre>
+
+            <p><strong>Важно:</strong></p>
+            <ul>
+                <li>Всегда устанавливать TTL (время жизни)</li>
+                <li>Освобождать блокировку в finally</li>
+                <li>Использовать unique идентификатор (owner)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Как гарантировать доставку сообщений? (At-least-once, Exactly-once).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Семантика доставки:</strong></p>
+
+            <p><strong>At-most-once (не более одного раза)</strong></p>
+            <ul>
+                <li>Сообщение может быть потеряно</li>
+                <li>Быстро, без подтверждений</li>
+                <li>Пример: логи, метрики</li>
+            </ul>
+
+            <p><strong>At-least-once (не менее одного раза)</strong></p>
+            <ul>
+                <li>Сообщение доставляется как минимум один раз</li>
+                <li>Могут быть дубликаты</li>
+                <li>Требует идемпотентности получателя</li>
+                <li>Пример: заказы, платежи</li>
+            </ul>
+
+            <p><strong>Exactly-once (ровно один раз)</strong></p>
+            <ul>
+                <li>Идеальный случай</li>
+                <li>Сложно реализовать</li>
+                <li>Пример: финансовые операции</li>
+            </ul>
+
+            <p><strong>Как реализовать Exactly-once:</strong></p>
+            <pre>
+// 1. Idempotency Key (уникальный ID запроса)
+public async Task ProcessMessageAsync(Message message)
+{
+    if (await _cache.ExistsAsync(message.IdempotencyKey))
+        return;  // Уже обработано
+    
+    // Обработка сообщения
+    await ProcessData(message.Data);
+    
+    // Сохранить ключ (с TTL)
+    await _cache.SetAsync(message.IdempotencyKey, "done", TimeSpan.FromHours(24));
+}
+
+// 2. Транзакционная обработка (БД + брокер)
+using var transaction = await _dbContext.Database.BeginTransactionAsync();
+try
+{
+    await _dbContext.Orders.AddAsync(order);
+    await _dbContext.SaveChangesAsync();
+    
+    // Только после успешного сохранения в БД
+    await _messageBus.PublishAsync(new OrderCreatedEvent(order.Id));
+    
+    await transaction.CommitAsync();
+}
+catch
+{
+    await transaction.RollbackAsync();
+    throw;
+}</pre>
+        </div>
+    </details>
+</section>

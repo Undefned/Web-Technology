@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 19-22, 24 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 19 ===================== -->
+<section class="section c19">
+    <h2>☁️ 19. Микросервисы и Распределённые системы <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Что такое микросервисы? Отличие от монолита.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Микросервисная архитектура</strong> — подход, при котором приложение строится как набор небольших, независимо развёртываемых сервисов.</p>
+
+            <p><strong>Ключевые характеристики:</strong></p>
+            <ul>
+                <li>Каждый сервис решает <strong>одну бизнес-задачу</strong></li>
+                <li>Сервисы <strong>независимо</strong> развёртываются</li>
+                <li>Каждый сервис имеет свою <strong>БД</strong></li>
+                <li>Сервисы <strong>общаются</strong> по сети (HTTP/gRPC/Message Queue)</li>
+                <li>Разные технологии в разных сервисах</li>
+                <li><strong>Команды</strong> работают независимо</li>
+            </ul>
+
+            <p><strong>Сравнение с монолитом:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Монолит</th>
+                    <th>Микросервисы</th>
+                </tr>
+                <tr>
+                    <td>Развёртывание</td>
+                    <td>Один деплой</td>
+                    <td>Много деплоев</td>
+                </tr>
+                <tr>
+                    <td>Масштабирование</td>
+                    <td>Всё приложение</td>
+                    <td>Отдельные сервисы</td>
+                </tr>
+                <tr>
+                    <td>БД</td>
+                    <td>Одна</td>
+                    <td>У каждого своя</td>
+                </tr>
+                <tr>
+                    <td>Технологии</td>
+                    <td>Один стек</td>
+                    <td>Разные стеки</td>
+                </tr>
+                <tr>
+                    <td>Команда</td>
+                    <td>Одна</td>
+                    <td>Много команд</td>
+                </tr>
+                <tr>
+                    <td>Сложность</td>
+                    <td>Низкая</td>
+                    <td>Высокая</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда выбрать микросервисы:</strong></p>
+            <ul>
+                <li>Большая команда (> 50 человек)</li>
+                <li>Высокая нагрузка</li>
+                <li>Частые релизы</li>
+                <li>Разные технологии для разных задач</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Способы коммуникации микросервисов (REST, gRPC, Message Bus).</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>1. REST (HTTP/HTTPS) — синхронный</strong></p>
+            <ul>
+                <li>Простой, понятный</li>
+                <li>JSON/XML</li>
+                <li>Подходит для внешних API</li>
+                <li>Медленнее, чем gRPC</li>
+            </ul>
+
+            <p><strong>2. gRPC — синхронный (высокопроизводительный)</strong></p>
+            <ul>
+                <li>Protocol Buffers (бинарный)</li>
+                <li>Быстрее REST (в 10 раз)</li>
+                <li>Поддерживает стриминг</li>
+                <li>Требует генерации кода</li>
+                <li>Подходит для внутренних сервисов</li>
+            </ul>
+
+            <p><strong>3. Message Queue (RabbitMQ, Kafka) — асинхронный</strong></p>
+            <ul>
+                <li>Слабая связанность</li>
+                <li>Отказоустойчивость</li>
+                <li>Поддерживает события</li>
+                <li>Может задерживать доставку</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>REST</th>
+                    <th>gRPC</th>
+                    <th>Message Bus</th>
+                </tr>
+                <tr>
+                    <td>Скорость</td>
+                    <td>Средняя</td>
+                    <td>Высокая</td>
+                    <td>Низкая (задержка)</td>
+                </tr>
+                <tr>
+                    <td>Синхронность</td>
+                    <td>Да</td>
+                    <td>Да</td>
+                    <td>Нет (асинхронный)</td>
+                </tr>
+                <tr>
+                    <td>Связанность</td>
+                    <td>Высокая</td>
+                    <td>Средняя</td>
+                    <td>Низкая</td>
+                </tr>
+                <tr>
+                    <td>Пример</td>
+                    <td>Public API</td>
+                    <td>Внутренние сервисы</td>
+                    <td>События, фоновые задачи</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Service Discovery (Consul, Eureka) — зачем?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Service Discovery</strong> — механизм автоматического обнаружения сервисов.</p>
+
+            <p><strong>Проблема:</strong></p>
+            <ul>
+                <li>В микросервисах адреса сервисов меняются (масштабирование, падения)</li>
+                <li>Нельзя прописывать IP вручную</li>
+            </ul>
+
+            <p><strong>Решение:</strong></p>
+            <ul>
+                <li>Сервисы регистрируются в Service Discovery</li>
+                <li>Клиенты спрашивают: "Где находится Service X?"</li>
+                <li>Получают адрес и подключаются</li>
+            </ul>
+
+            <p><strong>Популярные реализации:</strong></p>
+            <ul>
+                <li><strong>Consul</strong> (HashiCorp) — + KV store, health checks</li>
+                <li><strong>Eureka</strong> (Netflix) — для Spring Cloud</li>
+                <li><strong>Kubernetes</strong> — встроенный (Services + DNS)</li>
+            </ul>
+
+            <p><strong>Пример в .NET:</strong></p>
+            <pre>
+// Регистрация в Consul
+builder.Services.AddConsul(options =>
+{
+    options.Address = new Uri("http://consul:8500");
+    options.Service = new Service
+    {
+        Name = "UserService",
+        Address = "userservice",
+        Port = 5000
+    };
+});</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>API Gateway (Ocelot, YARP) — зачем?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>API Gateway</strong> — единая точка входа для всех клиентов.</p>
+
+            <p><strong>Зачем нужен:</strong></p>
+            <ul>
+                <li>Единый URL для всех микросервисов</li>
+                <li>Аутентификация (централизованная)</li>
+                <li>Маршрутизация запросов</li>
+                <li>Балансировка нагрузки</li>
+                <li>Кэширование</li>
+                <li>Логирование</li>
+                <li>Rate Limiting</li>
+            </ul>
+
+            <p><strong>Популярные реализации:</strong></p>
+            <ul>
+                <li><strong>Ocelot</strong> — для .NET, настраивается JSON</li>
+                <li><strong>YARP</strong> (Yet Another Reverse Proxy) — от Microsoft</li>
+                <li><strong>Kong</strong> — Nginx-based</li>
+                <li><strong>Traefik</strong> — для Kubernetes</li>
+            </ul>
+
+            <p><strong>Пример Ocelot:</strong></p>
+            <pre>
+// ocelot.json
+{
+    "Routes": [
+        {
+            "DownstreamPathTemplate": "/api/users/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                { "Host": "localhost", "Port": 5001 }
+            ],
+            "UpstreamPathTemplate": "/users/{everything}",
+            "UpstreamHttpMethod": [ "GET", "POST" ],
+            "AuthenticationOptions": {
+                "AuthenticationProviderKey": "Bearer"
+            }
+        }
+    ]
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Distributed Tracing (Jaeger, Zipkin) — зачем?</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Distributed Tracing</strong> — отслеживание запроса через цепочку микросервисов.</p>
+
+            <p><strong>Проблема:</strong></p>
+            <ul>
+                <li>Запрос проходит через 5-10 сервисов</li>
+                <li>Непонятно, где возникает задержка</li>
+                <li>Логи каждого сервиса не дают целостной картины</li>
+            </ul>
+
+            <p><strong>Решение:</strong></p>
+            <ul>
+                <li>Каждый сервис добавляет span (отрезок времени)</li>
+                <li>Все span'ы собираются в один trace</li>
+                <li>Видно полную картину</li>
+            </ul>
+
+            <p><strong>Популярные реализации:</strong></p>
+            <ul>
+                <li><strong>Jaeger</strong> (Uber) — популярный, OpenTelemetry</li>
+                <li><strong>Zipkin</strong> (Twitter) — простой</li>
+                <li><strong>OpenTelemetry</strong> — стандарт (поддерживает Jaeger, Zipkin, Datadog)</li>
+            </ul>
+
+            <p><strong>Пример в .NET:</strong></p>
+            <pre>
+// OpenTelemetry
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri("http://jaeger:4317");
+            });
+    });</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Saga паттерн — для распределённых транзакций.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Saga</strong> — паттерн для управления распределёнными транзакциями.</p>
+
+            <p><strong>Проблема:</strong></p>
+            <ul>
+                <li>Одна бизнес-операция затрагивает несколько микросервисов</li>
+                <li>Каждый сервис имеет свою БД</li>
+                <li>Нельзя использовать 2PC (двухфазный коммит)</li>
+            </ul>
+
+            <p><strong>Решение Saga:</strong></p>
+            <ul>
+                <li>Каждая операция — последовательность шагов</li>
+                <li>Каждый шаг имеет компенсирующее действие</li>
+                <li>При ошибке — выполняются компенсации</li>
+            </ul>
+
+            <p><strong>Два типа Saga:</strong></p>
+
+            <p><strong>1. Choreography (хореография)</strong></p>
+            <ul>
+                <li>Сервисы общаются через события</li>
+                <li>Нет координатора</li>
+                <li>Пример: Order → Payment → Delivery</li>
+            </ul>
+
+            <p><strong>2. Orchestration (оркестрация)</strong></p>
+            <ul>
+                <li>Центральный координатор (Saga Orchestrator)</li>
+                <li>Управляет последовательностью шагов</li>
+                <li>Пример: Saga Coordinator → Order → Payment → Delivery</li>
+            </ul>
+
+            <p><strong>Пример (Orchestration):</strong></p>
+            <pre>
+public class OrderSaga
+{
+    public async Task ExecuteAsync(Order order)
+    {
+        try
+        {
+            await _paymentService.ProcessAsync(order);
+            await _inventoryService.ReserveAsync(order);
+            await _deliveryService.ScheduleAsync(order);
+            
+            await _orderService.UpdateStatusAsync(order, "Completed");
+        }
+        catch (Exception)
+        {
+            // Компенсации
+            await _deliveryService.CancelAsync(order);
+            await _inventoryService.ReleaseAsync(order);
+            await _paymentService.RefundAsync(order);
+            
+            await _orderService.UpdateStatusAsync(order, "Failed");
+        }
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Circuit Breaker (Polly) — в распределённых системах.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Circuit Breaker</strong> — предотвращает каскадные отказы.</p>
+
+            <p><strong>Состояния:</strong></p>
+            <ul>
+                <li><strong>Closed (Закрыт):</strong> запросы проходят, счётчик ошибок растёт</li>
+                <li><strong>Open (Открыт):</strong> запросы блокируются (fail fast)</li>
+                <li><strong>Half-Open (Полуоткрыт):</strong> пробные запросы для восстановления</li>
+            </ul>
+
+            <p><strong>Пример с Polly:</strong></p>
+            <pre>
+var policy = Policy
+    .Handle&lt;HttpRequestException&gt;()
+    .CircuitBreakerAsync(
+        exceptionsAllowedBeforeBreaking: 3,
+        durationOfBreak: TimeSpan.FromSeconds(30)
+    );
+
+await policy.ExecuteAsync(async () =>
+{
+    await httpClient.GetAsync("https://api.example.com");
+});</pre>
+
+            <p><strong>Зачем:</strong></p>
+            <ul>
+                <li>Защита от перегрузки зависимостей</li>
+                <li>Быстрый отказ вместо тайм-аута</li>
+                <li>Автоматическое восстановление</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Event Sourcing + CQRS — базовое понимание.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Event Sourcing</strong> — хранение не текущего состояния, а всех событий, которые к нему привели.</p>
+
+            <p><strong>Принцип:</strong></p>
+            <ul>
+                <li>Вместо UPDATE записей — сохраняем событие</li>
+                <li>Текущее состояние = сумма всех событий</li>
+                <li>Можно восстановить любое состояние в прошлом</li>
+                <li>Пример: аудит, логи, финансы</li>
+            </ul>
+
+            <p><strong>CQRS (Command Query Responsibility Segregation)</strong> — разделение операций чтения и записи.</p>
+            <ul>
+                <li><strong>Command:</strong> изменения (CREATE, UPDATE, DELETE)</li>
+                <li><strong>Query:</strong> чтение (SELECT)</li>
+                <li>Разные модели для чтения и записи</li>
+            </ul>
+
+            <p><strong>Event Sourcing + CQRS вместе:</strong></p>
+            <pre>
+// Command — запись события
+public class CreateOrderCommand
+{
+    public async Task Handle(Order order)
+    {
+        var @event = new OrderCreatedEvent(order);
+        await _eventStore.SaveAsync(@event);
+    }
+}
+
+// Query — чтение из проекции
+public class GetOrderQuery
+{
+    public async Task&lt;OrderDto&gt; Handle(int orderId)
+    {
+        return await _readModel.GetAsync(orderId);
+    }
+}</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Нужен полный аудит</li>
+                <li>Сложная бизнес-логика</li>
+                <li>Возможность отката</li>
+                <li>Высокая нагрузка (разделение чтения/записи)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Docker + Kubernetes — для микросервисов.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Docker</strong> — контейнеризация приложений.</p>
+            <ul>
+                <li>Упаковка приложения + зависимостей</li>
+                <li>Одинаковое окружение везде</li>
+                <li>Лёгкий изоляция</li>
+            </ul>
+
+            <p><strong>Kubernetes (k8s)</strong> — оркестрация контейнеров.</p>
+            <ul>
+                <li>Управление сотнями контейнеров</li>
+                <li>Автоматическое масштабирование</li>
+                <li>Автоматическое восстановление</li>
+                <li>Обновления без простоя (rolling update)</li>
+            </ul>
+
+            <p><strong>Kubernetes компоненты:</strong></p>
+            <ul>
+                <li><strong>Pod</strong> — минимальная единица (один или несколько контейнеров)</li>
+                <li><strong>Service</strong> — стабильный адрес для Pod'ов</li>
+                <li><strong>Ingress</strong> — вход для внешних запросов</li>
+                <li><strong>Deployment</strong> — управление версиями Pod'ов</li>
+                <li><strong>ConfigMap / Secret</strong> — конфигурация и секреты</li>
+            </ul>
+
+            <p><strong>Пример деплоя:</strong></p>
+            <pre>
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: myapp/user-service:latest
+        ports:
+        - containerPort: 5000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  selector:
+    app: user-service
+  ports:
+  - port: 80
+    targetPort: 5000
+  type: LoadBalancer</pre>
+        </div>
+    </details>
+</section>
