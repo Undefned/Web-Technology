@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 36-40 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 38 ===================== -->
+<section class="section c38">
+    <h2>📨 38. Message Brokers (RabbitMQ, Kafka, Azure Service Bus) <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>RabbitMQ — очередь сообщений.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>RabbitMQ</strong> — брокер сообщений (AMQP).</p>
+
+            <p><strong>Ключевые понятия:</strong></p>
+            <ul>
+                <li><strong>Producer</strong> — отправитель сообщения</li>
+                <li><strong>Consumer</strong> — получатель сообщения</li>
+                <li><strong>Queue</strong> — очередь хранения сообщений</li>
+                <li><strong>Exchange</strong> — маршрутизация сообщений</li>
+                <li><strong>Routing Key</strong> — ключ маршрутизации</li>
+                <li><strong>Binding</strong> — связь Exchange → Queue</li>
+                <li><strong>Ack</strong> — подтверждение получения</li>
+            </ul>
+
+            <p><strong>Типы Exchange:</strong></p>
+            <ul>
+                <li><strong>Direct</strong> — точное совпадение routing key</li>
+                <li><strong>Topic</strong> — по шаблону (wildcard)</li>
+                <li><strong>Fanout</strong> — всем (broadcast)</li>
+                <li><strong>Headers</strong> — по заголовкам</li>
+            </ul>
+
+            <p><strong>Пример в .NET (RabbitMQ.Client):</strong></p>
+            <pre>
+// Producer
+var factory = new ConnectionFactory { HostName = "localhost" };
+using var connection = factory.CreateConnection();
+using var channel = connection.CreateModel();
+
+channel.QueueDeclare("orders", durable: true, exclusive: false, autoDelete: false);
+
+var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(order));
+channel.BasicPublish(exchange: "", routingKey: "orders", basicProperties: null, body: body);
+
+// Consumer
+var consumer = new EventingBasicConsumer(channel);
+consumer.Received += (model, ea) =>
+{
+    var body = ea.Body.ToArray();
+    var message = Encoding.UTF8.GetString(body);
+    var order = JsonSerializer.Deserialize&lt;Order&gt;(message);
+    
+    ProcessOrder(order);
+    
+    channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);  // Подтверждение
+};
+
+channel.BasicConsume(queue: "orders", autoAck: false, consumer: consumer);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Apache Kafka — распределённый лог.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Apache Kafka</strong> — распределённый журнал событий (лог).</p>
+
+            <p><strong>Ключевые понятия:</strong></p>
+            <ul>
+                <li><strong>Topic</strong> — категория событий (аналог очереди)</li>
+                <li><strong>Partition</strong> — часть топика (параллелизм)</li>
+                <li><strong>Producer</strong> — отправитель (публикует в топик)</li>
+                <li><strong>Consumer</strong> — получатель (читает из топика)</li>
+                <li><strong>Consumer Group</strong> — группа потребителей (балансировка)</li>
+                <li><strong>Offset</strong> — позиция сообщения в партиции</li>
+                <li><strong>Broker</strong> — сервер Kafka</li>
+            </ul>
+
+            <p><strong>Пример в .NET (Confluent.Kafka):</strong></p>
+            <pre>
+// Producer
+var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
+using var producer = new ProducerBuilder&lt;string, string&gt;(config)
+    .SetKeySerializer(Serializers.Utf8)
+    .SetValueSerializer(Serializers.Utf8)
+    .Build();
+
+var result = await producer.ProduceAsync("orders", new Message&lt;string, string&gt;
+{
+    Key = order.Id.ToString(),
+    Value = JsonSerializer.Serialize(order)
+});
+
+// Consumer
+var consumerConfig = new ConsumerConfig
+{
+    BootstrapServers = "localhost:9092",
+    GroupId = "order-processors",
+    AutoOffsetReset = AutoOffsetReset.Earliest
+};
+
+using var consumer = new ConsumerBuilder&lt;string, string&gt;(consumerConfig)
+    .SetKeyDeserializer(Deserializers.Utf8)
+    .SetValueDeserializer(Deserializers.Utf8)
+    .Build();
+
+consumer.Subscribe("orders");
+
+while (true)
+{
+    var result = consumer.Consume();
+    var order = JsonSerializer.Deserialize&lt;Order&gt;(result.Message.Value);
+    ProcessOrder(order);
+    
+    consumer.Commit(result);  // Сохраняем offset
+}</pre>
+
+            <p><strong>RabbitMQ vs Kafka:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>RabbitMQ</th>
+                    <th>Kafka</th>
+                </tr>
+                <tr>
+                    <td>Модель</td>
+                    <td>Очередь</td>
+                    <td>Журнал (лог)</td>
+                </tr>
+                <tr>
+                    <td>Скорость</td>
+                    <td>Высокая</td>
+                    <td>Очень высокая</td>
+                </tr>
+                <tr>
+                    <td>Хранение</td>
+                    <td>Пока не обработано</td>
+                    <td>Настраиваемое (дни/недели)</td>
+                </tr>
+                <tr>
+                    <td>Повторное чтение</td>
+                    <td>Нет</td>
+                    <td>Да (по offset)</td>
+                </tr>
+                <tr>
+                    <td>Сложность</td>
+                    <td>Средняя</td>
+                    <td>Высокая</td>
+                </tr>
+                <tr>
+                    <td>Где использовать</td>
+                    <td>Задачи, RPC, микросервисы</td>
+                    <td>Streaming, аналитика, логи, события</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Azure Service Bus — облачный брокер.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Azure Service Bus</strong> — управляемый брокер сообщений в Azure.</p>
+
+            <p><strong>Ключевые понятия:</strong></p>
+            <ul>
+                <li><strong>Queue</strong> — очередь (FIFO)</li>
+                <li><strong>Topic</strong> — топик (Publish/Subscribe)</li>
+                <li><strong>Subscription</strong> — подписка на топик</li>
+                <li><strong>Dead-Letter Queue</strong> — очередь для ошибочных сообщений</li>
+                <li><strong>Sessions</strong> — группировка сообщений</li>
+            </ul>
+
+            <p><strong>Пример в .NET (Azure.Messaging.ServiceBus):</strong></p>
+            <pre>
+// Producer
+await using var client = new ServiceBusClient(connectionString);
+var sender = client.CreateSender("orders");
+
+var message = new ServiceBusMessage(JsonSerializer.Serialize(order))
+{
+    MessageId = Guid.NewGuid().ToString(),
+    SessionId = order.UserId.ToString()
+};
+await sender.SendMessageAsync(message);
+
+// Consumer
+var processor = client.CreateProcessor("orders", new ServiceBusProcessorOptions
+{
+    MaxConcurrentCalls = 10,
+    AutoCompleteMessages = false
+});
+
+processor.ProcessMessageAsync += async args =>
+{
+    var body = args.Message.Body.ToString();
+    var order = JsonSerializer.Deserialize&lt;Order&gt;(body);
+    
+    await ProcessOrderAsync(order);
+    
+    await args.CompleteMessageAsync(args.Message);  // Подтверждение
+};
+
+processor.ProcessErrorAsync += args =>
+{
+    Console.WriteLine(args.Exception.Message);
+    return Task.CompletedTask;
+};
+
+await processor.StartProcessingAsync();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Dead Letter Queue — обработка ошибочных сообщений.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Dead Letter Queue (DLQ)</strong> — очередь для сообщений, которые не удалось обработать.</p>
+
+            <p><strong>Причины попадания в DLQ:</strong></p>
+            <ul>
+                <li>Превышен MaxDeliveryCount (количество попыток)</li>
+                <li>Истекло TTL (время жизни)</li>
+                <li>Ошибка валидации</li>
+                <li>Ошибка обработки (исключение)</li>
+            </ul>
+
+            <p><strong>Пример в Azure Service Bus:</strong></p>
+            <pre>
+// Настройка очереди с DLQ
+var queueOptions = new CreateQueueOptions("orders")
+{
+    MaxDeliveryCount = 3,  // После 3 неудач → DLQ
+    DefaultMessageTimeToLive = TimeSpan.FromMinutes(10),
+    EnableDeadLetteringOnMessageExpiration = true
+};
+await adminClient.CreateQueueAsync(queueOptions);
+
+// Обработка с DLQ
+processor.ProcessMessageAsync += async args =>
+{
+    try
+    {
+        var order = JsonSerializer.Deserialize&lt;Order&gt;(args.Message.Body.ToString());
+        await ProcessOrderAsync(order);
+        await args.CompleteMessageAsync(args.Message);
+    }
+    catch (Exception ex)
+    {
+        // Dead-letter вручную
+        await args.DeadLetterMessageAsync(args.Message,
+            deadLetterReason: "ProcessingFailed",
+            deadLetterErrorDescription: ex.Message);
+    }
+};
+
+// Чтение из DLQ
+var dlqProcessor = client.CreateProcessor("orders", new ServiceBusProcessorOptions
+{
+    SubQueue = SubQueue.DeadLetter
+});
+
+dlqProcessor.ProcessMessageAsync += async args =>
+{
+    var body = args.Message.Body.ToString();
+    var reason = args.Message.DeadLetterReason;
+    var error = args.Message.DeadLetterErrorDescription;
+    
+    // Анализ ошибки
+    await HandleDeadLetterAsync(body, reason, error);
+    
+    await args.CompleteMessageAsync(args.Message);
+};</pre>
+        </div>
+    </details>
+</section>

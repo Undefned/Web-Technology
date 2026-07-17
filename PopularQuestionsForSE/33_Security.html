@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 31-35 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 33 ===================== -->
+<section class="section c33">
+    <h2>🔒 33. Security (OAuth2, IdentityServer, JWT) <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>OAuth2 — что это, flow'ы (Authorization Code, Client Credentials).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>OAuth2</strong> — протокол авторизации для делегирования доступа.</p>
+
+            <p><strong>Роли:</strong></p>
+            <ul>
+                <li><strong>Resource Owner</strong> — владелец данных (пользователь)</li>
+                <li><strong>Client</strong> — приложение, запрашивающее доступ</li>
+                <li><strong>Authorization Server</strong> — выдает токены (IdentityServer, Keycloak)</li>
+                <li><strong>Resource Server</strong> — защищённый API, проверяет токены</li>
+            </ul>
+
+            <p><strong>Authorization Code Flow (с PKCE) — для публичных клиентов (SPA, Mobile)</strong></p>
+            <pre>
+1. Клиент → Авторизация → Redirect на Login
+2. Пользователь логинится
+3. Авторизация → Redirect с code → Клиент
+4. Клиент → Обмен code на токены → Авторизация
+5. Авторизация → Возвращает Access Token + Refresh Token → Клиент</pre>
+
+            <p><strong>Client Credentials Flow — для серверных приложений</strong></p>
+            <pre>
+1. Клиент → ClientId + ClientSecret → Авторизация
+2. Авторизация → Access Token → Клиент</pre>
+
+            <p><strong>Password Flow — устарел (небезопасен)</strong></p>
+            <pre>
+1. Клиент → Login + Password → Авторизация
+2. Авторизация → Access Token → Клиент</pre>
+
+            <p><strong>Device Code Flow — для устройств без браузера</strong></p>
+        </div>
+    </details>
+
+    <details>
+        <summary>OpenID Connect — отличие от OAuth2.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>OAuth2</strong> — авторизация (что можно делать).</p>
+            <ul>
+                <li>Даёт доступ к API</li>
+                <li>Не содержит информации о пользователе</li>
+                <li>Токен — Access Token</li>
+            </ul>
+
+            <p><strong>OpenID Connect (OIDC)</strong> — аутентификация + авторизация.</p>
+            <ul>
+                <li>Строится поверх OAuth2</li>
+                <li>Даёт информацию о пользователе (ID Token — JWT)</li>
+                <li>Содержит: sub (ID), name, email, picture</li>
+                <li>Использует UserInfo endpoint</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>OAuth2</th>
+                    <th>OpenID Connect</th>
+                </tr>
+                <tr>
+                    <td>Цель</td>
+                    <td>Авторизация (доступ к ресурсам)</td>
+                    <td>Аутентификация (кто пользователь)</td>
+                </tr>
+                <tr>
+                    <td>Токены</td>
+                    <td>Access Token</td>
+                    <td>ID Token + Access Token</td>
+                </tr>
+                <tr>
+                    <td>Информация о пользователе</td>
+                    <td>Нет</td>
+                    <td>Да (ID Token, UserInfo)</td>
+                </tr>
+                <tr>
+                    <td>Используется для</td>
+                    <td>API доступ</td>
+                    <td>Вход в систему (Single Sign-On)</td>
+                </tr>
+            </table>
+
+            <p><strong>Пример ID Token (JWT):</strong></p>
+            <pre>
+{
+    "iss": "https://auth.example.com",
+    "sub": "1234567890",
+    "aud": "myapp",
+    "exp": 1516242622,
+    "iat": 1516239022,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "picture": "https://example.com/avatar.jpg"
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>IdentityServer / Duende — реализация в .NET.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>IdentityServer</strong> — OAuth2/OpenID Connect сервер для .NET.</p>
+
+            <p><strong>Настройка IdentityServer (Duende):</strong></p>
+            <pre>
+// Program.cs
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddIdentityServer()
+    .AddInMemoryClients(new[]
+    {
+        new Client
+        {
+            ClientId = "myclient",
+            ClientSecrets = { new Secret("secret".Sha256()) },
+            AllowedGrantTypes = GrantTypes.ClientCredentials,
+            AllowedScopes = { "api1" }
+        }
+    })
+    .AddInMemoryApiScopes(new[]
+    {
+        new ApiScope("api1", "My API")
+    })
+    .AddTestUsers(new[]
+    {
+        new TestUser
+        {
+            SubjectId = "1",
+            Username = "alice",
+            Password = "password"
+        }
+    });
+
+// Клиент (API)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://localhost:5001";
+        options.Audience = "api1";
+    });
+
+// Использование в API
+[Authorize]
+[ApiController]
+[Route("api/orders")]
+public class OrdersController : ControllerBase
+{
+    [HttpGet]
+    public IActionResult Get()
+    {
+        var userId = User.FindFirst("sub")?.Value;
+        return Ok(new { userId });
+    }
+}</pre>
+
+            <p><strong>Запрос на токен:</strong></p>
+            <pre>
+POST https://localhost:5001/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id=myclient
+client_secret=secret
+grant_type=client_credentials
+scope=api1</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>JWT — углублённо (подпись, валидация, refresh token).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Структура JWT:</strong> <code>header.payload.signature</code></p>
+
+            <p><strong>Подпись (Signature):</strong></p>
+            <ul>
+                <li><strong>HS256</strong> — симметричное шифрование (один секрет)</li>
+                <li><strong>RS256</strong> — асимметричное (публичный/приватный ключ)</li>
+            </ul>
+            <pre>
+// HS256 — быстрый, простой
+var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("super-secret-key"));
+var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+// RS256 — безопаснее, для публичных клиентов
+using var rsa = RSA.Create();
+var privateKey = new RsaSecurityKey(rsa);
+var creds = new SigningCredentials(privateKey, SecurityAlgorithms.RsaSha256);</pre>
+
+            <p><strong>Валидация токена:</strong></p>
+            <pre>
+var tokenHandler = new JwtSecurityTokenHandler();
+var validationParameters = new TokenValidationParameters
+{
+    ValidateIssuer = true,
+    ValidIssuer = "https://auth.example.com",
+    ValidateAudience = true,
+    ValidAudience = "myapi",
+    ValidateLifetime = true,
+    ValidateIssuerSigningKey = true,
+    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("secret"))
+};
+
+try
+{
+    var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
+    // Токен валиден
+}
+catch (SecurityTokenException)
+{
+    // Токен не валиден
+}</pre>
+
+            <p><strong>Refresh Token (обновление токена):</strong></p>
+            <pre>
+// При логине выдаём Access + Refresh Token
+var tokens = new
+{
+    access_token = GenerateAccessToken(user),
+    refresh_token = GenerateRefreshToken(user),
+    expires_in = 3600
+};
+
+// Обновление Access Token
+POST /connect/token
+grant_type=refresh_token
+refresh_token=xxx
+client_id=myclient</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Политики авторизации — Policy-based authorization.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Policy-based authorization</strong> — гибкая авторизация на основе политик.</p>
+
+            <p><strong>Создание политики:</strong></p>
+            <pre>
+builder.Services.AddAuthorization(options =>
+{
+    // Простая политика
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+    
+    // Сложная политика
+    options.AddPolicy("CanEditUsers", policy =>
+        policy.RequireClaim("permission", "edit_users")
+              .RequireRole("Admin", "Manager")
+              .RequireAssertion(context =>
+                  context.User.HasClaim("department", "IT") ||
+                  context.User.HasClaim("department", "HR")));
+    
+    // Политика с требованием возраста
+    options.AddPolicy("Adult", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var ageClaim = context.User.FindFirst("age");
+            return ageClaim != null && int.Parse(ageClaim.Value) >= 18;
+        }));
+});</pre>
+
+            <p><strong>Использование:</strong></p>
+            <pre>
+// В контроллере
+[Authorize(Policy = "AdminOnly")]
+[HttpGet]
+public IActionResult Get() { }
+
+[Authorize(Policy = "CanEditUsers")]
+[HttpPut]
+public IActionResult Update() { }
+
+// В Razor
+@if (User.HasClaim("permission", "edit_users"))
+{
+    &lt;button&gt;Edit&lt;/button&gt;
+}</pre>
+
+            <p><strong>Кастомный Authorization Handler:</strong></p>
+            <pre>
+public class MinimumAgeHandler : AuthorizationHandler&lt;MinimumAgeRequirement&gt;
+{
+    protected override Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        MinimumAgeRequirement requirement)
+    {
+        var ageClaim = context.User.FindFirst("age");
+        if (ageClaim != null && int.Parse(ageClaim.Value) >= requirement.MinimumAge)
+            context.Succeed(requirement);
+        else
+            context.Fail();
+        return Task.CompletedTask;
+    }
+}
+
+public class MinimumAgeRequirement : IAuthorizationRequirement
+{
+    public int MinimumAge { get; }
+    public MinimumAgeRequirement(int age) => MinimumAge = age;
+}</pre>
+        </div>
+    </details>
+</section>

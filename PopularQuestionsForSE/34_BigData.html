@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 31-35 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 34 ===================== -->
+<section class="section c34">
+    <h2>📊 34. Работа с большими данными (Big Data) <span class="badge purple">Mid+</span></h2>
+
+    <details>
+        <summary>Streaming — Kafka, Event Hubs.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Streaming</strong> — обработка данных в реальном времени.</p>
+
+            <p><strong>Apache Kafka:</strong></p>
+            <ul>
+                <li>Распределённый журнал (лог)</li>
+                <li>Хранение данных на диске (настраиваемое)</li>
+                <li>Очень высокая пропускная способность</li>
+                <li>Партиционирование и репликация</li>
+            </ul>
+            <pre>
+// Producer
+var producer = new ProducerBuilder&lt;string, string&gt;(config)
+    .SetKeySerializer(Serializers.Utf8)
+    .SetValueSerializer(Serializers.Utf8)
+    .Build();
+
+await producer.ProduceAsync("orders", new Message&lt;string, string&gt;
+{
+    Key = order.Id.ToString(),
+    Value = JsonSerializer.Serialize(order)
+});
+
+// Consumer
+var consumer = new ConsumerBuilder&lt;string, string&gt;(config)
+    .SetKeyDeserializer(Deserializers.Utf8)
+    .SetValueDeserializer(Deserializers.Utf8)
+    .Build();
+
+consumer.Subscribe("orders");
+while (true)
+{
+    var result = consumer.Consume();
+    var order = JsonSerializer.Deserialize&lt;Order&gt;(result.Message.Value);
+    ProcessOrder(order);
+}</pre>
+
+            <p><strong>Azure Event Hubs:</strong></p>
+            <ul>
+                <li>Managed Kafka-подобный сервис</li>
+                <li>Интеграция с Azure</li>
+                <li>Поддерживает Kafka протокол</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Batch Processing — Spark, Hadoop.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Batch Processing</strong> — обработка больших объёмов данных периодически.</p>
+
+            <p><strong>Apache Spark:</strong></p>
+            <ul>
+                <li>In-memory обработка данных</li>
+                <li>Поддерживает: Scala, Python, Java, R, SQL</li>
+                <li>Библиотеки: SQL, Streaming, ML, Graph</li>
+            </ul>
+            <pre>
+// PySpark
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("MyApp").getOrCreate()
+
+df = spark.read.csv("data/*.csv", header=True, inferSchema=True)
+df.filter(df["age"] > 18).groupBy("city").count().show()
+df.write.parquet("output/")</pre>
+
+            <p><strong>Hadoop (HDFS + MapReduce):</strong></p>
+            <ul>
+                <li>Распределённое хранение файлов (HDFS)</li>
+                <li>MapReduce — обработка данных</li>
+                <li>Устаревает (вытесняется Spark)</li>
+            </ul>
+
+            <p><strong>В .NET — можно использовать PolyBase, U-SQL, Spark.NET</strong></p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Data Lake / Data Warehouse — базово.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Data Warehouse (Хранилище данных):</strong></p>
+            <ul>
+                <li>Структурированные данные</li>
+                <li>Схема заранее известна (Schema-on-Write)</li>
+                <li>Оптимизированы для аналитики (OLAP)</li>
+                <li>Примеры: Snowflake, BigQuery, Redshift, SQL Server (Data Warehouse)</li>
+                <li>Используется для: отчёты, бизнес-аналитика, BI</li>
+            </ul>
+
+            <p><strong>Data Lake (Озеро данных):</strong></p>
+            <ul>
+                <li>Неструктурированные и полуструктурированные данные</li>
+                <li>Схема определяется при чтении (Schema-on-Read)</li>
+                <li>Хранит: JSON, CSV, Parquet, Avro, изображения, видео</li>
+                <li>Примеры: Azure Data Lake, AWS S3, Google Cloud Storage</li>
+                <li>Используется для: обработка больших данных, ML, исследование</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Data Warehouse</th>
+                    <th>Data Lake</th>
+                </tr>
+                <tr>
+                    <td>Данные</td>
+                    <td>Структурированные</td>
+                    <td>Любые</td>
+                </tr>
+                <tr>
+                    <td>Схема</td>
+                    <td>Заранее (Write)</td>
+                    <td>При чтении (Read)</td>
+                </tr>
+                <tr>
+                    <td>Производительность</td>
+                    <td>Высокая (оптимизирована)</td>
+                    <td>Средняя</td>
+                </tr>
+                <tr>
+                    <td>Стоимость</td>
+                    <td>Высокая</td>
+                    <td>Низкая</td>
+                </tr>
+                <tr>
+                    <td>Пример</td>
+                    <td>Snowflake, BigQuery</td>
+                    <td>Azure Data Lake, S3</td>
+                </tr>
+            </table>
+
+            <p><strong>Medallion Architecture (Bronze → Silver → Gold):</strong></p>
+            <ul>
+                <li><strong>Bronze:</strong> сырые данные (как есть)</li>
+                <li><strong>Silver:</strong> очищенные, валидированные</li>
+                <li><strong>Gold:</strong> агрегированные, готовые к использованию</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>ETL / ELT — что это.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>ETL (Extract, Transform, Load)</strong> — классический процесс обработки данных.</p>
+            <ul>
+                <li><strong>Extract:</strong> извлечение данных из источников (БД, API, файлы)</li>
+                <li><strong>Transform:</strong> преобразование данных (очистка, агрегация, денормализация)</li>
+                <li><strong>Load:</strong> загрузка в целевое хранилище (Data Warehouse)</li>
+                <li>Трансформация ДО загрузки</li>
+                <li>Пример: SSIS, Talend, Informatica</li>
+            </ul>
+
+            <p><strong>ELT (Extract, Load, Transform)</strong> — современный подход (облака).</p>
+            <ul>
+                <li><strong>Extract:</strong> извлечение данных</li>
+                <li><strong>Load:</strong> загрузка в Data Lake (сырые данные)</li>
+                <li><strong>Transform:</strong> преобразование внутри Data Lake/Data Warehouse</li>
+                <li>Трансформация ПОСЛЕ загрузки</li>
+                <li>Пример: Snowflake, BigQuery, dbt</li>
+            </ul>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>ETL</th>
+                    <th>ELT</th>
+                </tr>
+                <tr>
+                    <td>Порядок</td>
+                    <td>Extract → Transform → Load</td>
+                    <td>Extract → Load → Transform</td>
+                </tr>
+                <tr>
+                    <td>Где трансформация</td>
+                    <td>Вне БД (на отдельном сервере)</td>
+                    <td>Внутри БД (мощный движок)</td>
+                </tr>
+                <tr>
+                    <td>Объём данных</td>
+                    <td>Средний</td>
+                    <td>Большой</td>
+                </tr>
+                <tr>
+                    <td>Используется</td>
+                    <td>Классические on-premise</td>
+                    <td>Облачные Data Warehouses</td>
+                </tr>
+            </table>
+
+            <p><strong>Пример ELT с dbt (data build tool):</strong></p>
+            <pre>
+-- models/staging/stg_orders.sql
+SELECT
+    id,
+    user_id,
+    total,
+    created_at
+FROM raw.orders
+
+-- models/marts/fct_orders.sql
+SELECT
+    o.id,
+    u.name as user_name,
+    o.total,
+    o.created_at
+FROM {{ ref('stg_orders') }} o
+JOIN {{ ref('stg_users') }} u ON o.user_id = u.id</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Change Data Capture (CDC) — отслеживание изменений.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>CDC (Change Data Capture)</strong> — отслеживание изменений в БД.</p>
+
+            <p><strong>Зачем:</strong></p>
+            <ul>
+                <li>Синхронизация данных между системами</li>
+                <li>Обновление кэшей</li>
+                <li>Аналитика в реальном времени</li>
+                <li>Репликация данных</li>
+            </ul>
+
+            <p><strong>Способы реализации:</strong></p>
+
+            <p><strong>1. Database Triggers</strong></p>
+            <pre>
+CREATE TRIGGER trg_order_audit
+ON Orders
+AFTER INSERT, UPDATE, DELETE
+AS
+BEGIN
+    INSERT INTO OrderAudit (...)
+    SELECT ... FROM inserted
+END</pre>
+
+            <p><strong>2. Log-based CDC (другие DB)</strong></p>
+            <ul>
+                <li>PostgreSQL: pglogical, Debezium</li>
+                <li>SQL Server: Change Tracking, Change Data Capture</li>
+                <li>MySQL: binlog (Debezium, Canal)</li>
+            </ul>
+
+            <p><strong>3. Debezium (Kafka Connect)</strong></p>
+            <pre>
+{
+    "name": "orders-connector",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "database.hostname": "postgres",
+        "database.port": "5432",
+        "database.user": "user",
+        "database.password": "password",
+        "database.dbname": "orders",
+        "table.include.list": "public.orders",
+        "topic.prefix": "cdc"
+    }
+}</pre>
+
+            <p><strong>4. EF Core — ChangeTracker</strong></p>
+            <pre>
+var entries = context.ChangeTracker.Entries()
+    .Where(e => e.State == EntityState.Added || 
+                e.State == EntityState.Modified ||
+                e.State == EntityState.Deleted);
+
+foreach (var entry in entries)
+{
+    var event = new EntityChangedEvent
+    {
+        EntityType = entry.Entity.GetType().Name,
+        Action = entry.State.ToString(),
+        Data = JsonSerializer.Serialize(entry.Entity)
+    };
+    await _eventBus.PublishAsync(event);
+}</pre>
+        </div>
+    </details>
+</section>

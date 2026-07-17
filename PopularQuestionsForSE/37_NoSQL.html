@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 36-40 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 37 ===================== -->
+<section class="section c37">
+    <h2>🗄️ 37. NoSQL базы данных <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>MongoDB — документо-ориентированная БД.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>MongoDB</strong> — NoSQL БД с гибкой схемой (документы JSON).</p>
+
+            <p><strong>Ключевые понятия:</strong></p>
+            <ul>
+                <li><strong>Collection</strong> — аналог таблицы в SQL</li>
+                <li><strong>Document</strong> — аналог строки (JSON)</li>
+                <li><strong>BSON</strong> — бинарный JSON (быстрее, компактнее)</li>
+                <li><strong>Index</strong> — для ускорения запросов</li>
+            </ul>
+
+            <p><strong>Пример в .NET (MongoDB.Driver):</strong></p>
+            <pre>
+// Подключение
+var client = new MongoClient("mongodb://localhost:27017");
+var database = client.GetDatabase("MyApp");
+var collection = database.GetCollection&lt;User&gt;("Users");
+
+// Модель
+public class User
+{
+    [BsonId]
+    public ObjectId Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public int Age { get; set; }
+    public List&lt;string&gt; Tags { get; set; }
+}
+
+// CRUD операции
+// Вставка
+await collection.InsertOneAsync(new User { Name = "Alice", Age = 30 });
+
+// Поиск
+var users = await collection.Find(u => u.Age > 18).ToListAsync();
+
+// Поиск с проекцией
+var names = await collection.Find(u => u.Age > 18)
+    .Project(u => u.Name)
+    .ToListAsync();
+
+// Обновление
+await collection.UpdateOneAsync(
+    u => u.Id == id,
+    Builders&lt;User&gt;.Update.Set(u => u.Age, 31));
+
+// Удаление
+await collection.DeleteOneAsync(u => u.Id == id);
+
+// Агрегация
+var avgAge = await collection.Aggregate()
+    .Group(u => u.Age,
+        g => new { Age = g.Key, Count = g.Count() })
+    .ToListAsync();</pre>
+
+            <p><strong>Когда использовать MongoDB:</strong></p>
+            <ul>
+                <li>Гибкая схема (данные меняются)</li>
+                <li>Большие объёмы данных</li>
+                <li>Горизонтальное масштабирование</li>
+                <li>Вложенные структуры (документы внутри документов)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Redis — in-memory кэш.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Redis</strong> — in-memory БД (самая популярная для кэша).</p>
+
+            <p><strong>Структуры данных Redis:</strong></p>
+            <ul>
+                <li><strong>String</strong> — простые значения</li>
+                <li><strong>List</strong> — список (FIFO)</li>
+                <li><strong>Set</strong> — множество (уникальные)</li>
+                <li><strong>Sorted Set</strong> — множество с сортировкой</li>
+                <li><strong>Hash</strong> — объект (ключ-значение)</li>
+                <li><strong>Stream</strong> — очередь событий</li>
+            </ul>
+
+            <p><strong>Пример в .NET (StackExchange.Redis):</strong></p>
+            <pre>
+// Подключение
+var connection = ConnectionMultiplexer.Connect("localhost:6379");
+var db = connection.GetDatabase();
+
+// String
+await db.StringSetAsync("key", "value");
+string value = await db.StringGetAsync("key");
+
+// Hash
+await db.HashSetAsync("user:1", "name", "Alice");
+await db.HashSetAsync("user:1", "age", "30");
+var name = await db.HashGetAsync("user:1", "name");
+var all = await db.HashGetAllAsync("user:1");
+
+// List (очередь)
+await db.ListLeftPushAsync("queue", "item1");
+await db.ListLeftPushAsync("queue", "item2");
+var item = await db.ListRightPopAsync("queue");  // FIFO
+
+// Set
+await db.SetAddAsync("tags", "csharp");
+await db.SetAddAsync("tags", "dotnet");
+var members = await db.SetMembersAsync("tags");
+
+// Sorted Set (лидерборды)
+await db.SortedSetAddAsync("scoreboard", "Alice", 100);
+await db.SortedSetAddAsync("scoreboard", "Bob", 200);
+var top = await db.SortedSetRangeByRankAsync("scoreboard", 0, 1, Order.Descending);
+
+// TTL
+await db.KeyExpireAsync("key", TimeSpan.FromMinutes(10));
+
+// Pub/Sub
+var sub = connection.GetSubscriber();
+await sub.SubscribeAsync("channel", (channel, message) =>
+    Console.WriteLine($"Received: {message}"));
+await sub.PublishAsync("channel", "Hello");</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Elasticsearch — поиск и аналитика.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Elasticsearch</strong> — поисковый движок + аналитика (ELK Stack).</p>
+
+            <p><strong>Ключевые понятия:</strong></p>
+            <ul>
+                <li><strong>Index</strong> — аналог таблицы</li>
+                <li><strong>Document</strong> — JSON-документ</li>
+                <li><strong>Shard</strong> — часть индекса (партицирование)</li>
+                <li><strong>Query DSL</strong> — язык запросов (JSON)</li>
+            </ul>
+
+            <p><strong>Пример в .NET (Elasticsearch.Net / NEST):</strong></p>
+            <pre>
+// Подключение
+var settings = new ConnectionSettings(new Uri("http://localhost:9200"))
+    .DefaultIndex("users");
+var client = new ElasticClient(settings);
+
+// Модель
+[ElasticsearchType(IdProperty = "Id")]
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+    [Text(Analyzer = "russian")]
+    public string Description { get; set; }
+}
+
+// Индексация
+await client.IndexDocumentAsync(new User { Id = 1, Name = "Alice", Description = "Разработчик C#" });
+
+// Поиск
+var response = await client.SearchAsync&lt;User&gt;(s => s
+    .Query(q => q
+        .Bool(b => b
+            .Must(
+                m => m.Match(mq => mq.Field(f => f.Name).Query("Alice")),
+                m => m.Range(r => r.Field(f => f.Id).GreaterThan(0))
+            )))
+    .From(0)
+    .Size(10));
+
+// Полнотекстовый поиск (русский)
+var searchResponse = await client.SearchAsync&lt;User&gt;(s => s
+    .Query(q => q
+        .Match(m => m
+            .Field(f => f.Description)
+            .Query("разработчик")
+            .Analyzer("russian"))));
+
+// Агрегации
+var aggResponse = await client.SearchAsync&lt;User&gt;(s => s
+    .Size(0)
+    .Aggregations(a => a
+        .Terms("by_name", t => t.Field(f => f.Name.Suffix("keyword")))));</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Когда использовать NoSQL вместо SQL.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <table>
+                <tr>
+                    <th>Сценарий</th>
+                    <th>SQL</th>
+                    <th>NoSQL</th>
+                </tr>
+                <tr>
+                    <td>Схема</td>
+                    <td>Фиксированная</td>
+                    <td>Гибкая (schemaless)</td>
+                </tr>
+                <tr>
+                    <td>Транзакции</td>
+                    <td>ACID (строгие)</td>
+                    <td>BASE (eventual consistency)</td>
+                </tr>
+                <tr>
+                    <td>Связи</td>
+                    <td>JOIN, Foreign Key</td>
+                    <td>Денормализация, вложенные документы</td>
+                </tr>
+                <tr>
+                    <td>Масштабирование</td>
+                    <td>Вертикальное (сложное горизонтальное)</td>
+                    <td>Горизонтальное (sharding)</td>
+                </tr>
+                <tr>
+                    <td>Скорость</td>
+                    <td>Средняя</td>
+                    <td>Высокая</td>
+                </tr>
+                <tr>
+                    <td>Пример</td>
+                    <td>Финансы, учёт, CRM</td>
+                    <td>Каталоги, логи, аналитика, соцсети</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда использовать SQL:</strong></p>
+            <ul>
+                <li>Строгие транзакции (деньги, заказы)</li>
+                <li>Сложные связи между данными</li>
+                <li>Схема стабильна</li>
+                <li>Нужны сложные запросы (JOIN, GROUP BY)</li>
+            </ul>
+
+            <p><strong>Когда использовать NoSQL:</strong></p>
+            <ul>
+                <li>Большие объёмы данных</li>
+                <li>Схема часто меняется</li>
+                <li>Высокая нагрузка (миллионы запросов)</li>
+                <li>Горизонтальное масштабирование</li>
+                <li>Вложенные структуры (документы)</li>
+                <li>Поиск (Elasticsearch)</li>
+                <li>Кэширование (Redis)</li>
+            </ul>
+        </div>
+    </details>
+</section>

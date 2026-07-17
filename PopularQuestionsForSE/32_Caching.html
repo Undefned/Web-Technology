@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 31-35 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 32 ===================== -->
+<section class="section c32">
+    <h2>🗄️ 32. Кэширование стратегии и инвалидация <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Cache-Aside — стратегия кэширования.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Cache-Aside (Lazy Loading)</strong> — самая популярная стратегия.</p>
+
+            <p><strong>Логика:</strong></p>
+            <ol>
+                <li>Проверить кэш</li>
+                <li>Если есть → вернуть</li>
+                <li>Если нет → загрузить из БД</li>
+                <li>Сохранить в кэш</li>
+                <li>Вернуть</li>
+            </ol>
+
+            <pre>
+public async Task&lt;User&gt; GetUserAsync(int id)
+{
+    var cacheKey = $"user:{id}";
+    
+    // 1. Проверяем кэш
+    var user = await _cache.GetAsync&lt;User&gt;(cacheKey);
+    if (user != null)
+        return user;
+    
+    // 2. Загружаем из БД
+    user = await _db.Users.FindAsync(id);
+    
+    // 3. Сохраняем в кэш
+    await _cache.SetAsync(cacheKey, user, TimeSpan.FromMinutes(10));
+    
+    return user;
+}
+
+// Обновление — инвалидация кэша
+public async Task UpdateUserAsync(User user)
+{
+    await _db.SaveChangesAsync();
+    await _cache.RemoveAsync($"user:{user.Id}");
+}</pre>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Простая реализация</li>
+                <li>Работает для любых данных</li>
+                <li>Кэшируются только запрошенные данные</li>
+            </ul>
+
+            <p><strong>Недостатки:</strong></p>
+            <ul>
+                <li>Cache Stampede (много запросов одновременно)</li>
+                <li>Нет автоматической инвалидации</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Write-Through и Write-Behind.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Write-Through (сквозная запись)</strong></p>
+            <ul>
+                <li>Запись одновременно в БД и кэш</li>
+                <li>Кэш всегда актуален</li>
+                <li>Медленнее (две операции)</li>
+            </ul>
+            <pre>
+public async Task UpdateUserAsync(User user)
+{
+    await _db.UpdateUserAsync(user);
+    await _cache.SetAsync($"user:{user.Id}", user, TimeSpan.FromMinutes(10));
+}</pre>
+
+            <p><strong>Write-Behind (Write-Back, отложенная запись)</strong></p>
+            <ul>
+                <li>Запись только в кэш (быстро)</li>
+                <li>Асинхронно синхронизируется с БД</li>
+                <li>Риск потери данных</li>
+                <li>Высокая производительность</li>
+            </ul>
+            <pre>
+public async Task UpdateUserAsync(User user)
+{
+    // Сразу в кэш
+    await _cache.SetAsync($"user:{user.Id}", user, TimeSpan.FromMinutes(30));
+    
+    // Добавляем в очередь на синхронизацию
+    await _queue.EnqueueAsync(new UserUpdateEvent(user));
+}
+
+// Фоновый процесс
+public class UserSyncProcessor : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var events = await _queue.DequeueBatchAsync(100, stoppingToken);
+            foreach (var evt in events)
+            {
+                await _db.UpdateUserAsync(evt.User);
+            }
+            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+        }
+    }
+}</pre>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr>
+                    <th>Стратегия</th>
+                    <th>Скорость записи</th>
+                    <th>Актуальность</th>
+                    <th>Риск потери</th>
+                </tr>
+                <tr>
+                    <td>Cache-Aside</td>
+                    <td>Средняя</td>
+                    <td>Средняя</td>
+                    <td>Нет</td>
+                </tr>
+                <tr>
+                    <td>Write-Through</td>
+                    <td>Медленная</td>
+                    <td>Высокая</td>
+                    <td>Нет</td>
+                </tr>
+                <tr>
+                    <td>Write-Behind</td>
+                    <td>Быстрая</td>
+                    <td>Низкая</td>
+                    <td>Да</td>
+                </tr>
+            </table>
+        </div>
+    </details>
+
+    <details>
+        <summary>Cache Invalidation — как инвалидировать кэш.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Cache Invalidation (инвалидация)</strong> — удаление устаревших данных из кэша.</p>
+
+            <p><strong>Способы:</strong></p>
+
+            <p><strong>1. TTL (Time-To-Live) — время жизни</strong></p>
+            <pre>
+// Простой TTL
+await _cache.SetAsync(key, data, TimeSpan.FromMinutes(10));
+
+// Sliding TTL (продлевается при каждом обращении)
+await _cache.SetAsync(key, data, new MemoryCacheEntryOptions
+{
+    SlidingExpiration = TimeSpan.FromMinutes(5)
+});</pre>
+
+            <p><strong>2. Активная инвалидация (при обновлении данных)</strong></p>
+            <pre>
+public async Task UpdateUserAsync(User user)
+{
+    await _db.SaveChangesAsync();
+    
+    // Удаляем из кэша
+    await _cache.RemoveAsync($"user:{user.Id}");
+    await _cache.RemoveAsync($"users:list");
+}</pre>
+
+            <p><strong>3. Версионирование</strong></p>
+            <pre>
+// Ключ содержит версию
+var version = await _db.GetVersionAsync();
+var key = $"users:list:v{version}";
+var data = await _cache.GetAsync(key);</pre>
+
+            <p><strong>4. Event-based Invalidation (через брокер)</strong></p>
+            <pre>
+// Публикация события при изменении
+await _eventBus.PublishAsync(new UserUpdatedEvent(user.Id));
+
+// Подписка на события для инвалидации
+public class UserCacheInvalidator : IEventHandler&lt;UserUpdatedEvent&gt;
+{
+    public async Task Handle(UserUpdatedEvent evt)
+    {
+        await _cache.RemoveAsync($"user:{evt.UserId}");
+    }
+}</pre>
+
+            <p><strong>5. Cache Stampede (защита от множественных запросов)</strong></p>
+            <pre>
+// Только один запрос к БД, остальные ждут
+private readonly SemaphoreSlim _semaphore = new(1, 1);
+
+public async Task&lt;User&gt; GetUserAsync(int id)
+{
+    var key = $"user:{id}";
+    var user = await _cache.GetAsync&lt;User&gt;(key);
+    if (user != null) return user;
+    
+    await _semaphore.WaitAsync();
+    try
+    {
+        // Double-check после блокировки
+        user = await _cache.GetAsync&lt;User&gt;(key);
+        if (user != null) return user;
+        
+        user = await _db.Users.FindAsync(id);
+        await _cache.SetAsync(key, user, TimeSpan.FromMinutes(10));
+        return user;
+    }
+    finally
+    {
+        _semaphore.Release();
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Distributed Cache — Redis vs Memcached.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>Redis</th>
+                    <th>Memcached</th>
+                </tr>
+                <tr>
+                    <td>Тип</td>
+                    <td>Key-Value + структуры</td>
+                    <td>Key-Value (только строки)</td>
+                </tr>
+                <tr>
+                    <td>Структуры</td>
+                    <td>List, Set, Hash, Sorted Set, Stream</td>
+                    <td>Нет</td>
+                </tr>
+                <tr>
+                    <td>Персистентность</td>
+                    <td>Да (RDB/AOF)</td>
+                    <td>Нет (только в памяти)</td>
+                </tr>
+                <tr>
+                    <td>Скорость</td>
+                    <td>Очень быстрый</td>
+                    <td>Очень быстрый</td>
+                </tr>
+                <tr>
+                    <td>Сложность</td>
+                    <td>Средняя</td>
+                    <td>Низкая</td>
+                </tr>
+                <tr>
+                    <td>Транзакции</td>
+                    <td>Да</td>
+                    <td>Нет</td>
+                </tr>
+                <tr>
+                    <td>Lua скрипты</td>
+                    <td>Да</td>
+                    <td>Нет</td>
+                </tr>
+                <tr>
+                    <td>Где использовать</td>
+                    <td>Сложное кэширование, сессии, lock</td>
+                    <td>Простое кэширование</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда выбрать Redis:</strong></p>
+            <ul>
+                <li>Нужны сложные структуры данных</li>
+                <li>Нужна персистентность</li>
+                <li>Нужны транзакции/блокировки</li>
+                <li>Планируется масштабирование</li>
+            </ul>
+
+            <p><strong>Когда выбрать Memcached:</strong></p>
+            <ul>
+                <li>Простое кэширование (строки)</li>
+                <li>Максимальная производительность</li>
+                <li>Простота</li>
+                <li>Данные не важны (можно потерять)</li>
+            </ul>
+        </div>
+    </details>
+</section>

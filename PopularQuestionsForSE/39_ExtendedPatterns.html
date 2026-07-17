@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 36-40 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 39 ===================== -->
+<section class="section c39">
+    <h2>🧩 39. Дополнительные паттерны проектирования <span class="badge purple">Mid+</span></h2>
+
+    <details>
+        <summary>Chain of Responsibility — цепочка обязанностей.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Chain of Responsibility</strong> — передача запроса по цепочке обработчиков.</p>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+public abstract class Handler
+{
+    protected Handler _next;
+    
+    public Handler SetNext(Handler next)
+    {
+        _next = next;
+        return next;
+    }
+    
+    public abstract Task HandleAsync(Request request);
+}
+
+public class AuthHandler : Handler
+{
+    public override async Task HandleAsync(Request request)
+    {
+        if (!IsAuthenticated(request))
+        {
+            throw new UnauthorizedException();
+        }
+        await _next?.HandleAsync(request);
+    }
+}
+
+public class ValidationHandler : Handler
+{
+    public override async Task HandleAsync(Request request)
+    {
+        if (!IsValid(request))
+        {
+            throw new ValidationException();
+        }
+        await _next?.HandleAsync(request);
+    }
+}
+
+public class LoggingHandler : Handler
+{
+    public override async Task HandleAsync(Request request)
+    {
+        Console.WriteLine($"Processing: {request.Path}");
+        await _next?.HandleAsync(request);
+        Console.WriteLine($"Done: {request.Path}");
+    }
+}
+
+// Использование
+var pipeline = new AuthHandler()
+    .SetNext(new ValidationHandler())
+    .SetNext(new LoggingHandler());
+
+await pipeline.HandleAsync(request);</pre>
+
+            <p><strong>Middleware в ASP.NET Core — это Chain of Responsibility!</strong></p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Command — инкапсуляция запроса.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Command</strong> — инкапсуляция запроса как объекта.</p>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Command
+public interface ICommand
+{
+    void Execute();
+}
+
+public class SaveOrderCommand : ICommand
+{
+    private readonly Order _order;
+    private readonly IOrderRepository _repository;
+    
+    public SaveOrderCommand(Order order, IOrderRepository repository)
+    {
+        _order = order;
+        _repository = repository;
+    }
+    
+    public void Execute()
+    {
+        _repository.Save(_order);
+    }
+}
+
+// Invoker
+public class CommandInvoker
+{
+    public void ExecuteCommand(ICommand command)
+    {
+        command.Execute();
+    }
+}
+
+// Использование
+var command = new SaveOrderCommand(order, repository);
+new CommandInvoker().ExecuteCommand(command);
+
+// Undo/Redo
+public interface ICommandWithUndo : ICommand
+{
+    void Undo();
+}
+
+public class CreateOrderCommand : ICommandWithUndo
+{
+    private readonly Order _order;
+    private readonly IOrderRepository _repository;
+    private int _savedId;
+    
+    public void Execute()
+    {
+        _savedId = _repository.Save(_order);
+    }
+    
+    public void Undo()
+    {
+        _repository.Delete(_savedId);
+    }
+}</pre>
+
+            <p><strong>MediatR использует Command паттерн!</strong></p>
+        </div>
+    </details>
+
+    <details>
+        <summary>State — управление состояниями.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>State</strong> — поведение объекта зависит от его состояния.</p>
+
+            <p><strong>Пример (заказ):</strong></p>
+            <pre>
+// State
+public interface IOrderState
+{
+    void Pay(Order order);
+    void Ship(Order order);
+    void Cancel(Order order);
+}
+
+// Concrete States
+public class NewOrderState : IOrderState
+{
+    public void Pay(Order order)
+    {
+        order.State = new PaidOrderState();
+        Console.WriteLine("Order paid");
+    }
+    
+    public void Ship(Order order) => 
+        throw new InvalidOperationException("Can't ship unpaid order");
+    
+    public void Cancel(Order order)
+    {
+        order.State = new CancelledOrderState();
+        Console.WriteLine("Order cancelled");
+    }
+}
+
+public class PaidOrderState : IOrderState
+{
+    public void Pay(Order order) => 
+        throw new InvalidOperationException("Already paid");
+    
+    public void Ship(Order order)
+    {
+        order.State = new ShippedOrderState();
+        Console.WriteLine("Order shipped");
+    }
+    
+    public void Cancel(Order order) => 
+        throw new InvalidOperationException("Can't cancel paid order");
+}
+
+public class ShippedOrderState : IOrderState
+{
+    public void Pay(Order order) => 
+        throw new InvalidOperationException("Already paid");
+    
+    public void Ship(Order order) => 
+        throw new InvalidOperationException("Already shipped");
+    
+    public void Cancel(Order order) => 
+        throw new InvalidOperationException("Can't cancel shipped order");
+}
+
+// Context
+public class Order
+{
+    public IOrderState State { get; set; }
+    
+    public Order()
+    {
+        State = new NewOrderState();
+    }
+    
+    public void Pay() => State.Pay(this);
+    public void Ship() => State.Ship(this);
+    public void Cancel() => State.Cancel(this);
+}
+
+// Использование
+var order = new Order();
+order.Pay();      // New → Paid
+order.Ship();     // Paid → Shipped
+order.Cancel();   // Ошибка (Can't cancel shipped order)</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Proxy — заместитель.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Proxy</strong> — объект, заменяющий другой объект для контроля доступа.</p>
+
+            <p><strong>Типы Proxy:</strong></p>
+            <ul>
+                <li><strong>Virtual Proxy</strong> — ленивая инициализация (Lazy Loading)</li>
+                <li><strong>Protection Proxy</strong> — контроль доступа (Security)</li>
+                <li><strong>Remote Proxy</strong> — удалённый доступ (gRPC, WCF)</li>
+                <li><strong>Cache Proxy</strong> — кэширование</li>
+            </ul>
+
+            <p><strong>Пример (Virtual Proxy):</strong></p>
+            <pre>
+// Subject
+public interface IImage
+{
+    void Display();
+}
+
+// Real Subject
+public class HighResolutionImage : IImage
+{
+    private string _filename;
+    
+    public HighResolutionImage(string filename)
+    {
+        _filename = filename;
+        LoadFromDisk();
+    }
+    
+    private void LoadFromDisk()
+    {
+        Console.WriteLine($"Loading {_filename} (heavy operation)");
+    }
+    
+    public void Display()
+    {
+        Console.WriteLine($"Displaying {_filename}");
+    }
+}
+
+// Proxy
+public class ImageProxy : IImage
+{
+    private string _filename;
+    private HighResolutionImage _realImage;
+    
+    public ImageProxy(string filename)
+    {
+        _filename = filename;
+    }
+    
+    public void Display()
+    {
+        // Ленивая инициализация
+        _realImage ??= new HighResolutionImage(_filename);
+        _realImage.Display();
+    }
+}
+
+// Использование
+var image = new ImageProxy("photo.jpg");
+// Ничего не загружено!
+
+image.Display();  // Загружается при первом обращении
+image.Display();  // Использует уже загруженный</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Template Method — шаблонный метод.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Template Method</strong> — определяет скелет алгоритма в базовом классе, детали — в наследниках.</p>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Abstract Class
+public abstract class DataProcessor
+{
+    // Template Method (скелет алгоритма)
+    public void Process()
+    {
+        var data = LoadData();
+        var transformed = Transform(data);
+        SaveData(transformed);
+        NotifyComplete();
+    }
+    
+    protected abstract string LoadData();
+    protected abstract string Transform(string data);
+    protected abstract void SaveData(string data);
+    
+    // Hook method (optional)
+    protected virtual void NotifyComplete()
+    {
+        Console.WriteLine("Processing complete");
+    }
+}
+
+// Concrete Implementations
+public class CsvDataProcessor : DataProcessor
+{
+    protected override string LoadData()
+    {
+        Console.WriteLine("Loading CSV");
+        return "csv data";
+    }
+    
+    protected override string Transform(string data)
+    {
+        Console.WriteLine("Transforming CSV");
+        return data.ToUpper();
+    }
+    
+    protected override void SaveData(string data)
+    {
+        Console.WriteLine($"Saving CSV: {data}");
+    }
+}
+
+public class XmlDataProcessor : DataProcessor
+{
+    protected override string LoadData()
+    {
+        Console.WriteLine("Loading XML");
+        return "&lt;data&gt;value&lt;/data&gt;";
+    }
+    
+    protected override string Transform(string data)
+    {
+        Console.WriteLine("Transforming XML");
+        return data.Replace("value", "processed");
+    }
+    
+    protected override void SaveData(string data)
+    {
+        Console.WriteLine($"Saving XML: {data}");
+    }
+    
+    protected override void NotifyComplete()
+    {
+        base.NotifyComplete();
+        Console.WriteLine("XML processing finished");
+    }
+}
+
+// Использование
+var processor = new CsvDataProcessor();
+processor.Process();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Memento — сохранение состояния.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Memento</strong> — сохранение и восстановление состояния объекта (Undo/Redo).</p>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Memento
+public class EditorMemento
+{
+    public string Content { get; }
+    public DateTime Timestamp { get; }
+    
+    public EditorMemento(string content)
+    {
+        Content = content;
+        Timestamp = DateTime.Now;
+    }
+}
+
+// Originator
+public class TextEditor
+{
+    private string _content = "";
+    
+    public void Write(string text)
+    {
+        _content += text;
+    }
+    
+    public string GetContent() => _content;
+    
+    public EditorMemento Save()
+    {
+        return new EditorMemento(_content);
+    }
+    
+    public void Restore(EditorMemento memento)
+    {
+        _content = memento.Content;
+    }
+}
+
+// Caretaker
+public class History
+{
+    private Stack&lt;EditorMemento&gt; _history = new();
+    
+    public void Push(EditorMemento memento) => _history.Push(memento);
+    public EditorMemento Pop() => _history.Pop();
+    public bool CanUndo => _history.Count > 0;
+}
+
+// Использование
+var editor = new TextEditor();
+var history = new History();
+
+editor.Write("Hello");
+history.Push(editor.Save());
+
+editor.Write(" World");
+history.Push(editor.Save());
+
+editor.Write("!");
+
+Console.WriteLine(editor.GetContent());  // "Hello World!"
+
+// Undo
+if (history.CanUndo)
+    editor.Restore(history.Pop());
+
+Console.WriteLine(editor.GetContent());  // "Hello World"
+
+// Undo again
+if (history.CanUndo)
+    editor.Restore(history.Pop());
+
+Console.WriteLine(editor.GetContent());  // "Hello"</pre>
+        </div>
+    </details>
+</section>

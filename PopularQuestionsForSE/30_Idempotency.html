@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 24-30 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 30 ===================== -->
+<section class="section c30">
+    <h2>🔄 30. Идемпотентность и обработка дубликатов <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Что такое идемпотентность?</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>Идемпотентность</strong> — свойство операции, при котором повторный вызов даёт тот же результат.</p>
+
+            <p><strong>Примеры:</strong></p>
+            <ul>
+                <li><strong>GET</strong> — всегда идемпотентен (не меняет состояние)</li>
+                <li><strong>PUT</strong> — идемпотентен (обновление ресурса)</li>
+                <li><strong>DELETE</strong> — идемпотентен (первый раз 200, второй — 404)</li>
+                <li><strong>POST</strong> — НЕ идемпотентен (создаёт новый ресурс)</li>
+            </ul>
+
+            <p><strong>Почему важно:</strong></p>
+            <ul>
+                <li>Сетевые проблемы → повторные запросы</li>
+                <li>At-least-once доставка сообщений</li>
+                <li>Retry в клиентах</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Idempotency Key — как реализовать.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Idempotency Key</strong> — уникальный идентификатор запроса.</p>
+
+            <p><strong>Клиент:</strong></p>
+            <pre>
+// Клиент генерирует ключ
+var idempotencyKey = Guid.NewGuid().ToString();
+var request = new CreateOrderRequest { ... };
+
+// Добавляет в заголовок
+client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
+var response = await client.PostAsync("/api/orders", content);</pre>
+
+            <p><strong>Сервер:</strong></p>
+            <pre>
+[HttpPost]
+public async Task&lt;IActionResult&gt; CreateOrder(CreateOrderRequest request)
+{
+    // Проверка ключа
+    var key = Request.Headers["Idempotency-Key"].FirstOrDefault();
+    if (string.IsNullOrEmpty(key))
+        return BadRequest("Idempotency-Key required");
+
+    // Проверка в кэше/БД
+    if (await _cache.ExistsAsync($"idempotent:{key}"))
+    {
+        // Возвращаем предыдущий результат
+        var cached = await _cache.GetAsync&lt;OrderResponse&gt;($"idempotent:{key}");
+        return Ok(cached);
+    }
+
+    // Обработка запроса
+    var result = await _orderService.CreateAsync(request);
+
+    // Сохраняем результат
+    await _cache.SetAsync($"idempotent:{key}", result, TimeSpan.FromHours(24));
+
+    return CreatedAtAction(nameof(GetOrder), new { id = result.Id }, result);
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Обработка дубликатов в очередях.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Проблема:</strong> At-least-once доставка → дубликаты сообщений.</p>
+
+            <p><strong>Решение:</strong></p>
+
+            <p><strong>1. Idempotency Key в сообщении</strong></p>
+            <pre>
+public class Message
+{
+    public string IdempotencyKey { get; set; }
+    public object Data { get; set; }
+}
+
+// Consumer
+public async Task ProcessMessageAsync(Message message)
+{
+    if (await _cache.ExistsAsync(message.IdempotencyKey))
+        return;  // Уже обработано
+
+    await ProcessData(message.Data);
+    await _cache.SetAsync(message.IdempotencyKey, "done", TimeSpan.FromHours(24));
+}</pre>
+
+            <p><strong>2. Транзакционная обработка</strong></p>
+            <pre>
+// Использование транзакции БД
+using var transaction = await _dbContext.Database.BeginTransactionAsync();
+try
+{
+    await _dbContext.Orders.AddAsync(order);
+    await _dbContext.SaveChangesAsync();
+    
+    // Только после сохранения
+    await _messageBus.PublishAsync(new OrderCreatedEvent(order.Id));
+    
+    await transaction.CommitAsync();
+}
+catch
+{
+    await transaction.RollbackAsync();
+    throw;
+}</pre>
+
+            <p><strong>3. Deduplication Table</strong></p>
+            <pre>
+CREATE TABLE ProcessedMessages (
+    MessageId VARCHAR(36) PRIMARY KEY,
+    ProcessedAt DATETIME
+);
+
+-- Проверка перед обработкой
+INSERT INTO ProcessedMessages (MessageId, ProcessedAt)
+VALUES (@messageId, GETUTCDATE())
+-- Если дубликат → ошибка</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Как гарантировать exactly-once доставку.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Exactly-once</strong> — идеальный случай, сложно реализовать.</p>
+
+            <p><strong>Комбинация подходов:</strong></p>
+            <ul>
+                <li><strong>Idempotency Key</strong> — уникальный ID запроса</li>
+                <li><strong>Транзакция</strong> — атомарная запись в БД + публикация события</li>
+                <li><strong>Outbox Pattern</strong> — сохранение событий в БД, доставка в фоне</li>
+            </ul>
+
+            <p><strong>Outbox Pattern:</strong></p>
+            <pre>
+// Создание заказа
+public async Task CreateOrderAsync(Order order)
+{
+    using var transaction = await _dbContext.Database.BeginTransactionAsync();
+    try
+    {
+        // 1. Сохраняем заказ
+        await _dbContext.Orders.AddAsync(order);
+        
+        // 2. Сохраняем событие в Outbox
+        var outbox = new OutboxMessage
+        {
+            Id = Guid.NewGuid(),
+            Type = "OrderCreated",
+            Data = JsonSerializer.Serialize(order),
+            CreatedAt = DateTime.UtcNow
+        };
+        await _dbContext.OutboxMessages.AddAsync(outbox);
+        
+        await _dbContext.SaveChangesAsync();
+        await transaction.CommitAsync();
+    }
+    catch { await transaction.RollbackAsync(); throw; }
+}
+
+// Фоновый процесс доставки
+public class OutboxProcessor : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var messages = await _dbContext.OutboxMessages
+                .Where(m => !m.Processed)
+                .Take(100)
+                .ToListAsync();
+            
+            foreach (var msg in messages)
+            {
+                try
+                {
+                    await _messageBus.PublishAsync(msg);
+                    msg.Processed = true;
+                    await _dbContext.SaveChangesAsync();
+                }
+                catch
+                {
+                    // Повтор позже
+                }
+            }
+            
+            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+        }
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Как обрабатывать повторные запросы в REST API.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>GET — безопасен, можно повторять</strong></p>
+            <pre>
+[HttpGet("{id}")]
+public IActionResult Get(int id)
+{
+    var user = _userService.Get(id);
+    return user == null ? NotFound() : Ok(user);
+}</pre>
+
+            <p><strong>PUT — идемпотентен</strong></p>
+            <pre>
+[HttpPut("{id}")]
+public IActionResult Update(int id, User user)
+{
+    var existing = _userService.Get(id);
+    if (existing == null) return NotFound();
+    
+    // Обновление (идемпотентно)
+    existing.Name = user.Name;
+    existing.Email = user.Email;
+    _userService.Update(existing);
+    return Ok(existing);
+}</pre>
+
+            <p><strong>POST — реализуем идемпотентность</strong></p>
+            <pre>
+[HttpPost]
+public async Task&lt;IActionResult&gt; Create([FromBody] User user, 
+    [FromHeader(Name = "Idempotency-Key")] string key)
+{
+    if (string.IsNullOrEmpty(key))
+        return BadRequest("Idempotency-Key required");
+
+    // Проверка в кэше
+    var cached = await _cache.GetAsync&lt;User&gt;($"idempotent:{key}");
+    if (cached != null)
+        return Ok(cached);
+
+    // Создание
+    var created = await _userService.CreateAsync(user);
+    
+    // Сохраняем в кэш
+    await _cache.SetAsync($"idempotent:{key}", created, TimeSpan.FromHours(24));
+    
+    return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+}</pre>
+        </div>
+    </details>
+</section>

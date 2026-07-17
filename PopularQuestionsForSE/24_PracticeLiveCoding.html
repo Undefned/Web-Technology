@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 24-30 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 24 ===================== -->
+<section class="section c24">
+    <h2>💻 24. Практические задачи (Live Coding) <span class="badge red">100%</span></h2>
+
+    <details>
+        <summary>FizzBuzz — классическая задача.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>Задача:</strong> Вывести числа от 1 до 100. Для чисел, кратных 3 — вывести "Fizz", кратных 5 — "Buzz", кратных 3 и 5 — "FizzBuzz".</p>
+            <pre>
+for (int i = 1; i &lt;= 100; i++)
+{
+    if (i % 15 == 0) Console.WriteLine("FizzBuzz");
+    else if (i % 3 == 0) Console.WriteLine("Fizz");
+    else if (i % 5 == 0) Console.WriteLine("Buzz");
+    else Console.WriteLine(i);
+}
+
+// ✅ С LINQ
+Enumerable.Range(1, 100)
+    .Select(i => (i % 3 == 0, i % 5 == 0) switch
+    {
+        (true, true) => "FizzBuzz",
+        (true, false) => "Fizz",
+        (false, true) => "Buzz",
+        _ => i.ToString()
+    })
+    .ToList()
+    .ForEach(Console.WriteLine);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Проверка строки на палиндром.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>Задача:</strong> Проверить, является ли строка палиндромом (читается одинаково слева направо и справа налево).</p>
+            <pre>
+bool IsPalindrome(string s)
+{
+    var cleaned = new string(s.Where(char.IsLetterOrDigit).Select(char.ToLower).ToArray());
+    int left = 0, right = cleaned.Length - 1;
+    while (left &lt; right)
+    {
+        if (cleaned[left] != cleaned[right]) return false;
+        left++;
+        right--;
+    }
+    return true;
+}
+
+// ✅ С LINQ
+bool IsPalindromeLinq(string s)
+{
+    var cleaned = s.Where(char.IsLetterOrDigit).Select(char.ToLower).ToArray();
+    return cleaned.SequenceEqual(cleaned.Reverse());
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Поиск дубликатов в массиве.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            <p><strong>Задача:</strong> Найти все дубликаты в массиве.</p>
+            <pre>
+// ✅ Через HashSet
+int[] FindDuplicates(int[] arr)
+{
+    var seen = new HashSet&lt;int&gt;();
+    var duplicates = new HashSet&lt;int&gt;();
+    foreach (int x in arr)
+    {
+        if (!seen.Add(x))
+            duplicates.Add(x);
+    }
+    return duplicates.ToArray();
+}
+
+// ✅ Через LINQ
+int[] FindDuplicatesLinq(int[] arr)
+{
+    return arr
+        .GroupBy(x => x)
+        .Where(g => g.Count() > 1)
+        .Select(g => g.Key)
+        .ToArray();
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Реализовать свой LINQ метод Where (с yield).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            <p><strong>Задача:</strong> Написать свой метод <code>MyWhere</code> с отложенным выполнением.</p>
+            <pre>
+public static IEnumerable&lt;T&gt; MyWhere&lt;T&gt;(this IEnumerable&lt;T&gt; source, Func&lt;T, bool&gt; predicate)
+{
+    if (source == null) throw new ArgumentNullException(nameof(source));
+    if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+    
+    foreach (var item in source)
+    {
+        if (predicate(item))
+            yield return item;
+    }
+}
+
+// Использование
+var numbers = new int[] { 1, 2, 3, 4, 5 };
+var result = numbers.MyWhere(x => x > 3);
+foreach (var n in result) Console.WriteLine(n); // 4, 5</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Потокобезопасный Singleton.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            <p><strong>Задача:</strong> Реализовать потокобезопасный Singleton.</p>
+            <pre>
+public sealed class Singleton
+{
+    private static readonly Singleton _instance = new Singleton();
+    private Singleton() { }
+    public static Singleton Instance => _instance;
+}
+
+// ✅ С Lazy&lt;T&gt; (C# 4+)
+public sealed class SingletonLazy
+{
+    private static readonly Lazy&lt;SingletonLazy&gt; _instance =
+        new Lazy&lt;SingletonLazy&gt;(() => new SingletonLazy());
+    private SingletonLazy() { }
+    public static SingletonLazy Instance => _instance.Value;
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Реализовать Producer-Consumer с BlockingCollection.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            <p><strong>Задача:</strong> Реализовать Producer-Consumer с использованием <code>BlockingCollection</code>.</p>
+            <pre>
+var queue = new BlockingCollection&lt;int&gt;(boundedCapacity: 10);
+
+// Producer
+Task.Run(() =>
+{
+    for (int i = 0; i &lt; 100; i++)
+    {
+        queue.Add(i);
+        Console.WriteLine($"Produced: {i}");
+        Thread.Sleep(100);
+    }
+    queue.CompleteAdding();
+});
+
+// Consumer
+Task.Run(() =>
+{
+    foreach (var item in queue.GetConsumingEnumerable())
+    {
+        Console.WriteLine($"Consumed: {item}");
+        Thread.Sleep(150);
+    }
+});
+
+Console.WriteLine("Press any key to exit...");
+Console.ReadKey();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Написать REST API (CRUD) на ASP.NET Core.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            <p><strong>Задача:</strong> Написать простой REST API для управления пользователями.</p>
+            <pre>
+// Model
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
+
+// Controller
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
+{
+    private static List&lt;User&gt; _users = new();
+    private static int _nextId = 1;
+
+    [HttpGet]
+    public IActionResult GetAll() => Ok(_users);
+
+    [HttpGet("{id}")]
+    public IActionResult Get(int id)
+    {
+        var user = _users.FirstOrDefault(u => u.Id == id);
+        return user == null ? NotFound() : Ok(user);
+    }
+
+    [HttpPost]
+    public IActionResult Create(User user)
+    {
+        user.Id = _nextId++;
+        _users.Add(user);
+        return CreatedAtAction(nameof(Get), new { id = user.Id }, user);
+    }
+
+    [HttpPut("{id}")]
+    public IActionResult Update(int id, User user)
+    {
+        var existing = _users.FirstOrDefault(u => u.Id == id);
+        if (existing == null) return NotFound();
+        existing.Name = user.Name;
+        existing.Email = user.Email;
+        return Ok(existing);
+    }
+
+    [HttpDelete("{id}")]
+    public IActionResult Delete(int id)
+    {
+        var user = _users.FirstOrDefault(u => u.Id == id);
+        if (user == null) return NotFound();
+        _users.Remove(user);
+        return NoContent();
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Написать функцию, проверяющую корректность скобок.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            <p><strong>Задача:</strong> Проверить, правильно ли расставлены скобки в строке.</p>
+            <pre>
+bool IsValidParentheses(string s)
+{
+    var stack = new Stack&lt;char&gt;();
+    var pairs = new Dictionary&lt;char, char&gt;
+    {
+        { ')', '(' },
+        { '}', '{' },
+        { ']', '[' }
+    };
+
+    foreach (char c in s)
+    {
+        if (pairs.ContainsValue(c)) // Открывающая
+            stack.Push(c);
+        else if (pairs.ContainsKey(c)) // Закрывающая
+        {
+            if (stack.Count == 0 || stack.Pop() != pairs[c])
+                return false;
+        }
+    }
+    return stack.Count == 0;
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Найти отсутствующее число в массиве 1..N.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            <p><strong>Задача:</strong> Дан массив чисел от 1 до N, одно число пропущено. Найти его.</p>
+            <pre>
+int FindMissingNumber(int[] arr, int n)
+{
+    int total = n * (n + 1) / 2;
+    int sum = arr.Sum();
+    return total - sum;
+}
+
+// ✅ С XOR (без переполнения)
+int FindMissingNumberXor(int[] arr, int n)
+{
+    int xor = 0;
+    for (int i = 1; i &lt;= n; i++) xor ^= i;
+    foreach (int x in arr) xor ^= x;
+    return xor;
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Найти максимальную сумму подмассива (Kadane's algorithm).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            <p><strong>Задача:</strong> Найти подмассив с максимальной суммой.</p>
+            <pre>
+int MaxSubArray(int[] arr)
+{
+    int maxSoFar = arr[0];
+    int maxEndingHere = arr[0];
+    
+    for (int i = 1; i &lt; arr.Length; i++)
+    {
+        maxEndingHere = Math.Max(arr[i], maxEndingHere + arr[i]);
+        maxSoFar = Math.Max(maxSoFar, maxEndingHere);
+    }
+    return maxSoFar;
+}
+
+// Пример: [-2,1,-3,4,-1,2,1,-5,4] → 6 ([4,-1,2,1])</pre>
+        </div>
+    </details>
+</section>

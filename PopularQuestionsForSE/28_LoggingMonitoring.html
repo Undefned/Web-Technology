@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 24-30 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 28 ===================== -->
+<section class="section c28">
+    <h2>📊 28. Логирование и мониторинг <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>ILogger vs Serilog vs NLog.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>ILogger</th>
+                    <th>Serilog</th>
+                    <th>NLog</th>
+                </tr>
+                <tr>
+                    <td>Встроен</td>
+                    <td>Да (в .NET Core)</td>
+                    <td>Нет (NuGet)</td>
+                    <td>Нет (NuGet)</td>
+                </tr>
+                <tr>
+                    <td>Структурированные логи</td>
+                    <td>Ограничено</td>
+                    <td>✅ Да</td>
+                    <td>✅ Да</td>
+                </tr>
+                <tr>
+                    <td>Sinks (вывод)</td>
+                    <td>Ограничено</td>
+                    <td>Много (Seq, Elastic, Console)</td>
+                    <td>Много (Файлы, БД)</td>
+                </tr>
+                <tr>
+                    <td>Производительность</td>
+                    <td>Быстрый</td>
+                    <td>Средний</td>
+                    <td>Быстрый</td>
+                </tr>
+                <tr>
+                    <td>Где использовать</td>
+                    <td>ASP.NET Core (по умолчанию)</td>
+                    <td>Сложное логирование</td>
+                    <td>Устаревшие проекты</td>
+                </tr>
+            </table>
+
+            <p><strong>ILogger:</strong></p>
+            <pre>
+builder.Services.AddLogging();
+app.MapGet("/test", (ILogger&lt;Program&gt; logger) =>
+{
+    logger.LogInformation("Test endpoint called at {Time}", DateTime.Now);
+    return "Ok";
+});</pre>
+
+            <p><strong>Serilog:</strong></p>
+            <pre>
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.Seq("http://seq:5341")
+    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://elastic:9200")))
+    .CreateLogger();
+
+builder.Host.UseSerilog();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Структурированное логирование (JSON-логи).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Структурированное логирование</strong> — логи в JSON-формате с полями.</p>
+
+            <p><strong>Пример с Serilog:</strong></p>
+            <pre>
+_logger.Information("User {UserId} logged in from {IpAddress}", userId, ipAddress);
+
+// В JSON:
+{
+    "Timestamp": "2026-07-17T12:00:00Z",
+    "Level": "Information",
+    "Message": "User 123 logged in from 192.168.1.1",
+    "UserId": 123,
+    "IpAddress": "192.168.1.1",
+    "SourceContext": "MyApp.Services.AuthService"
+}</pre>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Можно фильтровать по полям (<code>UserId=123</code>)</li>
+                <li>Легко агрегировать (ELK, DataDog)</li>
+                <li>Лучше для анализа</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Уровни логирования.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <table>
+                <tr>
+                    <th>Уровень</th>
+                    <th>Когда использовать</th>
+                </tr>
+                <tr>
+                    <td><strong>Trace</strong></td>
+                    <td>Мельчайшие детали (отладка)</td>
+                </tr>
+                <tr>
+                    <td><strong>Debug</strong></td>
+                    <td>Отладочная информация (для разработчиков)</td>
+                </tr>
+                <tr>
+                    <td><strong>Information</strong></td>
+                    <td>Нормальная работа (логи в продакшене)</td>
+                </tr>
+                <tr>
+                    <td><strong>Warning</strong></td>
+                    <td>Проблемы, которые не критичны</td>
+                </tr>
+                <tr>
+                    <td><strong>Error</strong></td>
+                    <td>Ошибки, но приложение работает</td>
+                </tr>
+                <tr>
+                    <td><strong>Critical</strong></td>
+                    <td>Критические ошибки (приложение падает)</td>
+                </tr>
+            </table>
+
+            <p><strong>Настройка уровней:</strong></p>
+            <pre>
+{
+    "Logging": {
+        "LogLevel": {
+            "Default": "Information",
+            "Microsoft.AspNetCore": "Warning",
+            "MyApp": "Debug"
+        }
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Health Checks — liveness, readiness, startup.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Health Checks</strong> — проверка работоспособности приложения.</p>
+
+            <pre>
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck&lt;AppDbContext&gt;()
+    .AddRedis("localhost:6379");
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = _ => true
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false
+});</pre>
+
+            <p><strong>В Kubernetes:</strong></p>
+            <pre>
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 80
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 80
+  initialDelaySeconds: 5
+  periodSeconds: 5</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>OpenTelemetry — распределённая трассировка.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>OpenTelemetry</strong> — стандарт для сбора телеметрии.</p>
+
+            <pre>
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddSqlClientInstrumentation()
+            .AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri("http://jaeger:4317");
+            });
+    })
+    .WithMetrics(metrics =>
+    {
+        metrics
+            .AddAspNetCoreInstrumentation()
+            .AddPrometheusExporter();
+    });</pre>
+
+            <p><strong>Activity (трассировка):</strong></p>
+            <pre>
+using var activity = Activity.Current.StartActivity("ProcessOrder");
+activity?.SetTag("order.id", orderId);
+// ... работа
+activity?.Stop();</pre>
+        </div>
+    </details>
+</section>

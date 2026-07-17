@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 24-30 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 29 ===================== -->
+<section class="section c29">
+    <h2>🧪 29. Интеграционное тестирование <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>WebApplicationFactory — тестирование ASP.NET Core API.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>WebApplicationFactory</strong> — интеграционное тестирование API.</p>
+
+            <pre>
+public class ApiTests : IClassFixture&lt;WebApplicationFactory&lt;Program&gt;&gt;
+{
+    private readonly HttpClient _client;
+
+    public ApiTests(WebApplicationFactory&lt;Program&gt; factory)
+    {
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task GetUsers_ReturnsSuccess()
+    {
+        var response = await _client.GetAsync("/api/users");
+        response.EnsureSuccessStatusCode();
+        
+        var json = await response.Content.ReadAsStringAsync();
+        var users = JsonSerializer.Deserialize&lt;List&lt;User&gt;&gt;(json);
+        Assert.NotNull(users);
+    }
+
+    [Fact]
+    public async Task CreateUser_ReturnsCreated()
+    {
+        var user = new { Name = "Alice", Email = "alice@example.com" };
+        var content = new StringContent(JsonSerializer.Serialize(user), 
+            Encoding.UTF8, "application/json");
+        
+        var response = await _client.PostAsync("/api/users", content);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>TestContainers — тестирование с реальной БД.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>TestContainers</strong> — запуск Docker-контейнеров для тестов.</p>
+
+            <pre>
+public class DbTests : IClassFixture&lt;DbFixture&gt;
+{
+    private readonly DbFixture _fixture;
+
+    public DbTests(DbFixture fixture) => _fixture = fixture;
+
+    [Fact]
+    public async Task SaveUser_ShouldWork()
+    {
+        await using var context = _fixture.CreateContext();
+        context.Users.Add(new User { Name = "Alice" });
+        await context.SaveChangesAsync();
+        
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Name == "Alice");
+        Assert.NotNull(user);
+    }
+}
+
+public class DbFixture : IAsyncLifetime
+{
+    private readonly TestcontainerDatabase _container;
+
+    public DbFixture()
+    {
+        _container = new TestcontainersBuilder&lt;PostgreSqlTestcontainer&gt;()
+            .WithDatabase(new PostgreSqlTestcontainerConfiguration
+            {
+                Database = "testdb",
+                Username = "test",
+                Password = "test123"
+            })
+            .Build();
+    }
+
+    public async Task InitializeAsync() => await _container.StartAsync();
+    public async Task DisposeAsync() => await _container.StopAsync();
+
+    public AppDbContext CreateContext()
+    {
+        var options = new DbContextOptionsBuilder&lt;AppDbContext&gt;()
+            .UseNpgsql(_container.ConnectionString)
+            .Options;
+        return new AppDbContext(options);
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Moq / NSubstitute — мокирование зависимостей.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Moq:</strong></p>
+            <pre>
+var mock = new Mock&lt;IUserRepository&gt;();
+mock.Setup(repo => repo.GetUserAsync(1))
+    .ReturnsAsync(new User { Id = 1, Name = "Alice" });
+
+var service = new UserService(mock.Object);
+var user = await service.GetUserAsync(1);
+Assert.Equal("Alice", user.Name);
+
+// Проверка вызовов
+mock.Verify(repo => repo.GetUserAsync(1), Times.Once);</pre>
+
+            <p><strong>NSubstitute:</strong></p>
+            <pre>
+var mock = Substitute.For&lt;IUserRepository&gt;();
+mock.GetUserAsync(1).Returns(new User { Id = 1, Name = "Alice" });
+
+var service = new UserService(mock);
+var user = await service.GetUserAsync(1);
+Assert.Equal("Alice", user.Name);
+
+mock.Received(1).GetUserAsync(1);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>FluentAssertions — читаемые проверки.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>FluentAssertions</strong> — читаемые утверждения.</p>
+
+            <pre>
+var users = new List&lt;User&gt; { new User { Id = 1, Name = "Alice" } };
+
+users.Should().HaveCount(1);
+users.Should().ContainSingle(u => u.Name == "Alice");
+users.First().Name.Should().Be("Alice");
+users.First().Id.Should().BePositive();
+
+// Сравнение объектов
+var expected = new User { Id = 1, Name = "Alice" };
+var actual = service.GetUser(1);
+actual.Should().BeEquivalentTo(expected);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Тестирование с БД — In-Memory vs реальная БД.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>In-Memory:</strong></p>
+            <ul>
+                <li>✅ Быстро</li>
+                <li>✅ Просто</li>
+                <li>❌ Не поддерживает транзакции</li>
+                <li>❌ Не поддерживает некоторые SQL-функции</li>
+                <li>❌ Может давать ложные результаты</li>
+            </ul>
+            <pre>
+var options = new DbContextOptionsBuilder&lt;AppDbContext&gt;()
+    .UseInMemoryDatabase("TestDb")
+    .Options;
+var context = new AppDbContext(options);</pre>
+
+            <p><strong>Реальная БД (TestContainers):</strong></p>
+            <ul>
+                <li>✅ Реальное поведение</li>
+                <li>✅ Все SQL-функции</li>
+                <li>✅ Транзакции</li>
+                <li>❌ Медленнее</li>
+                <li>❌ Требует Docker</li>
+            </ul>
+
+            <p><strong>Рекомендация:</strong> Используйте In-Memory для простых тестов, реальную БД для интеграционных.</p>
+        </div>
+    </details>
+</section>

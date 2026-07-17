@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 36-40 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 40 ===================== -->
+<section class="section c40">
+    <h2>🇷🇺 40. Специфика РФ (1C, ГОСТ, ФСТЭК, импортозамещение) <span class="badge purple">Mid+</span></h2>
+
+    <details>
+        <summary>1С интеграция — взаимодействие с 1С.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>1С</strong> — популярная ERP-система в РФ. Интеграция с .NET — частая задача.</p>
+
+            <p><strong>Способы интеграции:</strong></p>
+
+            <p><strong>1. OData (HTTP)</strong></p>
+            <pre>
+// 1С публикует OData-сервис
+// http://1c-server/odata/standard.odata
+var client = new HttpClient();
+var response = await client.GetAsync("http://1c-server/odata/standard.odata/Documents_Счет?$top=10");
+var json = await response.Content.ReadAsStringAsync();
+var documents = JsonSerializer.Deserialize&lt;List&lt;Document&gt;&gt;(json);</pre>
+
+            <p><strong>2. COM-объекты (1C:Enterprise 8)</strong></p>
+            <pre>
+// Добавить ссылку на com-объект 1С
+var connection = new COMObject("V83.COMConnector");
+var v8 = connection.CreateObject("V83.Application");
+v8.Connect("File=""C:\\1C\\Base"";Usr=user;Pwd=password;");
+var doc = v8.CreateObject("Document.Счет");
+doc.Read(123);
+var number = doc.Number;
+doc.Post();</pre>
+
+            <p><strong>3. БД (прямой доступ к MSSQL)</strong></p>
+            <ul>
+                <li>1C может работать с MSSQL</li>
+                <li>Прямые запросы к таблицам 1С (но это рискованно)</li>
+                <li>Лучше использовать представления или хранимые процедуры</li>
+            </ul>
+
+            <p><strong>4. Файловый обмен</strong></p>
+            <ul>
+                <li>XML/JSON файлы</li>
+                <li>CSV/Excel</li>
+                <li>Обмен через общую папку</li>
+            </ul>
+
+            <p><strong>5. Service Bus (RabbitMQ, Kafka)</strong></p>
+            <ul>
+                <li>1С отправляет сообщения в очередь</li>
+                <li>.NET сервис обрабатывает</li>
+                <li>Асинхронная интеграция</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>ГОСТ-криптография — российские стандарты шифрования.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>ГОСТ-криптография</strong> — российские стандарты шифрования.</p>
+
+            <p><strong>Основные ГОСТ:</strong></p>
+            <ul>
+                <li><strong>ГОСТ 28147-89</strong> — блочный шифр (устаревший, заменён на ГОСТ Р 34.12-2015)</li>
+                <li><strong>ГОСТ Р 34.10-2012</strong> — ЭЦП на основе эллиптических кривых (аналог ECDSA)</li>
+                <li><strong>ГОСТ Р 34.11-2012</strong> — хеш-функция Стрибог (аналог SHA-256)</li>
+                <li><strong>ГОСТ Р 34.12-2015</strong> — блочные шифры Кузнечик и Магма</li>
+            </ul>
+
+            <p><strong>Использование в .NET:</strong></p>
+            <pre>
+// Нужно установить пакет System.Security.Cryptography
+// или использовать специализированные библиотеки (КриптоПро)
+
+// Сертификаты по ГОСТ
+var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+store.Open(OpenFlags.ReadOnly);
+var certificates = store.Certificates.Find(
+    X509FindType.FindByIssuerName, 
+    "ГОСТ Р 34.10-2012", 
+    false);
+
+// Подпись по ГОСТ
+using var gost = new Gost3410Signer(certificate);
+var signature = gost.Sign(data);
+
+// Проверка подписи
+var isValid = gost.Verify(data, signature);</pre>
+
+            <p><strong>Требования по ФЗ-152:</strong></p>
+            <ul>
+                <li>Использовать российские криптографические алгоритмы</li>
+                <li>Сертифицированные СКЗИ (КриптоПро, VipNet)</li>
+                <li>Хранить ключи в сертифицированных ключевых носителях</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>ФСТЭК требования — аттестация и безопасность.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>ФСТЭК (Федеральная служба по техническому и экспортному контролю)</strong> — регулирует безопасность информационных систем.</p>
+
+            <p><strong>Основные требования для разработчиков:</strong></p>
+
+            <p><strong>1. СУБД и ОС должны быть сертифицированы</strong></p>
+            <ul>
+                <li>Сертифицированные СУБД: PostgreSQL Pro, Oracle (спецверсия)</li>
+                <li>Сертифицированные ОС: Astra Linux, Alt Linux, Windows Server (сертифицированный)</li>
+            </ul>
+
+            <p><strong>2. Криптографические средства — сертифицированные СКЗИ</strong></p>
+            <ul>
+                <li>КриптоПро CSP</li>
+                <li>VipNet CSP</li>
+                <li>Signal-COM CSP</li>
+            </ul>
+
+            <p><strong>3. Строгое разграничение доступа</strong></p>
+            <ul>
+                <li>Роли и права (HR, RD, AD)</li>
+                <li>Мандатное управление доступом (MAC)</li>
+            </ul>
+
+            <p><strong>4. Аудит и логирование</strong></p>
+            <ul>
+                <li>Все действия логируются</li>
+                <li>Логи хранятся не менее 6 месяцев</li>
+                <li>Неизменяемость логов (WORM)</li>
+            </ul>
+
+            <p><strong>5. Классы защищённости (от К1 до К3)</strong></p>
+            <ul>
+                <li>К3 — минимальный</li>
+                <li>К1 — максимальный (военные системы)</li>
+            </ul>
+
+            <p><strong>Влияние на разработку:</strong></p>
+            <ul>
+                <li>Нет сторонних библиотек без сертификации</li>
+                <li>Нет доступа к внешним сетям (интернет, API)</li>
+                <li>Строгие контроль версий и ревью кода</li>
+                <li>Документирование всех изменений</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Импортозамещение — российские аналоги.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Импортозамещение</strong> — замена зарубежных продуктов на российские.</p>
+
+            <p><strong>Что меняем:</strong></p>
+            <table>
+                <tr>
+                    <th>Зарубежный</th>
+                    <th>Российский аналог</th>
+                </tr>
+                <tr>
+                    <td>Windows</td>
+                    <td>Astra Linux, Alt Linux, Ред ОС</td>
+                </tr>
+                <tr>
+                    <td>SQL Server</td>
+                    <td>PostgreSQL Pro, Tantor, Greenplum (российская поддержка)</td>
+                </tr>
+                <tr>
+                    <td>Oracle</td>
+                    <td>PostgreSQL Pro</td>
+                </tr>
+                <tr>
+                    <td>Kafka</td>
+                    <td>Кафка от VK (Managed Kafka)</td>
+                </tr>
+                <tr>
+                    <td>RabbitMQ</td>
+                    <td>Yandex Message Queue</td>
+                </tr>
+                <tr>
+                    <td>Azure/AWS</td>
+                    <td>Yandex Cloud, SberCloud, VK Cloud</td>
+                </tr>
+                <tr>
+                    <td>GitHub</td>
+                    <td>GitFlic, GitLab (on-premise)</td>
+                </tr>
+                <tr>
+                    <td>Jira</td>
+                    <td>Yandex Tracker, Jira (on-premise)</td>
+                </tr>
+                <tr>
+                    <td>Slack</td>
+                    <td>Telegram (защищённая версия)</td>
+                </tr>
+            </table>
+
+            <p><strong>Влияние на .NET разработку:</strong></p>
+            <ul>
+                <li>.NET Core/5+ поддерживает Linux → можно использовать Astra Linux</li>
+                <li>PostgreSQL — отличная замена SQL Server</li>
+                <li>Yandex Cloud / SberCloud — замена Azure/AWS</li>
+                <li>GitFlic — замена GitHub</li>
+            </ul>
+
+            <p><strong>Сложности:</strong></p>
+            <ul>
+                <li>Не все библиотеки совместимы с Linux</li>
+                <li>Нужно адаптировать под российские ОС</li>
+                <li>Сертификация дополнительных компонентов</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Postgres Pro / Альт — российские СУБД и ОС.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>PostgreSQL Pro</strong> — российская сборка PostgreSQL.</p>
+            <ul>
+                <li>Полная совместимость с PostgreSQL</li>
+                <li>Сертифицирована ФСТЭК</li>
+                <li>Дополнительные модули и оптимизация</li>
+                <li>Техническая поддержка на русском</li>
+            </ul>
+
+            <pre>
+// PostgreSQL Pro — используется так же, как обычный PostgreSQL
+// В .NET через Npgsql
+var connectionString = "Host=localhost;Database=mydb;Username=postgres;Password=password;";
+await using var conn = new NpgsqlConnection(connectionString);
+await conn.OpenAsync();
+
+await using var cmd = new NpgsqlCommand("SELECT * FROM users WHERE age > @age", conn);
+cmd.Parameters.AddWithValue("@age", 18);
+await using var reader = await cmd.ExecuteReaderAsync();
+
+// Entity Framework Core с PostgreSQL Pro
+builder.Services.AddDbContext&lt;AppDbContext&gt;(options =>
+    options.UseNpgsql(connectionString));</pre>
+
+            <p><strong>Alt Linux / Astra Linux:</strong></p>
+            <ul>
+                <li>Российские ОС для госсектора</li>
+                <li>Сертифицированы ФСТЭК</li>
+                <li>.NET работает на Linux (включая Astra)</li>
+            </ul>
+
+            <pre>
+# Установка .NET на Astra Linux / Alt Linux
+sudo apt-get update
+sudo apt-get install -y dotnet-sdk-8.0
+dotnet --info
+
+# Запуск приложения
+dotnet MyApp.dll</pre>
+
+            <p><strong>Рекомендации:</strong></p>
+            <ul>
+                <li>Используйте PostgreSQL Pro вместо SQL Server</li>
+                <li>Планируйте работу на Astra Linux</li>
+                <li>Тратьте время на сертификацию</li>
+                <li>Документируйте всю архитектуру</li>
+            </ul>
+        </div>
+    </details>
+</section>

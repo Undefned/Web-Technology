@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 24-30 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 25 ===================== -->
+<section class="section c25">
+    <h2>🆕 25. Новые фичи C# 9, 10, 11, 12 <span class="badge purple">Mid+</span></h2>
+
+    <details>
+        <summary>C# 9: record, init, with.</summary>
+        <div class="answer">
+            <span class="tag ob">обяз</span>
+            
+            <p><strong>record</strong> — ссылочный тип с value-семантикой.</p>
+            <pre>
+// record с позиционным синтаксисом
+public record Person(string Name, int Age);
+
+// record с явным объявлением
+public record Person
+{
+    public string Name { get; init; }
+    public int Age { get; init; }
+}
+
+// Использование
+var p1 = new Person("Alice", 30);
+var p2 = p1 with { Age = 31 };  // Копирование с изменением
+
+// Сравнение по значению
+var p3 = new Person("Alice", 30);
+Console.WriteLine(p1 == p3);  // True</pre>
+
+            <p><strong>init</strong> — свойство, которое можно установить только при создании.</p>
+            <pre>
+public class Person
+{
+    public string Name { get; init; }
+    public int Age { get; init; }
+}
+
+// Можно при создании
+var p = new Person { Name = "Alice", Age = 30 };
+// Нельзя после создания
+// p.Name = "Bob"; // Ошибка</pre>
+
+            <p><strong>with</strong> — выражение для копирования record с изменением.</p>
+            <pre>
+var p2 = p1 with { Age = 31 };</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>C# 10: struct-записи, file-модификатор.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>record struct</strong> — значимый тип с value-семантикой.</p>
+            <pre>
+public record struct Point(int X, int Y);
+
+// Отличие от record class
+// record struct — хранится в стеке (как struct)
+// record class — хранится в куче (как class)</pre>
+
+            <p><strong>file</strong> — модификатор доступа, ограничивающий видимость в пределах файла.</p>
+            <pre>
+// file class — виден только в этом файле
+file class InternalHelper
+{
+    public void DoWork() { }
+}
+
+// Не виден из других файлов</pre>
+
+            <p><strong>Улучшения лямбд:</strong></p>
+            <pre>
+// Natural type для лямбд
+var add = (int a, int b) => a + b;  // Func&lt;int, int, int&gt;
+
+// Атрибуты для лямбд
+var func = [MyAttribute] (int x) => x * 2;</pre>
+
+            <p><strong>Const interpolated strings</strong></p>
+            <pre>
+const string Prefix = "Hello";
+const string Full = $"{Prefix} World";  // C# 10</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>C# 11: required, raw string literals.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>required</strong> — обязательное свойство при создании объекта.</p>
+            <pre>
+public class Person
+{
+    public required string Name { get; init; }
+    public required int Age { get; init; }
+    public string? Email { get; init; }
+}
+
+// Обязательно указать Name и Age
+var p = new Person { Name = "Alice", Age = 30 };</pre>
+
+            <p><strong>Raw string literals</strong> — многострочные строки без экранирования.</p>
+            <pre>
+string json = """
+{
+    "name": "Alice",
+    "age": 30
+}
+""";
+
+// С отступами
+string sql = """
+    SELECT *
+    FROM Users
+    WHERE Age > 18
+    """;</pre>
+
+            <p><strong>static abstract в интерфейсах</strong></p>
+            <pre>
+public interface IMath&lt;T&gt;
+{
+    static abstract T Add(T a, T b);
+    static abstract T Zero { get; }
+}
+
+public struct IntMath : IMath&lt;int&gt;
+{
+    public static int Add(int a, int b) => a + b;
+    public static int Zero => 0;
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>C# 12: primary constructors, collection expressions.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Primary constructors</strong> — конструктор в объявлении класса.</p>
+            <pre>
+// До C# 12
+public class User
+{
+    private readonly string _name;
+    public User(string name) => _name = name;
+}
+
+// C# 12
+public class User(string name)
+{
+    public string Name => name;
+}</pre>
+
+            <p><strong>Collection expressions</strong> — новый синтаксис для создания коллекций.</p>
+            <pre>
+// До C# 12
+int[] arr1 = new int[] { 1, 2, 3 };
+int[] arr2 = { 1, 2, 3 };
+List&lt;int&gt; list = new List&lt;int&gt; { 1, 2, 3 };
+
+// C# 12
+int[] arr = [1, 2, 3];
+List&lt;int&gt; list = [1, 2, 3];
+Span&lt;int&gt; span = [1, 2, 3];
+
+// Spread оператор
+int[] more = [..arr, 4, 5];  // [1, 2, 3, 4, 5]</pre>
+
+            <p><strong>alias any type</strong></p>
+            <pre>
+using Point = (int X, int Y);
+using IntList = List&lt;int&gt;;
+
+Point p = (10, 20);
+IntList numbers = [1, 2, 3];</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>C# 13 (предварительно) — что ожидать.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            <p><strong>Ожидаемые фичи C# 13 (.NET 9):</strong></p>
+            <ul>
+                <li><strong>params collections</strong> — <code>params</code> для любых коллекций</li>
+                <pre>
+void Print(params List&lt;string&gt; items) { }  // Работает с List&lt;T&gt;</pre>
+                <li><strong>Extension types</strong> — улучшенные методы расширения</li>
+                <li><strong>Field-backed properties</strong> — упрощённые свойства</li>
+                <li><strong>Interceptors</strong> — перехват вызовов методов</li>
+                <li><strong>Better pattern matching</strong> — улучшения</li>
+            </ul>
+        </div>
+    </details>
+</section>

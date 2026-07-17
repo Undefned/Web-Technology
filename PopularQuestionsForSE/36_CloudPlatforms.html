@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 36-40 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 36 ===================== -->
+<section class="section c36">
+    <h2>☁️ 36. Облачные платформы (Azure, AWS, Yandex Cloud) <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Azure — основные сервисы для .NET разработчика.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Microsoft Azure</strong> — облачная платформа от Microsoft, лидер для .NET.</p>
+
+            <p><strong>Основные сервисы:</strong></p>
+            <ul>
+                <li><strong>App Services</strong> — хостинг веб-приложений (.NET, Node.js, Python)</li>
+                <li><strong>Azure Functions</strong> — Serverless (функции как сервис)</li>
+                <li><strong>Azure SQL</strong> — управляемая БД SQL Server</li>
+                <li><strong>Cosmos DB</strong> — глобально распределённая NoSQL БД</li>
+                <li><strong>Azure Storage</strong> — Blob, Queue, Table, File</li>
+                <li><strong>Azure Service Bus</strong> — брокер сообщений</li>
+                <li><strong>Azure Key Vault</strong> — хранение секретов</li>
+                <li><strong>Azure DevOps</strong> — CI/CD, репозитории</li>
+                <li><strong>Application Insights</strong> — мониторинг и логирование</li>
+            </ul>
+
+            <p><strong>Пример деплоя в Azure App Service:</strong></p>
+            <pre>
+# Azure CLI
+az webapp create --name MyApp --resource-group MyRG --plan MyPlan
+az webapp deployment source config-zip --name MyApp --resource-group MyRG --src publish.zip
+
+# GitHub Actions
+- name: Deploy to Azure
+  uses: azure/webapps-deploy@v2
+  with:
+    app-name: 'MyApp'
+    publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+    package: ./publish</pre>
+
+            <p><strong>Azure Functions (Serverless):</strong></p>
+            <pre>
+[FunctionName("ProcessOrder")]
+public static async Task&lt;IActionResult&gt; Run(
+    [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req,
+    [Queue("orders")] IAsyncCollector&lt;string&gt; queue,
+    ILogger log)
+{
+    string body = await new StreamReader(req.Body).ReadToEndAsync();
+    await queue.AddAsync(body);
+    return new OkResult();
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>AWS — основные сервисы для .NET разработчика.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>AWS (Amazon Web Services)</strong> — крупнейшая облачная платформа.</p>
+
+            <p><strong>Основные сервисы:</strong></p>
+            <ul>
+                <li><strong>EC2</strong> — виртуальные машины (IaaS)</li>
+                <li><strong>ECS / EKS</strong> — контейнеры (Docker / Kubernetes)</li>
+                <li><strong>Lambda</strong> — Serverless (функции)</li>
+                <li><strong>RDS</strong> — управляемые БД (PostgreSQL, MySQL, SQL Server)</li>
+                <li><strong>DynamoDB</strong> — NoSQL (ключ-значение)</li>
+                <li><strong>S3</strong> — хранение файлов (Blob Storage)</li>
+                <li><strong>SQS / SNS</strong> — очереди и уведомления</li>
+                <li><strong>Secrets Manager</strong> — хранение секретов</li>
+                <li><strong>CloudWatch</strong> — мониторинг и логи</li>
+                <li><strong>CodePipeline / CodeDeploy</strong> — CI/CD</li>
+            </ul>
+
+            <p><strong>Пример деплоя в AWS Lambda:</strong></p>
+            <pre>
+// Amazon.Lambda.RuntimeSupport
+public class Function
+{
+    public async Task&lt;APIGatewayHttpApiV2ProxyResponse&gt; FunctionHandler(
+        APIGatewayHttpApiV2ProxyRequest request, ILambdaContext context)
+    {
+        return new APIGatewayHttpApiV2ProxyResponse
+        {
+            StatusCode = 200,
+            Body = "Hello from Lambda!"
+        };
+    }
+}
+
+# AWS CLI
+dotnet publish -c Release
+aws lambda update-function-code --function-name MyFunction --zip-file fileb://publish.zip</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Yandex Cloud — для российских компаний.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Yandex Cloud</strong> — облачная платформа Яндекса (популярна в РФ).</p>
+
+            <p><strong>Основные сервисы:</strong></p>
+            <ul>
+                <li><strong>Compute Cloud</strong> — виртуальные машины</li>
+                <li><strong>Managed Kubernetes</strong> — контейнеры</li>
+                <li><strong>Serverless</strong> — функции, API Gateway</li>
+                <li><strong>Managed Databases</strong> — PostgreSQL, MySQL, ClickHouse, MongoDB</li>
+                <li><strong>Object Storage</strong> — S3-совместимое хранилище</li>
+                <li><strong>Message Queue</strong> — очереди (аналог SQS)</li>
+                <li><strong>Yandex Lockbox</strong> — хранение секретов</li>
+                <li><strong>Yandex Monitoring</strong> — метрики и логи</li>
+            </ul>
+
+            <p><strong>Сравнение с Azure/AWS:</strong></p>
+            <table>
+                <tr>
+                    <th>Сервис</th>
+                    <th>Azure</th>
+                    <th>AWS</th>
+                    <th>Yandex Cloud</th>
+                </tr>
+                <tr>
+                    <td>ВМ</td>
+                    <td>Virtual Machines</td>
+                    <td>EC2</td>
+                    <td>Compute Cloud</td>
+                </tr>
+                <tr>
+                    <td>Хранилище</td>
+                    <td>Blob Storage</td>
+                    <td>S3</td>
+                    <td>Object Storage</td>
+                </tr>
+                <tr>
+                    <td>Serverless</td>
+                    <td>Functions</td>
+                    <td>Lambda</td>
+                    <td>Serverless Functions</td>
+                </tr>
+                <tr>
+                    <td>БД</td>
+                    <td>Azure SQL, Cosmos DB</td>
+                    <td>RDS, DynamoDB</td>
+                    <td>Managed PostgreSQL, ClickHouse</td>
+                </tr>
+                <tr>
+                    <td>Очереди</td>
+                    <td>Service Bus</td>
+                    <td>SQS</td>
+                    <td>Message Queue</td>
+                </tr>
+            </table>
+
+            <p><strong>Пример деплоя в Yandex Cloud (Serverless):</strong></p>
+            <pre>
+# yc — Yandex Cloud CLI
+yc serverless function create --name my-function
+yc serverless function version create \
+    --function-name my-function \
+    --runtime dotnetcore31 \
+    --entrypoint Handler \
+    --source-path ./publish.zip</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>S3 / Blob Storage — работа с файлами в облаке.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Объектное хранилище</strong> — для хранения файлов (изображения, видео, бэкапы).</p>
+
+            <p><strong>Azure Blob Storage:</strong></p>
+            <pre>
+// Azure.Storage.Blobs
+var container = new BlobContainerClient(connectionString, "mycontainer");
+await container.CreateIfNotExistsAsync();
+
+// Загрузка
+var blob = container.GetBlobClient("image.jpg");
+await blob.UploadAsync(stream);
+
+// Скачивание
+var response = await blob.DownloadAsync();
+var stream = response.Value.Content;</pre>
+
+            <p><strong>AWS S3:</strong></p>
+            <pre>
+// AWSSDK.S3
+var client = new AmazonS3Client(accessKey, secretKey, RegionEndpoint.EUCentral1);
+
+// Загрузка
+await client.PutObjectAsync(new PutObjectRequest
+{
+    BucketName = "mybucket",
+    Key = "image.jpg",
+    InputStream = stream
+});
+
+// Скачивание
+var response = await client.GetObjectAsync(new GetObjectRequest
+{
+    BucketName = "mybucket",
+    Key = "image.jpg"
+});
+var stream = response.ResponseStream;</pre>
+
+            <p><strong>Yandex Cloud Object Storage (S3-совместимый):</strong></p>
+            <pre>
+// Использует AWS SDK с endpoint'ом Yandex
+var config = new AmazonS3Config
+{
+    ServiceURL = "https://storage.yandexcloud.net",
+    AuthenticationRegion = "ru-central1"
+};
+var client = new AmazonS3Client(accessKey, secretKey, config);</pre>
+        </div>
+    </details>
+</section>

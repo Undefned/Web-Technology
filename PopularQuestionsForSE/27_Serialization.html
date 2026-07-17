@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 24-30 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 27 ===================== -->
+<section class="section c27">
+    <h2>📦 27. Сериализация (JSON, XML, Protobuf) <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>System.Text.Json vs Newtonsoft.Json.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <table>
+                <tr>
+                    <th>Характеристика</th>
+                    <th>System.Text.Json</th>
+                    <th>Newtonsoft.Json</th>
+                </tr>
+                <tr>
+                    <td>Производительность</td>
+                    <td>Быстрее (в 2-3 раза)</td>
+                    <td>Медленнее</td>
+                </tr>
+                <tr>
+                    <td>Память</td>
+                    <td>Меньше (Span, Utf8)</td>
+                    <td>Больше</td>
+                </tr>
+                <tr>
+                    <td>Функции</td>
+                    <td>Базовые</td>
+                    <td>Богатые (линки, конвертеры)</td>
+                </tr>
+                <tr>
+                    <td>Атрибуты</td>
+                    <td>JsonPropertyName, JsonIgnore</td>
+                    <td>JsonProperty, JsonIgnore</td>
+                </tr>
+                <tr>
+                    <td>Полиморфизм</td>
+                    <td>Сложнее</td>
+                    <td>Легче (JsonSubTypes)</td>
+                </tr>
+                <tr>
+                    <td>Где использовать</td>
+                    <td>ASP.NET Core (по умолчанию)</td>
+                    <td>Устаревшие проекты, сложные сценарии</td>
+                </tr>
+            </table>
+
+            <p><strong>Пример System.Text.Json:</strong></p>
+            <pre>
+var options = new JsonSerializerOptions
+{
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    WriteIndented = true
+};
+
+string json = JsonSerializer.Serialize(user, options);
+var user = JsonSerializer.Deserialize&lt;User&gt;(json, options);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Атрибуты сериализации — JsonIgnore, JsonPropertyName.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <pre>
+public class User
+{
+    public int Id { get; set; }
+
+    [JsonPropertyName("fullName")]
+    public string Name { get; set; }
+
+    [JsonIgnore]
+    public string PasswordHash { get; set; }
+
+    [JsonConverter(typeof(DateTimeConverter))]
+    public DateTime CreatedAt { get; set; }
+}
+
+// Атрибуты для Newtonsoft.Json
+public class User
+{
+    [JsonProperty("id")]
+    public int Id { get; set; }
+
+    [JsonProperty("full_name")]
+    public string Name { get; set; }
+
+    [JsonIgnore]
+    public string PasswordHash { get; set; }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Полиморфная сериализация.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>System.Text.Json (C# 11+):</strong></p>
+            <pre>
+[JsonDerivedType(typeof(Circle), typeDiscriminator: "circle")]
+[JsonDerivedType(typeof(Rectangle), typeDiscriminator: "rectangle")]
+public abstract class Shape { }
+
+public class Circle : Shape { public double Radius { get; set; } }
+public class Rectangle : Shape { public double Width { get; set; } public double Height { get; set; } }
+
+// Сериализация
+var shapes = new List&lt;Shape&gt; { new Circle { Radius = 5 }, new Rectangle { Width = 10, Height = 20 } };
+string json = JsonSerializer.Serialize(shapes);
+// [{"$type":"circle","Radius":5},{"$type":"rectangle","Width":10,"Height":20}]</pre>
+
+            <p><strong>Newtonsoft.Json:</strong></p>
+            <pre>
+[JsonConverter(typeof(JsonSubtypes))]
+[JsonSubtypes.KnownSubType(typeof(Circle), "circle")]
+[JsonSubtypes.KnownSubType(typeof(Rectangle), "rectangle")]
+public abstract class Shape { }</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>XML-сериализация (XmlSerializer, DataContractSerializer).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>XmlSerializer:</strong></p>
+            <pre>
+[XmlRoot("User")]
+public class User
+{
+    [XmlElement("Id")]
+    public int Id { get; set; }
+
+    [XmlElement("Name")]
+    public string Name { get; set; }
+
+    [XmlIgnore]
+    public string PasswordHash { get; set; }
+}
+
+// Сериализация
+var serializer = new XmlSerializer(typeof(User));
+using var sw = new StringWriter();
+serializer.Serialize(sw, user);
+string xml = sw.ToString();
+
+// Десериализация
+using var sr = new StringReader(xml);
+var user = (User)serializer.Deserialize(sr);</pre>
+
+            <p><strong>DataContractSerializer:</strong></p>
+            <pre>
+[DataContract]
+public class User
+{
+    [DataMember]
+    public int Id { get; set; }
+
+    [DataMember]
+    public string Name { get; set; }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Protobuf — для gRPC, бинарная сериализация.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Protobuf (Protocol Buffers)</strong> — бинарный формат от Google.</p>
+
+            <p><strong>.proto файл:</strong></p>
+            <pre>
+syntax = "proto3";
+
+message User
+{
+    int32 id = 1;
+    string name = 2;
+    string email = 3;
+}</pre>
+
+            <p><strong>В .NET:</strong></p>
+            <pre>
+// Генерация классов из .proto
+// dotnet add package Google.Protobuf
+// dotnet add package Grpc.Tools
+
+var user = new User { Id = 1, Name = "Alice", Email = "alice@example.com" };
+
+// Сериализация
+byte[] data = user.ToByteArray();
+
+// Десериализация
+var user2 = User.Parser.ParseFrom(data);</pre>
+
+            <p><strong>Преимущества Protobuf:</strong></p>
+            <ul>
+                <li>Меньший размер (бинарный)</li>
+                <li>Быстрее чем JSON</li>
+                <li>Строгая типизация</li>
+                <li>Поддерживает стриминг</li>
+            </ul>
+        </div>
+    </details>
+</section>

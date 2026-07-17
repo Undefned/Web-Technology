@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 24-30 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 26 ===================== -->
+<section class="section c26">
+    <h2>⚡ 26. Производительность и оптимизация <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>Профилирование — как найти узкие места.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Инструменты профилирования:</strong></p>
+            <ul>
+                <li><strong>BenchmarkDotNet</strong> — бенчмаркинг кода</li>
+                <li><strong>dotMemory / dotTrace</strong> — память и производительность</li>
+                <li><strong>PerfView</strong> — от Microsoft (GC, CPU, ETW)</li>
+                <li><strong>Visual Studio Diagnostic Tools</strong> — встроенные</li>
+                <li><strong>Application Insights / DataDog</strong> — в продакшене</li>
+            </ul>
+
+            <p><strong>Пример с BenchmarkDotNet:</strong></p>
+            <pre>
+[MemoryDiagnoser]
+public class StringBenchmark
+{
+    [Benchmark]
+    public string Concat()
+    {
+        string s = "";
+        for (int i = 0; i &lt; 1000; i++)
+            s += i.ToString();
+        return s;
+    }
+
+    [Benchmark]
+    public string StringBuilder()
+    {
+        var sb = new StringBuilder();
+        for (int i = 0; i &lt; 1000; i++)
+            sb.Append(i);
+        return sb.ToString();
+    }
+}</pre>
+
+            <p><strong>Что искать:</strong></p>
+            <ul>
+                <li><strong>CPU</strong> — много вычислений, плохие алгоритмы</li>
+                <li><strong>Memory</strong> — много аллокаций → GC</li>
+                <li><strong>IO</strong> — блокирующие операции</li>
+                <li><strong>Locks</strong> — contention (конкуренция за блокировки)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Оптимизация памяти: Span, Memory, ArrayPool, ObjectPool.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Span&lt;T&gt;</strong> — без аллокаций, работа с памятью.</p>
+            <pre>
+string text = "Hello World";
+ReadOnlySpan&lt;char&gt; slice = text.AsSpan(6, 5);  // "World"</pre>
+
+            <p><strong>Memory&lt;T&gt;</strong> — для асинхронных операций.</p>
+            <pre>
+Memory&lt;byte&gt; memory = new byte[1024];
+await stream.ReadAsync(memory);</pre>
+
+            <p><strong>ArrayPool&lt;T&gt;</strong> — пул массивов (уменьшает GC).</p>
+            <pre>
+var pool = ArrayPool&lt;byte&gt;.Shared;
+byte[] buffer = pool.Rent(1024);
+try
+{
+    // Используем buffer
+}
+finally
+{
+    pool.Return(buffer);
+}</pre>
+
+            <p><strong>ObjectPool&lt;T&gt;</strong> — пул объектов (Microsoft.Extensions.ObjectPool).</p>
+            <pre>
+var pool = new DefaultObjectPool&lt;StringBuilder&gt;(
+    new DefaultPooledObjectPolicy&lt;StringBuilder&gt;());
+
+var sb = pool.Get();
+try
+{
+    sb.Append("Hello");
+    return sb.ToString();
+}
+finally
+{
+    sb.Clear();
+    pool.Return(sb);
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Оптимизация LINQ — когда использовать, когда избегать.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Когда использовать LINQ:</strong></p>
+            <ul>
+                <li>Читаемость важнее производительности</li>
+                <li>Небольшие коллекции (&lt; 1000 элементов)</li>
+                <li>Не в горячих путях</li>
+            </ul>
+
+            <p><strong>Когда избегать LINQ:</strong></p>
+            <ul>
+                <li>Большие коллекции (петля может быть быстрее)</li>
+                <li>Горячие пути (высокая нагрузка)</li>
+                <li>Сложные запросы (несколько Where, Select, OrderBy)</li>
+                <li>Критичные по производительности участки</li>
+            </ul>
+
+            <p><strong>Оптимизации:</strong></p>
+            <pre>
+// ❌ Медленно — лямбды создаются каждый раз
+list.Where(x => x > 5).Select(x => x * 2).ToList();
+
+// ✅ Быстрее — предварительная компиляция
+static readonly Func&lt;int, bool&gt; _filter = x => x > 5;
+static readonly Func&lt;int, int&gt; _map = x => x * 2;
+list.Where(_filter).Select(_map).ToList();
+
+// ❌ Медленно — Count() в условии
+if (list.Count(x => x > 5) > 0) { }
+
+// ✅ Быстрее — Any()
+if (list.Any(x => x > 5)) { }</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Оптимизация строк — StringBuilder, String.Create, интернирование.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>StringBuilder</strong> — для частых изменений.</p>
+            <pre>
+var sb = new StringBuilder(1000);
+for (int i = 0; i &lt; 1000; i++)
+    sb.Append(i);
+string result = sb.ToString();</pre>
+
+            <p><strong>String.Create</strong> — минимальные аллокации (C# 10).</p>
+            <pre>
+string result = string.Create(10, 42, (span, state) =>
+{
+    span[0] = 'H';
+    span[1] = 'e';
+    span[2] = 'l';
+    span[3] = 'l';
+    span[4] = 'o';
+});</pre>
+
+            <p><strong>String.Intern</strong> — пул строк (экономия памяти).</p>
+            <pre>
+string s1 = "Hello";  // В пуле
+string s2 = new string('H', 5);  // Не в пуле
+string s3 = string.Intern(s2);  // В пуле</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>GC-оптимизация — избегать аллокаций в горячих путях.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Правила:</strong></p>
+            <ul>
+                <li>Избегать <code>new object()</code> в циклах</li>
+                <li>Использовать <code>struct</code> вместо <code>class</code> для маленьких объектов</li>
+                <li>Использовать <code>ArrayPool&lt;T&gt;</code> и <code>ObjectPool&lt;T&gt;</code></li>
+                <li>Избегать <code>string</code> конкатенации в циклах</li>
+                <li>Использовать <code>Span&lt;T&gt;</code> и <code>Memory&lt;T&gt;</code></li>
+                <li>Отключать <code>ChangeTracker</code> в EF Core для чтения</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// ❌ Много аллокаций
+List&lt;string&gt; result = new();
+for (int i = 0; i &lt; 10000; i++)
+    result.Add(new string('A', i));  // Каждый раз новая строка
+
+// ✅ Меньше аллокаций (пул строк?)
+// Но здесь строки нужны — это нормально
+
+// ❌ Аллокации в горячем пути
+public void Process(Span&lt;int&gt; data)
+{
+    foreach (int x in data)
+        ProcessItem(x);  // Может создавать объекты внутри
+}
+
+// ✅ Без аллокаций (если ProcessItem не создаёт объекты)</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Кэширование — стратегии (Cache-Aside, Write-Through, Write-Behind).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Cache-Aside (Lazy Loading)</strong></p>
+            <ul>
+                <li>Сначала проверяем кэш</li>
+                <li>Если нет — загружаем из БД</li>
+                <li>Сохраняем в кэш</li>
+            </ul>
+            <pre>
+async Task&lt;User&gt; GetUserAsync(int id)
+{
+    var user = await cache.GetAsync&lt;User&gt;($"user:{id}");
+    if (user == null)
+    {
+        user = await db.GetUserAsync(id);
+        await cache.SetAsync($"user:{id}", user, TimeSpan.FromMinutes(10));
+    }
+    return user;
+}</pre>
+
+            <p><strong>Write-Through</strong></p>
+            <ul>
+                <li>Запись одновременно в БД и кэш</li>
+                <li>Гарантирует актуальность кэша</li>
+            </ul>
+            <pre>
+async Task UpdateUserAsync(User user)
+{
+    await db.UpdateUserAsync(user);
+    await cache.SetAsync($"user:{user.Id}", user, TimeSpan.FromMinutes(10));
+}</pre>
+
+            <p><strong>Write-Behind (Write-Back)</strong></p>
+            <ul>
+                <li>Запись в кэш, асинхронно в БД</li>
+                <li>Быстрее, но возможна потеря данных</li>
+                <li>Используется в высоконагруженных системах</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Асинхронная производительность — ValueTask, ConfigureAwait.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>ValueTask&lt;T&gt;</strong> — для синхронных результатов.</p>
+            <pre>
+public async ValueTask&lt;int&gt; GetCachedValueAsync()
+{
+    if (_cache.TryGetValue("key", out int value))
+        return value;  // Нет аллокации
+    return await ComputeValueAsync();  // Только если асинхронно
+}</pre>
+
+            <p><strong>ConfigureAwait(false)</strong> — избегает захвата контекста.</p>
+            <pre>
+// В библиотеках
+await httpClient.GetStringAsync(url).ConfigureAwait(false);
+
+// В UI-приложениях — использовать только в не-UI коде
+// После await — продолжение в пуле потоков, а не в UI</pre>
+
+            <p><strong>Избегать async void</strong></p>
+            <pre>
+// ❌ Плохо — исключения теряются
+async void BadMethod() { throw new Exception(); }
+
+// ✅ Хорошо
+async Task GoodMethod() { throw new Exception(); }</pre>
+        </div>
+    </details>
+</section>

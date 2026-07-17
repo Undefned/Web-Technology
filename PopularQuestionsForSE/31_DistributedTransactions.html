@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Блоки 31-35 | Расширенные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ===================== БЛОК 31 ===================== -->
+<section class="section c31">
+    <h2>🔁 31. Транзакции в распределённых системах <span class="badge orange">Mid+</span></h2>
+
+    <details>
+        <summary>2PC (Two-Phase Commit) — что это, почему не используют в микросервисах.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>2PC (Two-Phase Commit)</strong> — протокол гарантированного коммита транзакции.</p>
+
+            <p><strong>Фазы:</strong></p>
+            <ul>
+                <li><strong>Фаза 1 (Prepare):</strong> координатор спрашивает все участники: "Готовы закоммитить?"</li>
+                <li><strong>Фаза 2 (Commit):</strong> если все ответили "Да" — координатор отправляет "Commit", иначе "Rollback"</li>
+            </ul>
+
+            <pre>
+Координатор          Участник 1          Участник 2
+    |                    |                   |
+    |----- Prepare ----->|                   |
+    |                    |----- Prepare ----->|
+    |<---- Yes ----------|                   |
+    |                    |<---- Yes ----------|
+    |----- Commit ------>|                   |
+    |                    |----- Commit ------>|
+    |<---- Done ---------|                   |
+    |                    |<---- Done ---------|</pre>
+
+            <p><strong>Почему не используют в микросервисах:</strong></p>
+            <ul>
+                <li><strong>Блокировки:</strong> ресурсы залочены до завершения (плохо для высокой нагрузки)</li>
+                <li><strong>Single Point of Failure:</strong> отказ координатора — все виснут</li>
+                <li><strong>Задержки:</strong> синхронный, медленный</li>
+                <li><strong>Сложность:</strong> трудно реализовать надёжно</li>
+            </ul>
+
+            <p><strong>Альтернатива:</strong> Saga паттерн (есть в Блоке 19).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Saga — Choreography vs Orchestration (подробно).</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Saga</strong> — паттерн для распределённых транзакций.</p>
+
+            <p><strong>1. Choreography (хореография)</strong></p>
+            <ul>
+                <li>Сервисы общаются через <strong>события</strong></li>
+                <li>Нет центрального координатора</li>
+                <li>Каждый сервис публикует события и реагирует на них</li>
+                <li>Гибкий, слабая связанность</li>
+                <li>Сложно отслеживать весь процесс</li>
+            </ul>
+            <pre>
+Order Service → (OrderCreated) → Payment Service
+Payment Service → (PaymentCompleted) → Inventory Service
+Inventory Service → (StockReserved) → Delivery Service</pre>
+
+            <p><strong>2. Orchestration (оркестрация)</strong></p>
+            <ul>
+                <li>Центральный <strong>Orchestrator</strong> управляет последовательностью</li>
+                <li>Orchestrator знает все шаги и компенсации</li>
+                <li>Проще управлять, легче отлаживать</li>
+                <li>Orchestrator — Single Point of Failure</li>
+            </ul>
+            <pre>
+Orchestrator:
+    1. Create Order → Order Service
+    2. Process Payment → Payment Service
+    3. Reserve Stock → Inventory Service
+    4. Schedule Delivery → Delivery Service
+    5. Complete Order → Order Service</pre>
+
+            <p><strong>Когда что использовать:</strong></p>
+            <ul>
+                <li><strong>Choreography:</strong> для простых процессов, слабой связанности</li>
+                <li><strong>Orchestration:</strong> для сложных процессов, где нужен контроль</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Eventual Consistency — что это, когда допустимо.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Eventual Consistency (Согласованность в конечном счёте)</strong> — гарантия, что система станет согласованной, но не мгновенно.</p>
+
+            <p><strong>Пример:</strong></p>
+            <ul>
+                <li>Пользователь создал заказ</li>
+                <li>Сервис заказов сохранил заказ</li>
+                <li>Сервис доставки получит событие через 1-2 секунды</li>
+                <li>За это время заказ может быть "не виден" в доставке</li>
+                <li>Через пару секунд всё согласуется</li>
+            </ul>
+
+            <p><strong>Когда допустимо:</strong></p>
+            <ul>
+                <li>Социальные сети (лайки, комментарии)</li>
+                <li>Аналитика и отчёты</li>
+                <li>Кэширование</li>
+                <li>Рекомендательные системы</li>
+                <li>Логи и аудит</li>
+            </ul>
+
+            <p><strong>Когда НЕ допустимо:</strong></p>
+            <ul>
+                <li>Финансовые транзакции (перевод денег)</li>
+                <li>Бронирование билетов (двойная продажа)</li>
+                <li>Инвентаризация (учёт товаров)</li>
+                <li>Там, где нужна строгая согласованность</li>
+            </ul>
+
+            <p><strong>CAP теорема:</strong> Consistency, Availability, Partition Tolerance — можно выбрать только 2.</p>
+            <ul>
+                <li><strong>CA:</strong> согласованность + доступность (реляционные БД)</li>
+                <li><strong>CP:</strong> согласованность + устойчивость (ZooKeeper)</li>
+                <li><strong>AP:</strong> доступность + устойчивость (Cassandra, DynamoDB) — eventual consistency</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Compensating Transaction — компенсирующие транзакции.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Compensating Transaction</strong> — действие, отменяющее эффект предыдущей операции.</p>
+
+            <p><strong>Пример Saga с компенсациями:</strong></p>
+            <pre>
+// Шаги и компенсации
+1. OrderService.CreateOrder()
+   → Если ошибка: компенсация не нужна (ничего не создано)
+
+2. PaymentService.ProcessPayment()
+   → Компенсация: PaymentService.RefundPayment()
+
+3. InventoryService.ReserveStock()
+   → Компенсация: InventoryService.ReleaseStock()
+
+4. DeliveryService.ScheduleDelivery()
+   → Компенсация: DeliveryService.CancelDelivery()
+
+// Если шаг 3 упал:
+- Компенсация шага 3: ReleaseStock()
+- Компенсация шага 2: RefundPayment()
+- Компенсация шага 1: не нужна</pre>
+
+            <p><strong>Реализация компенсаций:</strong></p>
+            <pre>
+public class OrderOrchestrator
+{
+    public async Task ExecuteAsync(Order order)
+    {
+        var compensations = new Stack&lt;Func&lt;Task&gt;&gt;();
+        
+        try
+        {
+            // Шаг 1
+            await _orderService.CreateOrderAsync(order);
+            compensations.Push(() => _orderService.CancelOrderAsync(order.Id));
+            
+            // Шаг 2
+            await _paymentService.ProcessPaymentAsync(order);
+            compensations.Push(() => _paymentService.RefundPaymentAsync(order.Id));
+            
+            // Шаг 3
+            await _inventoryService.ReserveStockAsync(order);
+            compensations.Push(() => _inventoryService.ReleaseStockAsync(order.Id));
+            
+            // Шаг 4
+            await _deliveryService.ScheduleDeliveryAsync(order);
+            compensations.Push(() => _deliveryService.CancelDeliveryAsync(order.Id));
+            
+            // Все успешно
+        }
+        catch (Exception)
+        {
+            // Откат в обратном порядке
+            foreach (var compensate in compensations)
+                await compensate();
+            throw;
+        }
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Outbox Pattern — как гарантировать доставку событий.</summary>
+        <div class="answer">
+            <span class="tag mid">mid</span>
+            
+            <p><strong>Outbox Pattern</strong> — гарантированная доставка событий через БД.</p>
+
+            <p><strong>Проблема:</strong></p>
+            <ul>
+                <li>Сохранение заказа в БД + публикация события</li>
+                <li>Если после БД произошла ошибка — событие потеряно</li>
+                <li>Если событие опубликовано, а БД не сохранила — противоречие</li>
+            </ul>
+
+            <p><strong>Решение — Outbox:</strong></p>
+            <pre>
+// 1. В одной транзакции сохраняем заказ + событие
+public async Task CreateOrderAsync(Order order)
+{
+    using var transaction = await _dbContext.Database.BeginTransactionAsync();
+    try
+    {
+        await _dbContext.Orders.AddAsync(order);
+        
+        // Сохраняем событие в Outbox
+        var outbox = new OutboxMessage
+        {
+            Id = Guid.NewGuid(),
+            Type = "OrderCreated",
+            Data = JsonSerializer.Serialize(order),
+            CreatedAt = DateTime.UtcNow
+        };
+        await _dbContext.OutboxMessages.AddAsync(outbox);
+        
+        await _dbContext.SaveChangesAsync();
+        await transaction.CommitAsync();
+    }
+    catch { await transaction.RollbackAsync(); throw; }
+}
+
+// 2. Фоновый процесс доставки
+public class OutboxProcessor : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var messages = await _dbContext.OutboxMessages
+                .Where(m => !m.Processed)
+                .OrderBy(m => m.CreatedAt)
+                .Take(100)
+                .ToListAsync(stoppingToken);
+            
+            foreach (var msg in messages)
+            {
+                try
+                {
+                    // Публикуем событие
+                    await _eventBus.PublishAsync(msg.Type, msg.Data);
+                    
+                    // Отмечаем обработанным
+                    msg.Processed = true;
+                    msg.ProcessedAt = DateTime.UtcNow;
+                    
+                    await _dbContext.SaveChangesAsync(stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    // Логируем ошибку, сообщение останется в Outbox
+                    _logger.LogError(ex, "Failed to process outbox message {Id}", msg.Id);
+                    
+                    // Оставляем для повторной попытки
+                    if (msg.RetryCount >= 3)
+                    {
+                        msg.Failed = true;
+                        msg.FailedAt = DateTime.UtcNow;
+                        await _dbContext.SaveChangesAsync(stoppingToken);
+                    }
+                    else
+                    {
+                        msg.RetryCount++;
+                        await _dbContext.SaveChangesAsync(stoppingToken);
+                    }
+                }
+            }
+            
+            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+        }
+    }
+}</pre>
+        </div>
+    </details>
+</section>
