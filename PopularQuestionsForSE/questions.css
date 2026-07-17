@@ -1,5 +1,5 @@
 /* =============================================
-   CSS переменные (легко менять тему)
+   CSS переменные
    ============================================= */
 :root {
     --bg: #f1f5f9;
@@ -12,9 +12,9 @@
     --shadow-hover: 0 8px 24px rgba(0,0,0,0.10);
     --radius: 14px;
     --radius-sm: 8px;
-    --font-base: 17px;          /* основной текст увеличен */
-    --font-code: 15px;          /* блоки кода уменьшены */
-    --font-code-inline: 15px;   /* строчный код */
+    --font-base: 19px;          /* увеличен на ~10% (было 17px) */
+    --font-code: 15px;          /* блоки кода — не трогаем */
+    --font-code-inline: 15px;   /* строчный код — не трогаем */
     --border-left: 6px solid #3b82f6;
 }
 
@@ -40,7 +40,7 @@ body {
 
 h1 {
     text-align: center;
-    font-size: 36px;
+    font-size: 38px;
     margin-bottom: 8px;
     font-weight: 700;
 }
@@ -48,7 +48,7 @@ h1 {
 .subtitle {
     text-align: center;
     color: var(--text-light);
-    font-size: 18px;
+    font-size: 20px;
     margin-bottom: 34px;
     border-bottom: 2px solid var(--border);
     padding-bottom: 18px;
@@ -82,14 +82,14 @@ h1 {
 }
 
 .card .card-number {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--text-muted);
     letter-spacing: 0.5px;
 }
 
 .card .card-title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     margin: 8px 0 10px 0;
     line-height: 1.4;
@@ -97,7 +97,7 @@ h1 {
 
 .card .card-badge {
     display: inline-block;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     padding: 3px 16px;
     border-radius: 30px;
@@ -117,11 +117,11 @@ h1 {
 }
 
 .card .card-count {
-    font-size: 14px;
+    font-size: 15px;
     color: var(--text-muted);
 }
 
-/* Цвета левых границ у карточек (генерация через [class*="c"]) */
+/* Цвета левых границ у карточек */
 [class*="c1"] { border-left-color: #3b82f6; }
 [class*="c2"] { border-left-color: #22c55e; }
 [class*="c3"] { border-left-color: #a855f7; }
@@ -175,7 +175,6 @@ h1 {
     border-left: var(--border-left);
 }
 
-/* Цвета для секций — используем тот же подход */
 .section[class*="c1"] { border-left-color: #3b82f6; }
 .section[class*="c2"] { border-left-color: #22c55e; }
 .section[class*="c3"] { border-left-color: #a855f7; }
@@ -218,7 +217,7 @@ h1 {
 .section[class*="c40"] { border-left-color: #ef4444; }
 
 .section h2 {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -228,7 +227,7 @@ h1 {
 }
 
 .section h2 .badge {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     background: var(--border);
     color: #475569;
@@ -252,7 +251,7 @@ h1 {
 }
 
 /* =============================================
-   Спойлеры (details / summary)
+   Спойлеры
    ============================================= */
 details {
     margin: 10px 0;
@@ -270,7 +269,7 @@ details:hover {
 details summary {
     cursor: pointer;
     font-weight: 700;
-    font-size: 17px;
+    font-size: 19px;
     color: #1e293b;
     padding: 4px 0;
     outline: none;
@@ -290,7 +289,7 @@ details .answer {
 }
 
 /* =============================================
-   Код
+   Код (размеры не трогаем)
    ============================================= */
 pre {
     background: #1e1e1e;
@@ -307,7 +306,6 @@ pre {
     position: relative;
 }
 
-/* Языковой бейдж */
 pre::before {
     content: attr(data-lang);
     position: absolute;
@@ -323,7 +321,6 @@ pre::before {
     border-radius: 4px;
 }
 
-/* Строчный код (внутри текста) */
 details .answer code {
     background: var(--border);
     padding: 2px 10px;
@@ -333,7 +330,7 @@ details .answer code {
 }
 
 /* =============================================
-   VS CODE DARK+ — подсветка синтаксиса
+   VS CODE DARK+
    ============================================= */
 .keyword, .sql-keyword { color: #569cd6; }
 .type { color: #4ec9b0; }
@@ -351,7 +348,6 @@ details .answer code {
 .bash-flag { color: #dcdcaa; }
 .bash-variable { color: #9cdcfe; }
 
-/* Жирность для ключевых элементов синтаксиса */
 pre .keyword,
 pre .sql-keyword,
 pre .type,
@@ -374,7 +370,7 @@ details .answer table {
     border-collapse: collapse;
     width: 100%;
     margin: 12px 0;
-    font-size: 15px;
+    font-size: 16px;
 }
 
 details .answer table th,
@@ -390,7 +386,7 @@ details .answer table th {
 
 details .answer .tag {
     display: inline-block;
-    font-size: 12px;
+    font-size: 13px;
     text-transform: uppercase;
     font-weight: 700;
     padding: 2px 14px;
@@ -449,7 +445,7 @@ details .answer .tag.mid {
 }
 
 /* =============================================
-   Общая жирность (усиление)
+   Общая жирность
    ============================================= */
 strong,
 b,
@@ -463,210 +459,59 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* =============================================
-   МОБИЛЬНАЯ ОПТИМИЗАЦИЯ (сильное уменьшение отступов)
+   МОБИЛЬНАЯ ОПТИМИЗАЦИЯ (МИНИМАЛЬНЫЕ ОТСТУПЫ)
    ============================================= */
 
-/* Общие отступы */
-@media (max-width: 640px) {
-    body {
-        padding: 10px 8px;
-        font-size: 15px;
-    }
-
-    h1 {
-        font-size: 22px;
-        margin-bottom: 4px;
-    }
-
-    .subtitle {
-        font-size: 13px;
-        margin-bottom: 18px;
-        padding-bottom: 10px;
-    }
-
-    /* Сетка — 2 колонки, но с меньшими отступами */
-    .grid {
-        gap: 8px;
-        margin-bottom: 18px;
-    }
-
-    .card {
-        padding: 12px 12px;
-        border-radius: 10px;
-        border-left-width: 4px;
-    }
-
-    .card .card-number {
-        font-size: 11px;
-    }
-
-    .card .card-title {
-        font-size: 13px;
-        margin: 4px 0 6px 0;
-    }
-
-    .card .card-badge {
-        font-size: 10px;
-        padding: 2px 10px;
-        margin-bottom: 4px;
-    }
-
-    .card .card-count {
-        font-size: 11px;
-    }
-
-    /* Секции */
-    .section {
-        padding: 12px 12px;
-        margin-bottom: 12px;
-        border-radius: 10px;
-        border-left-width: 4px;
-    }
-
-    .section h2 {
-        font-size: 16px;
-        gap: 8px;
-        margin-bottom: 10px;
-    }
-
-    .section h2 .badge {
-        font-size: 10px;
-        padding: 2px 10px;
-    }
-
-    /* Спойлеры */
-    details {
-        margin: 6px 0;
-        padding: 6px 10px;
-        border-radius: 6px;
-    }
-
-    details summary {
-        font-size: 14px;
-        padding: 2px 0;
-    }
-
-    details .answer {
-        padding: 8px 8px 4px 8px;
-        font-size: 14px;
-        margin-top: 6px;
-        line-height: 1.6;
-    }
-
-    details .answer ul,
-    details .answer ol {
-        margin: 6px 0 6px 18px;
-    }
-
-    details .answer table {
-        font-size: 13px;
-    }
-
-    details .answer table th,
-    details .answer table td {
-        padding: 6px 8px;
-    }
-
-    details .answer .tag {
-        font-size: 10px;
-        padding: 1px 10px;
-    }
-
-    /* Код */
-    pre {
-        font-size: 11px;
-        padding: 10px 12px;
-        border-radius: 6px;
-        margin: 8px 0;
-        line-height: 1.5;
-    }
-
-    pre::before {
-        font-size: 9px;
-        padding: 1px 8px;
-        top: 4px;
-        right: 6px;
-    }
-
-    details .answer code {
-        font-size: 12px;
-        padding: 1px 6px;
-    }
-
-    /* Кнопка назад */
-    .back-link {
-        font-size: 13px;
-        padding: 8px 14px;
-        margin-bottom: 14px;
-        border-radius: 6px;
-    }
-
-    /* Футер */
-    .footer {
-        font-size: 12px;
-        margin-top: 18px;
-        padding-top: 12px;
-    }
+@media (max-width: 820px) and (orientation: portrait) {
+    body { padding: 8px 6px; font-size: 18px; }
+    h1 { font-size: 26px; }
+    .subtitle { font-size: 16px; }
+    .grid { gap: 6px; margin-bottom: 14px; }
+    .card { padding: 10px 10px; }
+    .card .card-title { font-size: 17px; }
+    .section { padding: 10px 10px; }
+    .section h2 { font-size: 20px; }
+    details { padding: 6px 8px; }
+    details summary { font-size: 17px; }
+    details .answer { padding: 6px 6px; font-size: 18px; }
+    pre { padding: 8px 10px; font-size: 13px; }
+    details .answer code { font-size: 14px; }
+    .back-link { padding: 8px 14px; }
+    .footer { margin-top: 16px; padding-top: 10px; }
 }
 
-/* Очень маленькие экраны — одна колонка и ещё меньше отступов */
-@media (max-width: 420px) {
-    body {
-        padding: 6px 4px;
-        font-size: 14px;
-    }
+@media (max-width: 820px) and (orientation: landscape) {
+    body { padding: 8px 12px; font-size: 17px; }
+    h1 { font-size: 28px; }
+    .subtitle { font-size: 16px; }
+    .grid { gap: 10px; margin-bottom: 16px; }
+    .card { padding: 12px 14px; }
+    .card .card-title { font-size: 18px; }
+    .section { padding: 12px 14px; }
+    .section h2 { font-size: 21px; }
+    details { padding: 6px 10px; }
+    details summary { font-size: 17px; }
+    details .answer { padding: 8px 10px; font-size: 17px; }
+    pre { padding: 10px 14px; font-size: 13px; }
+    details .answer code { font-size: 14px; }
+    .back-link { padding: 10px 18px; }
+    .footer { margin-top: 18px; padding-top: 12px; }
+}
 
-    .grid {
-        grid-template-columns: 1fr;
-        gap: 6px;
-    }
-
-    .card {
-        padding: 10px 10px;
-    }
-
-    .card .card-title {
-        font-size: 14px;
-    }
-
-    .section {
-        padding: 10px 10px;
-    }
-
-    .section h2 {
-        font-size: 15px;
-    }
-
-    details {
-        padding: 4px 8px;
-    }
-
-    details summary {
-        font-size: 13px;
-    }
-
-    details .answer {
-        font-size: 13px;
-        padding: 6px 6px 2px 6px;
-    }
-
-    pre {
-        font-size: 10px;
-        padding: 8px 8px;
-        border-radius: 4px;
-    }
-
-    details .answer code {
-        font-size: 11px;
-        padding: 1px 4px;
-    }
-
-    .back-link {
-        font-size: 12px;
-        padding: 6px 12px;
-    }
-
-    .footer {
-        font-size: 11px;
-    }
+@media (max-width: 400px) {
+    body { padding: 4px 4px; font-size: 16px; }
+    h1 { font-size: 22px; }
+    .subtitle { font-size: 14px; }
+    .grid { grid-template-columns: 1fr; gap: 4px; }
+    .card { padding: 8px 8px; }
+    .card .card-title { font-size: 16px; }
+    .section { padding: 8px 8px; }
+    .section h2 { font-size: 18px; }
+    details { padding: 4px 6px; }
+    details summary { font-size: 15px; }
+    details .answer { padding: 4px 4px; font-size: 16px; }
+    pre { padding: 6px 8px; font-size: 11px; }
+    details .answer code { font-size: 12px; }
+    .back-link { padding: 6px 10px; font-size: 14px; }
+    .footer { margin-top: 12px; padding-top: 8px; font-size: 13px; }
 }
