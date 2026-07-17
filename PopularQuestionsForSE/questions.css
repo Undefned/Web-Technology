@@ -463,71 +463,210 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* =============================================
-   Адаптивность
+   МОБИЛЬНАЯ ОПТИМИЗАЦИЯ (сильное уменьшение отступов)
    ============================================= */
+
+/* Общие отступы */
 @media (max-width: 640px) {
     body {
-        padding: 16px;
-        font-size: 16px;
-    }
-
-    h1 { font-size: 28px; }
-    .subtitle { font-size: 15px; }
-
-    .grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
-
-    .card { padding: 18px 16px; }
-    .card .card-title { font-size: 15px; }
-    .card .card-badge { font-size: 11px; }
-    .card .card-count { font-size: 12px; }
-
-    .section { padding: 16px 18px; }
-    .section h2 { font-size: 18px; }
-    .section h2 .badge { font-size: 11px; }
-
-    details { padding: 8px 12px; }
-    details summary { font-size: 15px; }
-    details .answer {
-        padding: 10px 12px 6px 12px;
+        padding: 10px 8px;
         font-size: 15px;
     }
 
-    .back-link {
-        font-size: 14px;
-        padding: 10px 18px;
+    h1 {
+        font-size: 22px;
+        margin-bottom: 4px;
     }
 
-    .footer { font-size: 13px; }
-
-    /* Код на мобильных */
-    pre {
-        font-size: 12px;
-        padding: 14px 16px;
-        border-radius: var(--radius-sm);
+    .subtitle {
+        font-size: 13px;
+        margin-bottom: 18px;
+        padding-bottom: 10px;
     }
 
-    pre::before {
+    /* Сетка — 2 колонки, но с меньшими отступами */
+    .grid {
+        gap: 8px;
+        margin-bottom: 18px;
+    }
+
+    .card {
+        padding: 12px 12px;
+        border-radius: 10px;
+        border-left-width: 4px;
+    }
+
+    .card .card-number {
+        font-size: 11px;
+    }
+
+    .card .card-title {
+        font-size: 13px;
+        margin: 4px 0 6px 0;
+    }
+
+    .card .card-badge {
         font-size: 10px;
-        padding: 1px 10px;
-        top: 6px;
-        right: 8px;
+        padding: 2px 10px;
+        margin-bottom: 4px;
     }
 
-    details .answer code {
+    .card .card-count {
+        font-size: 11px;
+    }
+
+    /* Секции */
+    .section {
+        padding: 12px 12px;
+        margin-bottom: 12px;
+        border-radius: 10px;
+        border-left-width: 4px;
+    }
+
+    .section h2 {
+        font-size: 16px;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .section h2 .badge {
+        font-size: 10px;
+        padding: 2px 10px;
+    }
+
+    /* Спойлеры */
+    details {
+        margin: 6px 0;
+        padding: 6px 10px;
+        border-radius: 6px;
+    }
+
+    details summary {
+        font-size: 14px;
+        padding: 2px 0;
+    }
+
+    details .answer {
+        padding: 8px 8px 4px 8px;
+        font-size: 14px;
+        margin-top: 6px;
+        line-height: 1.6;
+    }
+
+    details .answer ul,
+    details .answer ol {
+        margin: 6px 0 6px 18px;
+    }
+
+    details .answer table {
         font-size: 13px;
     }
-}
 
-@media (max-width: 420px) {
-    .grid {
-        grid-template-columns: 1fr;
+    details .answer table th,
+    details .answer table td {
+        padding: 6px 8px;
     }
 
+    details .answer .tag {
+        font-size: 10px;
+        padding: 1px 10px;
+    }
+
+    /* Код */
     pre {
         font-size: 11px;
         padding: 10px 12px;
+        border-radius: 6px;
+        margin: 8px 0;
+        line-height: 1.5;
+    }
+
+    pre::before {
+        font-size: 9px;
+        padding: 1px 8px;
+        top: 4px;
+        right: 6px;
+    }
+
+    details .answer code {
+        font-size: 12px;
+        padding: 1px 6px;
+    }
+
+    /* Кнопка назад */
+    .back-link {
+        font-size: 13px;
+        padding: 8px 14px;
+        margin-bottom: 14px;
+        border-radius: 6px;
+    }
+
+    /* Футер */
+    .footer {
+        font-size: 12px;
+        margin-top: 18px;
+        padding-top: 12px;
+    }
+}
+
+/* Очень маленькие экраны — одна колонка и ещё меньше отступов */
+@media (max-width: 420px) {
+    body {
+        padding: 6px 4px;
+        font-size: 14px;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .card {
+        padding: 10px 10px;
+    }
+
+    .card .card-title {
+        font-size: 14px;
+    }
+
+    .section {
+        padding: 10px 10px;
+    }
+
+    .section h2 {
+        font-size: 15px;
+    }
+
+    details {
+        padding: 4px 8px;
+    }
+
+    details summary {
+        font-size: 13px;
+    }
+
+    details .answer {
+        font-size: 13px;
+        padding: 6px 6px 2px 6px;
+    }
+
+    pre {
+        font-size: 10px;
+        padding: 8px 8px;
+        border-radius: 4px;
+    }
+
+    details .answer code {
+        font-size: 11px;
+        padding: 1px 4px;
+    }
+
+    .back-link {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+
+    .footer {
+        font-size: 11px;
     }
 }
