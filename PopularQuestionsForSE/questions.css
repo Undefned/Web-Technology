@@ -457,6 +457,36 @@ pre::before {
     color: #9cdcfe;
 }
 
+/* ===== УВЕЛИЧЕНИЕ ЖИРНОСТИ ШРИФТА ===== */
+strong,
+b,
+h1, h2, h3, h4, h5, h6,
+.bold,
+.font-bold,
+[style*="font-weight: bold"],
+[style*="font-weight: 700"],
+[style*="font-weight: 600"] {
+    font-weight: 700 !important;
+}
+
+/* Для карточек и заголовков секций — чуть жирнее */
+.card .card-title,
+.section h2,
+details summary {
+    font-weight: 700 !important;
+}
+
+/* Для бейджей и мелких элементов — тоже жирнее */
+.card .card-badge,
+.section h2 .badge,
+.tag,
+pre .keyword,
+pre .sql-keyword,
+pre .type,
+pre .method {
+    font-weight: 700 !important;
+}
+
 /* ===== АДАПТИВНОСТЬ ===== */
 @media (max-width: 640px) {
     body { padding: 16px; }
