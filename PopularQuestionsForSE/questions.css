@@ -162,6 +162,14 @@ h1 {
 [class*="c38"] { border-left-color: #f59e0b; }
 [class*="c39"] { border-left-color: #8b5cf6; }
 [class*="c40"] { border-left-color: #ef4444; }
+[class*="c41"] { border-left-color: #00ADD8; }
+[class*="c42"] { border-left-color: #2ecc71; }
+[class*="c43"] { border-left-color: #9b59b6; }
+[class*="c44"] { border-left-color: #e67e22; }
+[class*="c45"] { border-left-color: #e74c3c; }
+[class*="c46"] { border-left-color: #3498db; }
+[class*="c47"] { border-left-color: #f1c40f; }
+[class*="c48"] { border-left-color: #e91e63; }
 
 /* =============================================
    Страницы с вопросами (секции)
@@ -215,6 +223,14 @@ h1 {
 .section[class*="c38"] { border-left-color: #f59e0b; }
 .section[class*="c39"] { border-left-color: #8b5cf6; }
 .section[class*="c40"] { border-left-color: #ef4444; }
+.section[class*="c41"] { border-left-color: #00ADD8; }
+.section[class*="c42"] { border-left-color: #2ecc71; }
+.section[class*="c43"] { border-left-color: #9b59b6; }
+.section[class*="c44"] { border-left-color: #e67e22; }
+.section[class*="c45"] { border-left-color: #e74c3c; }
+.section[class*="c46"] { border-left-color: #3498db; }
+.section[class*="c47"] { border-left-color: #f1c40f; }
+.section[class*="c48"] { border-left-color: #e91e63; }
 
 .section h2 {
     font-size: 24px;

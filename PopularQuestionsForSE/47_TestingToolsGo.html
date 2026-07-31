@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go — Блоки 1-4 | Подробные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 7 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>🧪 7. Тестирование и Инструменты</h2>
+
+    <!-- Вопрос 1 -->
+    <details>
+        <summary>Юнит-тесты — `go test` и `*testing.T`</summary>
+        <div class="answer">
+            <p><strong>В Go тесты встроены в язык — не нужно устанавливать сторонние фреймворки.</strong></p>
+
+            <p><strong>Правила:</strong></p>
+            <ul>
+                <li>Файлы тестов заканчиваются на <code>_test.go</code></li>
+                <li>Функции тестов начинаются с <code>Test</code></li>
+                <li>Принимают <code>*testing.T</code></li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// math.go
+func Add(a, b int) int {
+    return a + b
+}
+
+// math_test.go
+func TestAdd(t *testing.T) {
+    result := Add(2, 3)
+    expected := 5
+    
+    if result != expected {
+        t.Errorf("Add(2, 3) = %d; ожидалось %d", result, expected)
+    }
+}
+
+// Запуск
+go test .</pre>
+
+            <p><strong>Методы <code>testing.T</code>:</strong></p>
+            <ul>
+                <li><code>t.Error(msg)</code> — ошибка (продолжает выполнение)</li>
+                <li><code>t.Errorf(format, ...)</code> — ошибка с форматированием</li>
+                <li><code>t.Fatal(msg)</code> — фатальная ошибка (останавливает тест)</li>
+                <li><code>t.Fatalf(format, ...)</code> — фатальная с форматированием</li>
+                <li><code>t.Skip(msg)</code> — пропустить тест</li>
+                <li><code>t.Log(msg)</code> — логирование (показывается с <code>-v</code>)</li>
+            </ul>
+
+            <p><strong>Запуск с флагами:</strong></p>
+            <pre>
+go test          # все тесты
+go test -v       # подробный вывод
+go test -run TestAdd  # только конкретный тест
+go test -short   # пропустить долгие тесты (если есть проверка t.Short())
+go test -cover   # покрытие кода</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 2 -->
+    <details>
+        <summary>Табличные тесты (Table-Driven Tests)</summary>
+        <div class="answer">
+            <p><strong>Table-Driven Tests — это паттерн, где тесты описываются в виде таблицы входных данных и ожидаемых результатов.</strong></p>
+
+            <p><strong>Зачем:</strong></p>
+            <ul>
+                <li>Легко добавлять новые тесты</li>
+                <li>Код не дублируется</li>
+                <li>Хорошо читается</li>
+                <li>Легко видно все случаи</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+func TestAdd(t *testing.T) {
+    tests := []struct {
+        name     string
+        a, b     int
+        expected int
+    }{
+        {"положительные", 2, 3, 5},
+        {"отрицательные", -1, -2, -3},
+        {"с нулём", 0, 5, 5},
+        {"большие числа", 1000000, 2000000, 3000000},
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            result := Add(tt.a, tt.b)
+            if result != tt.expected {
+                t.Errorf("Add(%d, %d) = %d; ожидалось %d",
+                    tt.a, tt.b, result, tt.expected)
+            }
+        })
+    }
+}</pre>
+
+            <p><strong>С тестами на ошибки:</strong></p>
+            <pre>
+func TestDivide(t *testing.T) {
+    tests := []struct {
+        name      string
+        a, b      float64
+        expected  float64
+        expectErr bool
+    }{
+        {"нормальное", 10, 2, 5, false},
+        {"деление на ноль", 10, 0, 0, true},
+        {"отрицательные", -10, 2, -5, false},
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            result, err := Divide(tt.a, tt.b)
+            
+            if tt.expectErr {
+                if err == nil {
+                    t.Error("ожидалась ошибка, но её нет")
+                }
+                return
+            }
+            
+            if err != nil {
+                t.Errorf("неожиданная ошибка: %v", err)
+            }
+            
+            if result != tt.expected {
+                t.Errorf("ожидалось %f, получили %f", tt.expected, result)
+            }
+        })
+    }
+}</pre>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Добавление нового теста — просто новая строка в таблице</li>
+                <li>Все случаи видны сразу</li>
+                <li>Легко параметризовать</li>
+                <li>Подтесты (<code>t.Run</code>) дают хорошие отчёты</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 3 -->
+    <details>
+        <summary>Подтесты — `t.Run()`</summary>
+        <div class="answer">
+            <p><strong><code>t.Run()</code> позволяет создавать вложенные тесты.</strong></p>
+
+            <p><strong>Зачем:</strong></p>
+            <ul>
+                <li>Группировка связанных тестов</li>
+                <li>Запуск отдельных тестов по имени (<code>-run</code>)</li>
+                <li>Параллельный запуск подтестов</li>
+                <li>Чистые отчёты</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+func TestCalculator(t *testing.T) {
+    t.Run("сложение", func(t *testing.T) {
+        result := Add(2, 3)
+        if result != 5 {
+            t.Errorf("Add(2,3) = %d; ожидалось 5", result)
+        }
+    })
+    
+    t.Run("вычитание", func(t *testing.T) {
+        result := Sub(5, 3)
+        if result != 2 {
+            t.Errorf("Sub(5,3) = %d; ожидалось 2", result)
+        }
+    })
+}
+
+// Запуск только сложения
+go test -run TestCalculator/сложение</pre>
+
+            <p><strong>Параллельные подтесты:</strong></p>
+            <pre>
+func TestParallel(t *testing.T) {
+    t.Parallel()  // основной тест параллельный
+    
+    t.Run("тест 1", func(t *testing.T) {
+        t.Parallel()
+        // тест 1 выполняется параллельно
+    })
+    
+    t.Run("тест 2", func(t *testing.T) {
+        t.Parallel()
+        // тест 2 выполняется параллельно
+    })
+}</pre>
+
+            <p><strong>Вложенные подтесты:</strong></p>
+            <pre>
+func TestAPI(t *testing.T) {
+    t.Run("GET /users", func(t *testing.T) {
+        t.Run("существующий пользователь", func(t *testing.T) {
+            // ...
+        })
+        t.Run("несуществующий пользователь", func(t *testing.T) {
+            // ...
+        })
+    })
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 4 -->
+    <details>
+        <summary>Моки в Go — интерфейсы и ручная реализация</summary>
+        <div class="answer">
+            <p><strong>В Go моки обычно делаются через интерфейсы и ручную реализацию.</strong></p>
+
+            <p><strong>Шаг 1: Определяем интерфейс для зависимости</strong></p>
+            <pre>
+type UserRepository interface {
+    GetUser(id int) (*User, error)
+    SaveUser(user *User) error
+}</pre>
+
+            <p><strong>Шаг 2: Реальная реализация</strong></p>
+            <pre>
+type PostgresRepo struct {
+    db *sql.DB
+}
+
+func (r *PostgresRepo) GetUser(id int) (*User, error) {
+    // реальная работа с БД
+}</pre>
+
+            <p><strong>Шаг 3: Мок-реализация для тестов</strong></p>
+            <pre>
+type MockUserRepo struct {
+    users map[int]*User
+    err   error
+}
+
+func (m *MockUserRepo) GetUser(id int) (*User, error) {
+    if m.err != nil {
+        return nil, m.err
+    }
+    user, ok := m.users[id]
+    if !ok {
+        return nil, errors.New("пользователь не найден")
+    }
+    return user, nil
+}
+
+func (m *MockUserRepo) SaveUser(user *User) error {
+    if m.err != nil {
+        return m.err
+    }
+    m.users[user.ID] = user
+    return nil
+}</pre>
+
+            <p><strong>Шаг 4: Использование в тесте</strong></p>
+            <pre>
+func TestUserService(t *testing.T) {
+    mockRepo := &MockUserRepo{
+        users: map[int]*User{
+            1: {ID: 1, Name: "Alice"},
+        },
+    }
+    
+    service := NewUserService(mockRepo)
+    user, err := service.GetUser(1)
+    
+    if err != nil {
+        t.Errorf("ошибка: %v", err)
+    }
+    if user.Name != "Alice" {
+        t.Errorf("ожидалось Alice, получили %s", user.Name)
+    }
+}</pre>
+
+            <p><strong>Альтернативы:</strong></p>
+            <ul>
+                <li><strong>gomock</strong> — генерация моков из интерфейсов</li>
+                <li><strong>testify/mock</strong> — ещё один популярный фреймворк</li>
+                <li><strong>httptest</strong> — для мока HTTP-серверов</li>
+            </ul>
+
+            <p><strong>Пример с httptest:</strong></p>
+            <pre>
+func TestHTTPClient(t *testing.T) {
+    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Write([]byte(`{"status":"ok"}`))
+    }))
+    defer server.Close()
+    
+    // Используем server.URL в тесте
+    resp, err := http.Get(server.URL)
+    // ... проверяем resp
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 5 -->
+    <details>
+        <summary>HTTP тестирование — `httptest`</summary>
+        <div class="answer">
+            <p><strong><code>httptest</code> — пакет для тестирования HTTP-серверов и клиентов.</strong></p>
+
+            <p><strong>Тестирование обработчиков:</strong></p>
+            <pre>
+func TestHelloHandler(t *testing.T) {
+    // Создаём запрос
+    req, err := http.NewRequest("GET", "/hello/Alice", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+    
+    // Записываем ответ
+    rr := httptest.NewRecorder()
+    
+    // Вызываем обработчик
+    handler := http.HandlerFunc(helloHandler)
+    handler.ServeHTTP(rr, req)
+    
+    // Проверяем статус
+    if status := rr.Code; status != http.StatusOK {
+        t.Errorf("ожидался статус %v, получили %v", http.StatusOK, status)
+    }
+    
+    // Проверяем тело
+    expected := "Hello, Alice!"
+    if rr.Body.String() != expected {
+        t.Errorf("ожидалось %q, получили %q", expected, rr.Body.String())
+    }
+}</pre>
+
+            <p><strong>Тестирование с JSON:</strong></p>
+            <pre>
+func TestUserHandler(t *testing.T) {
+    req, _ := http.NewRequest("GET", "/user/1", nil)
+    rr := httptest.NewRecorder()
+    
+    userHandler.ServeHTTP(rr, req)
+    
+    var user User
+    err := json.NewDecoder(rr.Body).Decode(&user)
+    if err != nil {
+        t.Fatal(err)
+    }
+    
+    if user.Name != "Alice" {
+        t.Errorf("ожидалось Alice, получили %s", user.Name)
+    }
+}</pre>
+
+            <p><strong>Тестирование с middleware:</strong></p>
+            <pre>
+func TestAuthMiddleware(t *testing.T) {
+    req, _ := http.NewRequest("GET", "/protected", nil)
+    req.Header.Set("Authorization", "valid-token")
+    
+    rr := httptest.NewRecorder()
+    
+    // Оборачиваем обработчик в middleware
+    handler := authMiddleware(http.HandlerFunc(protectedHandler))
+    handler.ServeHTTP(rr, req)
+    
+    if rr.Code != http.StatusOK {
+        t.Errorf("ожидался 200, получили %d", rr.Code)
+    }
+}</pre>
+
+            <p><strong>Мок-сервер для клиентов:</strong></p>
+            <pre>
+func TestExternalAPI(t *testing.T) {
+    // Создаём тестовый сервер
+    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        w.Write([]byte(`{"status":"ok"}`))
+    }))
+    defer server.Close()
+    
+    // Используем server.URL в клиенте
+    resp, err := http.Get(server.URL + "/api/data")
+    // ... проверяем ответ
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 6 -->
+    <details>
+        <summary>Примеры (Examples) — как документация</summary>
+        <div class="answer">
+            <p><strong>Примеры (Examples) — это исполняемая документация, которая проверяется тестами.</strong></p>
+
+            <p><strong>Правила:</strong></p>
+            <ul>
+                <li>Функция начинается с <code>Example</code></li>
+                <li>Находится в <code>_test.go</code> файлах</li>
+                <li>Вывод проверяется автоматически</li>
+                <li>Показывается в документации <code>go doc</code></li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// math.go
+func Add(a, b int) int {
+    return a + b
+}
+
+// math_test.go
+func ExampleAdd() {
+    result := Add(2, 3)
+    fmt.Println(result)
+    // Output: 5
+}</pre>
+
+            <p><strong>Несколько примеров:</strong></p>
+            <pre>
+func ExampleAdd_negative() {
+    result := Add(-1, -2)
+    fmt.Println(result)
+    // Output: -3
+}
+
+func ExampleAdd_zero() {
+    result := Add(0, 5)
+    fmt.Println(result)
+    // Output: 5
+}</pre>
+
+            <p><strong>Пример для пакета:</strong></p>
+            <pre>
+func Example() {
+    fmt.Println("Пакет mathutils")
+    // Output: Пакет mathutils
+}</pre>
+
+            <p><strong>Где используются:</strong></p>
+            <ul>
+                <li>В официальной документации Go</li>
+                <li>В <code>pkg.go.dev</code></li>
+                <li>Проверяются при <code>go test</code></li>
+                <li>Служат как живые примеры использования</li>
+            </ul>
+
+            <p><strong>Важно:</strong> Если вывод не совпадает с <code>// Output:</code>, тест упадёт.</p>
+        </div>
+    </details>
+
+    <!-- Вопрос 7 -->
+    <details>
+        <summary>Test Coverage — покрытие кода</summary>
+        <div class="answer">
+            <p><strong>Покрытие кода показывает, какая часть кода выполняется во время тестов.</strong></p>
+
+            <p><strong>Зачем:</strong></p>
+            <ul>
+                <li>Находит непроверенный код</li>
+                <li>Помогает понять, где нужны дополнительные тесты</li>
+                <li>Метрика качества</li>
+            </ul>
+
+            <p><strong>Команды:</strong></p>
+            <pre>
+# Простое покрытие
+go test -cover
+
+# Подробный отчёт
+go test -coverprofile=coverage.out
+go tool cover -html=coverage.out  # открыть в браузере
+
+# Показать в терминале
+go tool cover -func=coverage.out</pre>
+
+            <p><strong>Пример отчёта:</strong></p>
+            <pre>
+go test -coverprofile=coverage.out
+go tool cover -func=coverage.out
+
+math.go:5: Add           100.0%
+math.go:10: Sub          100.0%
+math.go:15: Divide       80.0%
+math.go:22: Multiply     0.0%
+total:                   70.0%</pre>
+
+            <p><strong>Настройка порога:</strong></p>
+            <ul>
+                <li>В CI/CD можно требовать минимум 80% покрытия</li>
+                <li>Но 100% покрытие не всегда нужно — фокусируйтесь на важном коде</li>
+            </ul>
+
+            <p><strong>Флаги:</strong></p>
+            <pre>
+# Только пакеты с тестами
+go test -cover ./...
+
+# Игнорировать некоторые файлы
+go test -cover -coverpkg=./... -coverprofile=coverage.out</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 8 -->
+    <details>
+        <summary>Инструменты для тестирования — testify, gomega</summary>
+        <div class="answer">
+            <p><strong>Сторонние библиотеки упрощают написание тестов.</strong></p>
+
+            <p><strong><code>testify</code> — самый популярный фреймворк для тестов в Go:</strong></p>
+            <pre>
+import (
+    "testing"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+    "github.com/stretchr/testify/suite"
+)</pre>
+
+            <p><strong>Assert — проверки без остановки:</strong></p>
+            <pre>
+func TestWithAssert(t *testing.T) {
+    result := Add(2, 3)
+    
+    assert.Equal(t, 5, result, "сложение работает")
+    assert.NotNil(t, result)
+    assert.Greater(t, result, 0)
+    assert.Contains(t, "hello world", "world")
+}</pre>
+
+            <p><strong>Require — проверки с остановкой при ошибке:</strong></p>
+            <pre>
+func TestWithRequire(t *testing.T) {
+    user, err := GetUser(1)
+    
+    require.NoError(t, err)  // если ошибка — тест останавливается
+    require.NotNil(t, user)
+    
+    assert.Equal(t, "Alice", user.Name)
+}</pre>
+
+            <p><strong>Suite — группировка тестов (как классы в xUnit):</strong></p>
+            <pre>
+type MySuite struct {
+    suite.Suite
+    client *Client
+}
+
+func (s *MySuite) SetupTest() {
+    s.client = NewClient()
+}
+
+func (s *MySuite) TearDownTest() {
+    s.client.Close()
+}
+
+func (s *MySuite) TestAdd() {
+    result := s.client.Add(2, 3)
+    s.Equal(5, result)
+}
+
+func TestSuite(t *testing.T) {
+    suite.Run(t, new(MySuite))
+}</pre>
+
+            <p><strong><code>gomega</code> — BDD-стиль (как в RSpec):</strong></p>
+            <pre>
+import . "github.com/onsi/gomega"
+
+func TestWithGomega(t *testing.T) {
+    RegisterTestingT(t)
+    
+    result := Add(2, 3)
+    
+    Ω(result).Should(Equal(5))
+    Ω(result).ShouldNot(BeZero())
+    Ω(result).Should(BeNumerically(">", 0))
+}</pre>
+
+            <p><strong>Что выбрать:</strong></p>
+            <ul>
+                <li><strong>testify</strong> — стандарт, много проектов используют</li>
+                <li><strong>gomega</strong> — если нравится BDD-стиль</li>
+                <li><strong>Стандартный testing</strong> — тоже нормально, особенно для небольших проектов</li>
+            </ul>
+        </div>
+    </details>
+</section>
+
+    <script src="script.js"></script>
+</body>
+</html>

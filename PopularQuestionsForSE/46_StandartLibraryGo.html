@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go — Блоки 1-4 | Подробные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 6 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>📚 6. Стандартная библиотека и продвинутые пакеты</h2>
+
+    <!-- Вопрос 1 -->
+    <details>
+        <summary>`io.Reader` и `io.Writer` — основа всего в Go</summary>
+        <div class="answer">
+            <p><strong>Интерфейсы <code>io.Reader</code> и <code>io.Writer</code> — это фундамент для работы с потоками данных в Go.</strong></p>
+
+            <p><strong><code>io.Reader</code> — чтение данных:</strong></p>
+            <pre>
+type Reader interface {
+    Read(p []byte) (n int, err error)
+}</pre>
+            <ul>
+                <li>Читает данные в предоставленный срез <code>p</code></li>
+                <li>Возвращает количество прочитанных байтов и ошибку</li>
+                <li>При достижении конца возвращает <code>io.EOF</code></li>
+            </ul>
+
+            <p><strong><code>io.Writer</code> — запись данных:</strong></p>
+            <pre>
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}</pre>
+            <ul>
+                <li>Записывает данные из среза <code>p</code></li>
+                <li>Возвращает количество записанных байтов и ошибку</li>
+            </ul>
+
+            <p><strong>Кто реализует эти интерфейсы:</strong></p>
+            <ul>
+                <li><code>os.File</code> — файлы</li>
+                <li><code>net.Conn</code> — сетевые соединения</li>
+                <li><code>strings.Reader</code> — чтение из строки</li>
+                <li><code>bytes.Buffer</code> — буфер в памяти</li>
+                <li><code>http.Request.Body</code> — тело HTTP-запроса</li>
+                <li><code>crypto/rand.Reader</code> — криптографический генератор случайных чисел</li>
+            </ul>
+
+            <p><strong>Пример копирования:</strong></p>
+            <pre>
+func copyData(src io.Reader, dst io.Writer) error {
+    _, err := io.Copy(dst, src)  // встроенная функция
+    return err
+}
+
+// Пример использования
+func main() {
+    file, _ := os.Open("input.txt")
+    defer file.Close()
+    
+    output, _ := os.Create("output.txt")
+    defer output.Close()
+    
+    io.Copy(output, file)  // копирует файл
+}</pre>
+
+            <p><strong>Почему это мощно:</strong></p>
+            <ul>
+                <li>Любой источник и приёмник данных реализуют эти интерфейсы</li>
+                <li>Функции можно компоновать: <code>gzip.NewReader</code> оборачивает <code>io.Reader</code></li>
+                <li>Легко создавать цепочки обработки данных</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 2 -->
+    <details>
+        <summary>Работа с файлами — `os.Open`, `os.Create`</summary>
+        <div class="answer">
+            <p><strong>Пакет <code>os</code> предоставляет функции для работы с файловой системой.</strong></p>
+
+            <p><strong>Открытие файла:</strong></p>
+            <pre>
+// Только для чтения
+file, err := os.Open("file.txt")
+if err != nil {
+    // обработка ошибки (файл не найден, нет прав и т.д.)
+}
+defer file.Close()
+
+// Для чтения и записи
+file, err := os.OpenFile("file.txt", os.O_RDWR|os.O_CREATE, 0644)
+defer file.Close()</pre>
+
+            <p><strong>Создание файла:</strong></p>
+            <pre>
+// Создаёт или перезаписывает
+file, err := os.Create("newfile.txt")
+if err != nil {
+    // обработка ошибки
+}
+defer file.Close()
+
+// Чтение из файла
+data := make([]byte, 1024)
+n, err := file.Read(data)  // n — сколько прочитано
+
+// Запись в файл
+n, err := file.Write([]byte("Hello, World!"))
+
+// Запись строки
+n, err := file.WriteString("Hello, World!")</pre>
+
+            <p><strong>Удобные функции для маленьких файлов:</strong></p>
+            <pre>
+// Чтение всего файла
+data, err := os.ReadFile("file.txt")
+
+// Запись всего файла
+err := os.WriteFile("file.txt", []byte("content"), 0644)</pre>
+
+            <p><strong>Работа с директориями:</strong></p>
+            <pre>
+// Создать директорию
+err := os.Mkdir("myfolder", 0755)
+
+// Создать со всеми родительскими
+err := os.MkdirAll("path/to/folder", 0755)
+
+// Удалить файл
+err := os.Remove("file.txt")
+
+// Удалить директорию (только пустую)
+err := os.Remove("empty_folder")
+
+// Удалить директорию со всем содержимым
+err := os.RemoveAll("folder")
+
+// Прочитать содержимое директории
+entries, err := os.ReadDir(".")
+for _, entry := range entries {
+    fmt.Println(entry.Name(), entry.IsDir())
+}</pre>
+
+            <p><strong>Важно:</strong> Всегда используйте <code>defer file.Close()</code>, чтобы не допустить утечек.</p>
+        </div>
+    </details>
+
+    <!-- Вопрос 3 -->
+    <details>
+        <summary>Обработка JSON — `encoding/json`</summary>
+        <div class="answer">
+            <p><strong>Пакет <code>encoding/json</code> — основной инструмент для работы с JSON в Go.</strong></p>
+
+            <p><strong>Маршалинг (структура → JSON):</strong></p>
+            <pre>
+type Person struct {
+    Name string
+    Age  int
+    City string `json:"city"`  // тег: поле в JSON будет "city"
+}
+
+p := Person{Name: "Alice", Age: 30, City: "Moscow"}
+
+data, err := json.Marshal(p)
+if err != nil {
+    // обработка ошибки
+}
+fmt.Println(string(data))  // {"Name":"Alice","Age":30,"city":"Moscow"}
+
+// Красивый вывод (с отступами)
+data, err := json.MarshalIndent(p, "", "  ")</pre>
+
+            <p><strong>Анмаршалинг (JSON → структура):</strong></p>
+            <pre>
+jsonData := `{"Name":"Bob","Age":25,"city":"SPb"}`
+var p Person
+err := json.Unmarshal([]byte(jsonData), &p)
+if err != nil {
+    // обработка ошибки
+}
+fmt.Println(p.Name)  // "Bob"</pre>
+
+            <p><strong>Теги для настройки:</strong></p>
+            <pre>
+type User struct {
+    ID       int    `json:"id"`                    // переименовать
+    Password string `json:"-"`                     // игнорировать
+    Email    string `json:"email,omitempty"`       // пропустить, если пусто
+    Created  time.Time `json:"created_at,string"`  // хранить как строку
+}</pre>
+
+            <p><strong>Работа с произвольным JSON:</strong></p>
+            <pre>
+var data any
+err := json.Unmarshal(jsonData, &data)
+// data — map[string]any или []any
+
+// Проверка типа
+switch v := data.(type) {
+case map[string]any:
+    fmt.Println("Объект:", v)
+case []any:
+    fmt.Println("Массив:", v)
+}</pre>
+
+            <p><strong>Потоковая обработка (для больших файлов):</strong></p>
+            <pre>
+decoder := json.NewDecoder(file)
+for {
+    var p Person
+    err := decoder.Decode(&p)
+    if err == io.EOF {
+        break
+    }
+    if err != nil {
+        // обработка ошибки
+    }
+    // обрабатываем p
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 4 -->
+    <details>
+        <summary>HTTP-сервер — `net/http`</summary>
+        <div class="answer">
+            <p><strong>Пакет <code>net/http</code> предоставляет всё для создания HTTP-серверов и клиентов.</strong></p>
+
+            <p><strong>Простой сервер:</strong></p>
+            <pre>
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "Hello, %s!", r.URL.Path[1:])
+}
+
+func main() {
+    // Регистрируем обработчик
+    http.HandleFunc("/", helloHandler)
+    
+    // Запускаем сервер
+    http.ListenAndServe(":8080", nil)
+}</pre>
+
+            <p><strong>Более сложный пример:</strong></p>
+            <pre>
+func main() {
+    mux := http.NewServeMux()
+    
+    // GET-запрос
+    mux.HandleFunc("GET /users/{id}", func(w http.ResponseWriter, r *http.Request) {
+        id := r.PathValue("id")
+        fmt.Fprintf(w, "User ID: %s", id)
+    })
+    
+    // POST-запрос
+    mux.HandleFunc("POST /users", func(w http.ResponseWriter, r *http.Request) {
+        // Читаем тело
+        body, _ := io.ReadAll(r.Body)
+        defer r.Body.Close()
+        fmt.Fprintf(w, "Received: %s", body)
+    })
+    
+    // Настройка сервера
+    server := &http.Server{
+        Addr:         ":8080",
+        Handler:      mux,
+        ReadTimeout:  5 * time.Second,
+        WriteTimeout: 10 * time.Second,
+        IdleTimeout:  120 * time.Second,
+    }
+    
+    server.ListenAndServe()
+}</pre>
+
+            <p><strong>Обработка JSON:</strong></p>
+            <pre>
+func userHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    
+    user := User{Name: "Alice", Age: 30}
+    json.NewEncoder(w).Encode(user)
+}</pre>
+
+            <p><strong>Middleware (промежуточное ПО):</strong></p>
+            <pre>
+func loggingMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        log.Printf("%s %s", r.Method, r.URL.Path)
+        next.ServeHTTP(w, r)
+    })
+}
+
+func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc("/", helloHandler)
+    
+    // Оборачиваем
+    handler := loggingMiddleware(mux)
+    http.ListenAndServe(":8080", handler)
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 5 -->
+    <details>
+        <summary>HTTP-клиент — `http.Client`, таймауты</summary>
+        <div class="answer">
+            <p><strong><code>http.Client</code> — основной инструмент для выполнения HTTP-запросов.</strong></p>
+
+            <p><strong>Простой GET-запрос:</strong></p>
+            <pre>
+resp, err := http.Get("https://api.example.com/users")
+if err != nil {
+    // обработка ошибки
+}
+defer resp.Body.Close()
+
+body, err := io.ReadAll(resp.Body)
+fmt.Println(string(body))</pre>
+
+            <p><strong>POST-запрос с JSON:</strong></p>
+            <pre>
+data := User{Name: "Alice"}
+jsonData, _ := json.Marshal(data)
+
+resp, err := http.Post(
+    "https://api.example.com/users",
+    "application/json",
+    bytes.NewBuffer(jsonData),
+)</pre>
+
+            <p><strong>Настройка клиента (с таймаутами):</strong></p>
+            <pre>
+client := &http.Client{
+    Timeout: 10 * time.Second,  // общий таймаут
+    Transport: &http.Transport{
+        MaxIdleConns:        100,
+        IdleConnTimeout:     90 * time.Second,
+        TLSHandshakeTimeout: 5 * time.Second,
+        DialContext: (&net.Dialer{
+            Timeout:   5 * time.Second,
+            KeepAlive: 30 * time.Second,
+        }).DialContext,
+    },
+}
+
+resp, err := client.Get("https://api.example.com/users")</pre>
+
+            <p><strong>Полный контроль над запросом:</strong></p>
+            <pre>
+req, err := http.NewRequest("GET", "https://api.example.com/users", nil)
+if err != nil {
+    // обработка
+}
+
+req.Header.Set("Authorization", "Bearer token123")
+req.Header.Set("User-Agent", "MyApp/1.0")
+
+// С контекстом для отмены
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+req = req.WithContext(ctx)
+
+resp, err := client.Do(req)</pre>
+
+            <p><strong>Важно:</strong> Всегда закрывайте <code>resp.Body</code> с <code>defer</code>, даже при ошибке.</p>
+        </div>
+    </details>
+
+    <!-- Вопрос 6 -->
+    <details>
+        <summary>Работа со временем — `time`</summary>
+        <div class="answer">
+            <p><strong>Пакет <code>time</code> — работа со временем, таймерами и тикерами.</strong></p>
+
+            <p><strong>Текущее время:</strong></p>
+            <pre>
+now := time.Now()
+fmt.Println(now)  // 2026-07-31 12:34:56.789 +0300 MSK
+
+// Конкретная дата
+t := time.Date(2026, time.July, 31, 12, 0, 0, 0, time.UTC)</pre>
+
+            <p><strong>Форматирование и парсинг:</strong></p>
+            <pre>
+// Форматирование (используем специальный шаблон!)
+s := now.Format("2006-01-02 15:04:05")  // 2026-07-31 12:34:56
+
+// Парсинг
+t, err := time.Parse("2006-01-02", "2026-07-31")</pre>
+
+            <p><strong>Операции со временем:</strong></p>
+            <pre>
+// Добавить время
+future := now.Add(24 * time.Hour)  // +1 день
+past := now.Add(-1 * time.Hour)    // -1 час
+
+// Разница
+diff := future.Sub(now)  // 24h0m0s
+
+// Компоненты
+year := now.Year()
+month := now.Month()
+day := now.Day()
+hour := now.Hour()
+minute := now.Minute()
+weekday := now.Weekday()</pre>
+
+            <p><strong>Таймер (однократный):</strong></p>
+            <pre>
+timer := time.NewTimer(2 * time.Second)
+<-timer.C  // ждём 2 секунды
+
+// Или короче
+<-time.After(2 * time.Second)</pre>
+
+            <p><strong>Тикер (повторяющийся):</strong></p>
+            <pre>
+ticker := time.NewTicker(1 * time.Second)
+defer ticker.Stop()
+
+for range ticker.C {
+    fmt.Println("Tick")  // каждую секунду
+}</pre>
+
+            <p><strong>Задержка:</strong></p>
+            <pre>
+time.Sleep(5 * time.Second)  // уснуть на 5 секунд</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 7 -->
+    <details>
+        <summary>Логирование — `log` и `slog`</summary>
+        <div class="answer">
+            <p><strong>Стандартный пакет <code>log</code> для простого логирования.</strong></p>
+
+            <p><strong>Базовое использование:</strong></p>
+            <pre>
+import "log"
+
+log.Print("Это лог")              // с новой строки
+log.Printf("User %d", id)          // с форматированием
+log.Println("С новой строки")
+
+log.Fatal("Критическая ошибка")    // лог + os.Exit(1)
+log.Panic("Паника!")               // лог + panic</pre>
+
+            <p><strong>Настройка логгера:</strong></p>
+            <pre>
+// Добавить дату и время
+log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+// Пример вывода: 2026/07/31 12:34:56 main.go:15: сообщение
+
+// Создать свой логгер
+logger := log.New(os.Stdout, "APP: ", log.Ldate|log.Ltime)
+logger.Print("Пользовательский логгер")</pre>
+
+            <p><strong><code>slog</code> — структурированное логирование (Go 1.21+):</strong></p>
+            <pre>
+import "log/slog"
+
+// JSON-логгер
+logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+// Текстовый
+logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+// Логирование с атрибутами
+logger.Info("Пользователь вошёл",
+    "user_id", 123,
+    "ip", "192.168.1.1",
+)
+
+// С уровнем
+logger.Debug("Отладочное сообщение")
+logger.Warn("Предупреждение")
+logger.Error("Ошибка", "error", err)</pre>
+
+            <p><strong>Уровни логирования:</strong></p>
+            <ul>
+                <li><code>Debug</code> — для разработки</li>
+                <li><code>Info</code> — важные события</li>
+                <li><code>Warn</code> — предупреждения</li>
+                <li><code>Error</code> — ошибки (требуют внимания)</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 8 -->
+    <details>
+        <summary>Регулярные выражения — `regexp`</summary>
+        <div class="answer">
+            <p><strong>Пакет <code>regexp</code> для работы с регулярными выражениями.</strong></p>
+
+            <p><strong>Простые проверки:</strong></p>
+            <pre>
+import "regexp"
+
+// Проверка, соответствует ли строка шаблону
+matched, _ := regexp.MatchString(`\d+`, "abc123def")
+fmt.Println(matched)  // true
+
+// Проверка на email
+email := "user@example.com"
+matched, _ := regexp.MatchString(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`, email)</pre>
+
+            <p><strong>Компиляция для повторного использования:</strong></p>
+            <pre>
+// Компилируем один раз (для производительности)
+re := regexp.MustCompile(`\d+`)  // паника при ошибке
+
+// Поиск подстрок
+matches := re.FindAllString("abc123def456", -1)  // ["123", "456"]
+
+// Поиск с захватом групп
+re := regexp.MustCompile(`(\d+)-(\d+)`)
+matches := re.FindStringSubmatch("123-456")
+// matches[0] = "123-456", matches[1] = "123", matches[2] = "456"</pre>
+
+            <p><strong>Замена:</strong></p>
+            <pre>
+re := regexp.MustCompile(`\d+`)
+result := re.ReplaceAllString("abc123def", "XXX")
+fmt.Println(result)  // "abcXXXdef"
+
+// С захватом групп
+re := regexp.MustCompile(`(\d+)-(\d+)`)
+result := re.ReplaceAllString("123-456", "$2-$1")
+fmt.Println(result)  // "456-123"</pre>
+
+            <p><strong>Предостережение:</strong></p>
+            <ul>
+                <li>Регулярные выражения могут быть <strong>медленными</strong></li>
+                <li>Всегда компилируйте заранее (<code>MustCompile</code>)</li>
+                <li>Для простых задач используйте <code>strings.Contains</code> или <code>strings.HasPrefix</code> — они быстрее</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 9 -->
+    <details>
+        <summary>Шаблонизация — `html/template` vs `text/template`</summary>
+        <div class="answer">
+            <p><strong>Go имеет два пакета для шаблонов: <code>text/template</code> и <code>html/template</code>.</strong></p>
+
+            <p><strong><code>text/template</code> — для текста:</strong></p>
+            <pre>
+import "text/template"
+
+type Person struct {
+    Name string
+    Age  int
+}
+
+tmpl := `Имя: {{.Name}}, Возраст: {{.Age}}`
+t := template.Must(template.New("test").Parse(tmpl))
+
+p := Person{Name: "Alice", Age: 30}
+t.Execute(os.Stdout, p)  // "Имя: Alice, Возраст: 30"</pre>
+
+            <p><strong><code>html/template</code> — для HTML (безопасный):</strong></p>
+            <pre>
+import "html/template"
+
+tmpl := `&lt;h1&gt;Привет, {{.Name}}!&lt;/h1&gt;`
+t := template.Must(template.New("test").Parse(tmpl))
+
+p := Person{Name: "&lt;script&gt;alert('xss')&lt;/script&gt;"}
+t.Execute(os.Stdout, p)  // &lt;h1&gt;Привет, &lt;script&gt;alert('xss')&lt;/script&gt;!&lt;/h1&gt;
+// Безопасно! Спецсимволы экранированы</pre>
+
+            <p><strong>Разница:</strong></p>
+            <ul>
+                <li><code>text/template</code> — не экранирует спецсимволы</li>
+                <li><code>html/template</code> — экранирует <code>&lt;</code>, <code>&gt;</code>, <code>&amp;</code>, <code>"</code> для безопасности</li>
+                <li>Для веб-приложений <strong>всегда используйте <code>html/template</code></strong></li>
+            </ul>
+
+            <p><strong>Возможности шаблонов:</strong></p>
+            <pre>
+// Условия
+{{if .Admin}}
+  &lt;b&gt;Админ&lt;/b&gt;
+{{else}}
+  Обычный пользователь
+{{end}}
+
+// Циклы
+{{range .Items}}
+  {{.}}
+{{end}}
+
+// Функции
+{{.Date | formatDate}}
+
+// Комментарии
+{{/* Это комментарий */}}</pre>
+        </div>
+    </details>
+</section>
+
+    <script src="script.js"></script>
+</body>
+</html>

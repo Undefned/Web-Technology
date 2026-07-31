@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go — Блоки 1-4 | Подробные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 2 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>📦 2. Синтаксис. Типы данных. Память</h2>
+
+    <!-- Вопрос 1 -->
+    <details>
+        <summary>Базовые типы: int, int64, uint, float64, byte vs rune</summary>
+        <div class="answer">
+            <p><strong>Go — статически типизированный язык.</strong> Это значит, что тип переменной известен на этапе компиляции.</p>
+
+            <p><strong>Целочисленные типы:</strong></p>
+            <table>
+                <tr><th>Тип</th><th>Размер</th><th>Описание</th></tr>
+                <tr><td><code>int</code></td><td>32 или 64 бита</td><td>Зависит от архитектуры (на 64-битной системе это 64 бита)</td></tr>
+                <tr><td><code>int8</code></td><td>8 бит</td><td>от -128 до 127</td></tr>
+                <tr><td><code>int16</code></td><td>16 бит</td><td>от -32768 до 32767</td></tr>
+                <tr><td><code>int32</code></td><td>32 бита</td><td>от -2^31 до 2^31-1</td></tr>
+                <tr><td><code>int64</code></td><td>64 бита</td><td>от -2^63 до 2^63-1</td></tr>
+                <tr><td><code>uint</code></td><td>32 или 64 бита</td><td>Беззнаковый (только положительные числа)</td></tr>
+                <tr><td><code>uint8</code></td><td>8 бит</td><td>от 0 до 255 (это же <strong>byte</strong>)</td></tr>
+            </table>
+
+            <p><strong>Типы с плавающей точкой:</strong></p>
+            <table>
+                <tr><th>Тип</th><th>Размер</th><th>Точность</th></tr>
+                <tr><td><code>float32</code></td><td>32 бита</td><td>~7 знаков</td></tr>
+                <tr><td><code>float64</code></td><td>64 бита</td><td>~15 знаков (стандарт для Go)</td></tr>
+            </table>
+
+            <p><strong>byte vs rune — очень важное различие:</strong></p>
+            <ul>
+                <li><strong><code>byte</code></strong> — это псевдоним для <code>uint8</code>. Используется для работы с <strong>байтами</strong> (ASCII-символы, бинарные данные).</li>
+                <li><strong><code>rune</code></strong> — это псевдоним для <code>int32</code>. Используется для работы с <strong>Unicode-символами</strong> (любые символы мира, включая эмодзи).</li>
+            </ul>
+
+            <p><strong>Пример с rune:</strong></p>
+            <pre>
+// В русских и китайских символах один символ может занимать несколько байт
+str := "Привет 🌍"
+fmt.Println("Длина в байтах:", len(str))   // 13 (не 7!)
+fmt.Println("Количество символов:", utf8.RuneCountInString(str))  // 7
+
+// Итерация по символам (rune)
+for i, ch := range str {
+    fmt.Printf("%d: %c\n", i, ch)
+}</pre>
+
+            <p><strong>Почему это важно:</strong></p>
+            <ul>
+                <li>Если вы работаете с текстом на русском или других языках, используйте <code>rune</code></li>
+                <li>Если вы работаете с бинарными данными или ASCII, используйте <code>byte</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 2 -->
+    <details>
+        <summary>Что такое `nil` в Go? Какие типы могут быть nil?</summary>
+        <div class="answer">
+            <p><strong><code>nil</code></strong> — это предопределённое значение в Go, которое означает «отсутствие значения» или «нулевой указатель».</p>
+
+            <p><strong>Какие типы могут быть <code>nil</code>:</strong></p>
+            <ul>
+                <li><strong>Указатели</strong> (<code>*T</code>) — указатель, который никуда не указывает</li>
+                <li><strong>Срезы</strong> (<code>[]T</code>) — пустой срез без выделенной памяти</li>
+                <li><strong>Карты</strong> (<code>map[K]V</code>) — неинициализированная карта</li>
+                <li><strong>Каналы</strong> (<code>chan T</code>) — неинициализированный канал</li>
+                <li><strong>Функции</strong> (<code>func</code>) — неинициализированная функция</li>
+                <li><strong>Интерфейсы</strong> (<code>interface{}</code>) — пустой интерфейс без значения</li>
+            </ul>
+
+            <p><strong>Какие типы НЕ могут быть <code>nil</code>:</strong></p>
+            <ul>
+                <li>Примитивные типы: <code>int</code>, <code>bool</code>, <code>float64</code>, <code>string</code></li>
+                <li>Структуры (<code>struct</code>) — они всегда имеют значение (с нулевыми полями)</li>
+                <li>Массивы (<code>[5]int</code>)</li>
+            </ul>
+
+            <p><strong>Нулевые значения (zero values):</strong></p>
+            <ul>
+                <li>Если переменная объявлена, но не инициализирована, она получает «нулевое значение»</li>
+                <li><code>int</code> → <code>0</code></li>
+                <li><code>string</code> → <code>""</code></li>
+                <li><code>bool</code> → <code>false</code></li>
+                <li><code>struct</code> → все поля заполнены нулевыми значениями</li>
+            </ul>
+
+            <p><strong>Важный момент про <code>nil</code> и интерфейсы (ловушка):</strong></p>
+            <pre>
+func main() {
+    var ptr *int = nil
+    var iface interface{} = ptr
+    
+    if iface == nil {
+        fmt.Println("nil")  // НЕ сработает!
+    } else {
+        fmt.Println("not nil")  // Выведет это
+    }
+}</pre>
+            <p>Интерфейс состоит из <strong>двух частей</strong>: тип и значение. Если тип не <code>nil</code>, но значение <code>nil</code>, интерфейс не считается <code>nil</code>.</p>
+        </div>
+    </details>
+
+    <!-- Вопрос 3 -->
+    <details>
+        <summary>Указатели (`*T`) — когда использовать?</summary>
+        <div class="answer">
+            <p><strong>Указатель</strong> — это переменная, которая хранит <strong>адрес</strong> другой переменной в памяти.</p>
+
+            <p><strong>Синтаксис:</strong></p>
+            <ul>
+                <li><code>*T</code> — тип «указатель на значение типа T»</li>
+                <li><code>&amp;x</code> — получить адрес переменной x</li>
+                <li><code>*p</code> — получить значение по адресу p (разыменование)</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+func main() {
+    x := 42
+    p := &amp;x        // p — указатель на x
+    fmt.Println(*p) // 42 (получаем значение)
+    *p = 100        // меняем значение через указатель
+    fmt.Println(x)  // 100
+}</pre>
+
+            <p><strong>Когда использовать указатели:</strong></p>
+            <ol>
+                <li><strong>Чтобы изменить значение внутри функции</strong> (как ref/out в C#)</li>
+                <li><strong>Большие структуры</strong> — передача по указателю быстрее, чем копирование</li>
+                <li><strong>Проверка на <code>nil</code></strong> — указатель может быть <code>nil</code>, что означает «нет объекта»</li>
+                <li><strong>Экономия памяти</strong> — не копируете данные каждый раз</li>
+            </ol>
+
+            <p><strong>Когда НЕ использовать указатели:</strong></p>
+            <ul>
+                <li>Для маленьких типов (<code>int</code>, <code>bool</code>, <code>float64</code>) — копирование дешевле</li>
+                <li>Для строк и срезов — они уже содержат указатели внутри</li>
+                <li>Если вы не собираетесь изменять значение</li>
+            </ul>
+
+            <p><strong>В Go НЕТ арифметики указателей</strong> (в отличие от C/C++). Нельзя делать <code>p++</code> или <code>p + 4</code> — это безопасно.</p>
+        </div>
+    </details>
+
+    <!-- Вопрос 4 -->
+    <details>
+        <summary>`new` vs `make` — в чем разница?</summary>
+        <div class="answer">
+            <p><strong>Это два встроенных способа выделения памяти, но для разных целей.</strong></p>
+
+            <p><strong><code>new(T)</code>:</strong></p>
+            <ul>
+                <li>Выделяет память для <strong>любого</strong> типа T</li>
+                <li>Возвращает <strong>указатель</strong> на выделенную память (<code>*T</code>)</li>
+                <li>Память заполняется <strong>нулевыми значениями</strong> (zero values)</li>
+                <li>Используется редко — обычно используют литералы (<code>&amp;T{}</code>)</li>
+            </ul>
+
+            <p><strong><code>make(T, ...)</code>:</strong></p>
+            <ul>
+                <li>Работает <strong>только</strong> с тремя типами: <strong>срезы</strong> (slice), <strong>карты</strong> (map), <strong>каналы</strong> (channel)</li>
+                <li>Возвращает <strong>не указатель</strong>, а сам инициализированный объект</li>
+                <li>Делает больше, чем просто выделение памяти — инициализирует внутренние структуры</li>
+                <li>Используется <strong>всегда</strong> для создания слайсов, мап и каналов</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// new — выделяет память, но не инициализирует внутренние структуры
+p := new(int)      // *int, p указывает на 0
+p2 := new(Person)  // *Person, все поля заполнены нулевыми значениями
+
+// make — инициализирует слайс, карту или канал
+sl := make([]int, 5, 10)   // слайс длиной 5, ёмкостью 10
+mp := make(map[string]int) // пустая карта, готовая к использованию
+ch := make(chan int, 3)    // буферизированный канал на 3 элемента
+
+// ОШИБКА: new не работает для слайсов и карт
+// s := new([]int)   // получите указатель на nil-слайс, но не сможете его использовать</pre>
+
+            <p><strong>Запомните правило:</strong></p>
+            <ul>
+                <li>Для слайсов, карт и каналов — <strong>всегда <code>make</code></strong></li>
+                <li>Для структур, примитивов — <strong>литералы</strong> (<code>Person{}</code>) или <code>new</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 5 -->
+    <details>
+        <summary>Массивы (`[5]int`) — почему они редко используются?</summary>
+        <div class="answer">
+            <p><strong>Массив в Go — это фиксированный набор элементов одного типа.</strong></p>
+
+            <p><strong>Особенности массивов:</strong></p>
+            <ul>
+                <li>Размер массива является <strong>частью его типа</strong>. <code>[3]int</code> и <code>[5]int</code> — это разные типы.</li>
+                <li>Массив <strong>передается по значению</strong> — при передаче в функцию копируется весь массив.</li>
+                <li>Размер <strong>не может быть изменён</strong> после создания.</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+var arr1 [3]int = [3]int{1, 2, 3}
+arr2 := [...]int{4, 5, 6}  // размер выводится автоматически
+arr3 := [5]int{1, 2, 3}    // остальные элементы — 0
+
+// Передача в функцию — копирование!
+func modify(arr [3]int) {
+    arr[0] = 100  // меняем копию
+}
+
+modify(arr1)
+fmt.Println(arr1)  // [1, 2, 3] — оригинал не изменился</pre>
+
+            <p><strong>Почему массивы редко используются:</strong></p>
+            <ul>
+                <li>Нельзя менять размер динамически</li>
+                <li>При передаче в функцию копируются все элементы (дорого)</li>
+                <li>Вместо них используют <strong>срезы (slices)</strong>, которые гибкие и эффективные</li>
+            </ul>
+
+            <p><strong>Когда массивы всё же полезны:</strong></p>
+            <ul>
+                <li>Когда нужно гарантировать фиксированный размер (например, хэш SHA256 — 32 байта)</li>
+                <li>Для критичных по производительности участков (массивы немного быстрее слайсов)</li>
+                <li>Для небольших коллекций, размер которых известен на этапе компиляции</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 6 -->
+    <details>
+        <summary>Срезы (Slices) — устройство, `append`, ёмкость</summary>
+        <div class="answer">
+            <p><strong>Срез (slice) — это динамический массив.</strong> Это самая популярная структура для работы с коллекциями в Go.</p>
+
+            <p><strong>Устройство слайса (внутреннее представление):</strong></p>
+            <ul>
+                <li><strong>Указатель</strong> на массив, где хранятся элементы</li>
+                <li><strong>Длина (len)</strong> — сколько элементов сейчас в слайсе</li>
+                <li><strong>Ёмкость (cap)</strong> — сколько элементов может поместиться без перераспределения</li>
+            </ul>
+
+            <p><strong>Создание слайсов:</strong></p>
+            <pre>
+// Пустой слайс
+var s1 []int  // nil-слайс
+
+// С литералом
+s2 := []int{1, 2, 3}
+
+// Через make
+s3 := make([]int, 5)     // длина 5, ёмкость 5
+s4 := make([]int, 5, 10) // длина 5, ёмкость 10
+
+// Из массива
+arr := [5]int{1, 2, 3, 4, 5}
+s5 := arr[1:4]  // [2, 3, 4]</pre>
+
+            <p><strong><code>append</code> — добавление элементов:</strong></p>
+            <pre>
+s := []int{1, 2, 3}
+s = append(s, 4)         // [1, 2, 3, 4]
+s = append(s, 5, 6, 7)   // [1, 2, 3, 4, 5, 6, 7]
+
+// Если ёмкости не хватает, Go создаёт новый массив в 2 раза больше</pre>
+
+            <p><strong>Важно про ёмкость:</strong></p>
+            <pre>
+s := make([]int, 3, 5)
+fmt.Println(len(s), cap(s))  // 3, 5
+
+s = append(s, 4)
+fmt.Println(len(s), cap(s))  // 4, 5
+
+s = append(s, 5)
+fmt.Println(len(s), cap(s))  // 5, 5
+
+s = append(s, 6)
+fmt.Println(len(s), cap(s))  // 6, 10 (ёмкость увеличилась в 2 раза)</pre>
+
+            <p><strong>Главные правила:</strong></p>
+            <ul>
+                <li>Всегда используйте <code>append</code> для добавления</li>
+                <li>Проверяйте ёмкость, если пишете производительный код</li>
+                <li>Слайс — это ссылочный тип (изменения внутри функции видны снаружи)</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 7 -->
+    <details>
+        <summary>Карты (Maps) — устройство и особенности</summary>
+        <div class="answer">
+            <p><strong>Карта (map) — это хэш-таблица</strong> для хранения пар «ключ → значение».</p>
+
+            <p><strong>Создание карты:</strong></p>
+            <pre>
+// 1. Через make (рекомендуется)
+ages := make(map[string]int)
+ages["Alice"] = 30
+ages["Bob"] = 25
+
+// 2. С литералом
+colors := map[string]string{
+    "red":   "#ff0000",
+    "green": "#00ff00",
+    "blue":  "#0000ff",
+}
+
+// 3. nil-карта (нельзя добавлять элементы!)
+var empty map[string]int  // nil
+// empty["key"] = 1  // ОШИБКА: panic</pre>
+
+            <p><strong>Чтение и проверка наличия ключа:</strong></p>
+            <pre>
+// Простое чтение
+value := ages["Alice"]  // если ключа нет — вернёт 0
+
+// С проверкой
+value, exists := ages["Alice"]
+if exists {
+    fmt.Println("Alice есть, возраст:", value)
+} else {
+    fmt.Println("Alice не найдена")
+}</pre>
+
+            <p><strong>Удаление элемента:</strong></p>
+            <pre>
+delete(ages, "Alice")  // удаляем ключ</pre>
+
+            <p><strong>Особенности карт в Go:</strong></p>
+            <ul>
+                <li>Порядок итерации по карте <strong>случайный</strong> (намеренно)</li>
+                <li>Ключом может быть любой <strong>сравниваемый</strong> тип (<code>==</code> и <code>!=</code>)</li>
+                <li>Нельзя взять указатель на элемент карты (<code>&amp;m["key"]</code> — ошибка)</li>
+                <li>Карты не безопасны для конкурентного доступа (нужен <code>sync.Mutex</code> или <code>sync.Map</code>)</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 8 -->
+    <details>
+        <summary>Структуры (Structs) — выравнивание и анонимные поля</summary>
+        <div class="answer">
+            <p><strong>Структура — это набор полей (как класс в других языках, но без методов внутри).</strong></p>
+
+            <p><strong>Выравнивание в памяти:</strong></p>
+            <ul>
+                <li>Go размещает поля структуры в памяти <strong>не подряд</strong>, а с учётом выравнивания</li>
+                <li>Каждый тип имеет свой размер и требования к выравниванию</li>
+                <li><code>int64</code> обычно выравнивается по 8 байтам, <code>int32</code> — по 4 и т.д.</li>
+                <li>Порядок полей может влиять на размер структуры!</li>
+            </ul>
+
+            <p><strong>Пример (важно для оптимизации):</strong></p>
+            <pre>
+type Bad struct {
+    a bool   // 1 байт
+    b int64  // 8 байт + 7 байт отступа (padding)
+    c bool   // 1 байт + 7 байт отступа
+}
+// Размер: 24 байта
+
+type Good struct {
+    a int64  // 8 байт
+    b bool   // 1 байт
+    c bool   // 1 байт + 6 байт отступа
+}
+// Размер: 16 байт</pre>
+
+            <p><strong>Анонимные поля (встраивание):</strong></p>
+            <ul>
+                <li>Можно встроить одну структуру в другую, указав только тип, без имени</li>
+                <li>Это даёт «наследование» в Go (композиция)</li>
+                <li>Поля и методы встроенной структуры «поднимаются» на уровень внешней</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+type Person struct {
+    Name string
+    Age  int
+}
+
+type Employee struct {
+    Person      // анонимное поле (встраивание)
+    Company string
+    Salary  float64
+}
+
+func main() {
+    e := Employee{
+        Person:  Person{Name: "Иван", Age: 30},
+        Company: "Google",
+        Salary:  100000,
+    }
+    
+    // Доступ к полям Person напрямую
+    fmt.Println(e.Name)  // "Иван" (как будто поле Employee)
+    fmt.Println(e.Age)   // 30
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 9 -->
+    <details>
+        <summary>Строки (`string`) — иммутабельность, конвертация с []byte</summary>
+        <div class="answer">
+            <p><strong>Строка в Go — это неизменяемая (иммутабельная) последовательность байтов.</strong></p>
+
+            <p><strong>Что значит «неизменяемая»:</strong></p>
+            <ul>
+                <li>Вы не можете изменить отдельный символ в строке: <code>s[0] = 'a'</code> — ошибка</li>
+                <li>Любая операция, которая «меняет» строку, создаёт <strong>новую</strong> строку</li>
+                <li>Это безопасно, но может быть неэффективно при частых изменениях</li>
+            </ul>
+
+            <p><strong>Строка внутри — это:</strong></p>
+            <ul>
+                <li>Указатель на массив байтов</li>
+                <li>Длина (количество байтов, не символов!)</li>
+            </ul>
+
+            <p><strong>Конвертация <code>string</code> ↔ <code>[]byte</code>:</strong></p>
+            <pre>
+s := "Hello"
+b := []byte(s)   // string → []byte (копирование)
+s2 := string(b)  // []byte → string (копирование)</pre>
+
+            <p><strong>Важно:</strong> Конвертация <strong>копирует данные</strong>. Это дорого для больших строк.</p>
+
+            <p><strong>Оптимизация с <code>unsafe</code> (только когда уверены):</strong></p>
+            <pre>
+// Преобразование без копирования (опасно!)
+import "unsafe"
+
+func StringToBytes(s string) []byte {
+    return unsafe.Slice(unsafe.StringData(s), len(s))
+}</pre>
+
+            <p><strong>Итерация по строке:</strong></p>
+            <pre>
+s := "Привет 🌍"
+
+// По байтам (плохо для Unicode)
+for i := 0; i < len(s); i++ {
+    fmt.Printf("%c", s[i])  // непонятные символы
+}
+
+// По символам (правильно)
+for i, ch := range s {
+    fmt.Printf("%d: %c\n", i, ch)  // корректные символы
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 10 -->
+    <details>
+        <summary>Пакет `unsafe` — для чего, риски</summary>
+        <div class="answer">
+            <p><strong><code>unsafe</code> — пакет для работы с памятью на низком уровне.</strong> Название говорит само за себя: это <strong>небезопасно</strong>.</p>
+
+            <p><strong>Что можно делать с <code>unsafe</code>:</strong></p>
+            <ul>
+                <li>Преобразовывать указатели между разными типами</li>
+                <li>Получать размер типов в байтах</li>
+                <li>Работать с сырой памятью</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+import "unsafe"
+
+type MyStruct struct {
+    A int64
+    B bool
+}
+
+func main() {
+    s := MyStruct{A: 42, B: true}
+    
+    // Размер структуры в байтах
+    size := unsafe.Sizeof(s)  // 16 (с учётом выравнивания)
+    
+    // Смещение поля B
+    offset := unsafe.Offsetof(s.B)  // 8
+    
+    // Опасное преобразование указателя
+    var x int64 = 100
+    p := unsafe.Pointer(&amp;x)
+    f := (*float64)(p)  // теперь p указывает на float64 (но это опасно!)
+}</pre>
+
+            <p><strong>Риски:</strong></p>
+            <ul>
+                <li>Может привести к <strong>падению программы</strong> (segmentation fault)</li>
+                <li>Код становится <strong>зависимым от архитектуры</strong> (32/64 бита)</li>
+                <li>Обходит <strong>систему типов</strong> Go — теряется безопасность</li>
+                <li>Может <strong>сломаться</strong> при обновлении Go</li>
+            </ul>
+
+            <p><strong>Когда использовать <code>unsafe</code>:</strong></p>
+            <ul>
+                <li>Только для <strong>экстремальной оптимизации</strong>, где это критично</li>
+                <li>Для взаимодействия с C-кодом (cgo)</li>
+                <li>В системном программировании</li>
+                <li><strong>В обычной разработке НЕ ИСПОЛЬЗОВАТЬ</strong></li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 11 -->
+    <details>
+        <summary>`iota` — генерация перечислений</summary>
+        <div class="answer">
+            <p><strong><code>iota</code></strong> — это генератор последовательных констант. Используется для создания <strong>перечислений (enum)</strong>.</p>
+
+            <p><strong>Как работает:</strong></p>
+            <ul>
+                <li><code>iota</code> начинает с 0 и увеличивается на 1 для каждой константы в блоке <code>const</code></li>
+                <li>Сбрасывается при новом блоке <code>const</code></li>
+                <li>Можно использовать выражения с <code>iota</code></li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+// Простое перечисление
+const (
+    Monday = iota  // 0
+    Tuesday        // 1
+    Wednesday      // 2
+    Thursday       // 3
+    Friday         // 4
+    Saturday       // 5
+    Sunday         // 6
+)
+
+// С пропуском
+const (
+    _ = iota       // 0 (пропускаем)
+    KB = 1 << iota  // 1 << 1 = 2
+    MB              // 1 << 2 = 4
+    GB              // 1 << 3 = 8
+)
+
+// Со сдвигом
+const (
+    First = iota + 10  // 10
+    Second             // 11
+    Third              // 12
+)
+
+// С битовыми масками
+const (
+    FlagRead  = 1 << iota  // 1
+    FlagWrite              // 2
+    FlagExec               // 4
+)</pre>
+
+            <p><strong>Где полезно:</strong></p>
+            <ul>
+                <li>Статусы заказов (<code>Pending</code>, <code>Approved</code>, <code>Shipped</code>)</li>
+                <li>Типы ошибок</li>
+                <li>Роли пользователей</li>
+                <li>Флаги и битовые маски</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 12 -->
+    <details>
+        <summary>`rune` vs `byte` — правильная работа с Unicode</summary>
+        <div class="answer">
+            <p><strong>Это фундаментальное различие для работы с текстом в Go.</strong></p>
+
+            <p><strong>Проблема:</strong></p>
+            <ul>
+                <li>В Unicode один символ может занимать 1, 2, 3 или 4 байта</li>
+                <li>Русские буквы занимают 2 байта, эмодзи — 4 байта</li>
+                <li>Если использовать <code>byte</code>, можно «разрезать» символ пополам</li>
+            </ul>
+
+            <p><strong><code>byte</code> (uint8):</strong></p>
+            <ul>
+                <li>Работа с сырыми байтами</li>
+                <li>Для ASCII (английские буквы, цифры, знаки)</li>
+                <li>Для бинарных данных (картинки, аудио)</li>
+            </ul>
+
+            <p><strong><code>rune</code> (int32):</strong></p>
+            <ul>
+                <li>Представляет один Unicode-символ (code point)</li>
+                <li>Для работы с текстом на любом языке</li>
+                <li>Всегда занимает 4 байта</li>
+            </ul>
+
+            <p><strong>Практический пример:</strong></p>
+            <pre>
+s := "Привет 🌍"
+
+// НЕПРАВИЛЬНО — по байтам
+for i := 0; i < len(s); i++ {
+    fmt.Printf("%c ", s[i])  // ������� (кракозябры)
+}
+
+// ПРАВИЛЬНО — по символам (rune)
+for _, ch := range s {
+    fmt.Printf("%c ", ch)  // П р и в е т   🌍
+}
+
+// Количество байт vs количество символов
+fmt.Println("Байт:", len(s))                          // 13
+fmt.Println("Символов:", utf8.RuneCountInString(s))  // 7</pre>
+
+            <p><strong>Как правильно работать с подстроками:</strong></p>
+            <pre>
+// НЕПРАВИЛЬНО — может разрезать символ
+sub := s[:5]  // обрезает по байтам! Опасно!
+
+// ПРАВИЛЬНО — преобразуем в rune
+runes := []rune(s)
+sub := string(runes[:5])  // "Приве"</pre>
+
+            <p><strong>Золотое правило:</strong></p>
+            <ul>
+                <li>Для текста (особенно на русском, китайском, с эмодзи) — используйте <code>rune</code></li>
+                <li>Для бинарных данных — используйте <code>byte</code></li>
+            </ul>
+        </div>
+    </details>
+</section>
+    <script src="script.js"></script>
+</body>
+</html>

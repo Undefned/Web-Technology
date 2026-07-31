@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go — Блоки 1-4 | Подробные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 5 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>🧠 5. Память, GC и Производительность</h2>
+
+    <!-- Вопрос 1 -->
+    <details>
+        <summary>Сборщик мусора (GC) — как работает в Go?</summary>
+        <div class="answer">
+            <p><strong>Сборщик мусора (Garbage Collector, GC) в Go — это автоматический механизм освобождения памяти, которая больше не используется.</strong></p>
+
+            <p><strong>Особенности GC в Go:</strong></p>
+            <ul>
+                <li><strong>Параллельный</strong> — работает одновременно с вашим кодом (не останавливает программу полностью)</li>
+                <li><strong>Неинвазивный</strong> — не требует ручного управления памятью</li>
+                <li><strong>Низкая латентность</strong> — паузы обычно меньше 1 мс</li>
+                <li><strong>Три поколения?</strong> Нет, в Go используется <strong>однопоколенный</strong> GC (в отличие от C#/Java)</li>
+            </ul>
+
+            <p><strong>Как примерно работает:</strong></p>
+            <ol>
+                <li><strong>Маркировка (Mark)</strong> — GC находит все объекты, на которые есть ссылки из корневых объектов (глобальные переменные, стек горутин)</li>
+                <li><strong>Очистка (Sweep)</strong> — память, которая не была отмечена, считается свободной и может быть переиспользована</li>
+                <li>Процесс происходит <strong>параллельно</strong> с выполнением программы (не останавливает её полностью)</li>
+            </ol>
+
+            <p><strong>Когда запускается GC:</strong></p>
+            <ul>
+                <li>Когда объём выделенной памяти достигает определённого порога</li>
+                <li>Порог вычисляется автоматически на основе скорости аллокаций</li>
+                <li>Можно вызвать вручную через <code>runtime.GC()</code> (но не рекомендуется)</li>
+            </ul>
+
+            <p><strong>Настройка GC:</strong></p>
+            <pre>
+import "runtime/debug"
+
+// Установить цель — 50% времени на GC (по умолчанию 100%)
+debug.SetGCPercent(50)  // чаще запускать GC, но меньше паузы
+
+// Отключить GC (для экстремальной оптимизации!)
+debug.SetGCPercent(-1)</pre>
+
+            <p><strong>Важно:</strong> В отличие от C#/Java, в Go <strong>нет поколений</strong> (Gen 0, 1, 2). Это упрощает GC, но может быть менее эффективно для долгоживущих объектов.</p>
+        </div>
+    </details>
+
+    <!-- Вопрос 2 -->
+    <details>
+        <summary>Утечки памяти в Go — возможны?</summary>
+        <div class="answer">
+            <p><strong>Да, утечки памяти в Go возможны, хотя GC автоматически освобождает память.</strong></p>
+
+            <p><strong>Основные причины утечек:</strong></p>
+
+            <p><strong>1. Забытые горутины</strong> — горутина ждёт данные из канала, который никогда не получит данные</p>
+            <pre>
+func main() {
+    ch := make(chan int)
+    go func() {
+        v := <-ch  // блокируется навсегда, горутина не завершится
+        fmt.Println(v)
+    }()
+    // ch никогда не получит данные → горутина висит вечно
+}</pre>
+
+            <p><strong>2. Ссылки в глобальных переменных</strong> — объекты, на которые ссылаются глобальные переменные, никогда не будут собраны</p>
+            <pre>
+var cache = map[string][]byte{}  // глобальная карта
+
+func addToCache(key string, data []byte) {
+    cache[key] = data  // никогда не удаляется → память растёт
+}</pre>
+
+            <p><strong>3. Срезы, которые не освобождают память</strong></p>
+            <pre>
+func leak() {
+    big := make([]byte, 1024*1024)  // 1 МБ
+    small := big[:100]  // создаём маленький срез, но big всё ещё в памяти!
+    // small держит ссылку на весь массив → 1 МБ не освободится
+}</pre>
+
+            <p><strong>4. Циклические ссылки</strong> — два объекта ссылаются друг на друга</p>
+            <pre>
+type A struct { B *B }
+type B struct { A *A }
+
+a := &A{}
+b := &B{}
+a.B = b
+b.A = a
+// GC не может удалить их, так как они ссылаются друг на друга</pre>
+
+            <p><strong>Как обнаружить утечки:</strong></p>
+            <ul>
+                <li>Использовать <code>pprof</code> для профилирования памяти</li>
+                <li>Смотреть на рост памяти во время работы программы</li>
+                <li>Тестировать с нагрузкой и анализировать графики</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 3 -->
+    <details>
+        <summary>Профилирование — `pprof` и бенчмарки</summary>
+        <div class="answer">
+            <p><strong>Профилирование — это способ измерить, где программа тратит время и память.</strong></p>
+
+            <p><strong>Встроенный профилировщик <code>pprof</code>:</strong></p>
+            <ul>
+                <li>Позволяет смотреть CPU, память, блокировки, горутины</li>
+                <li>Может работать в веб-интерфейсе или командной строке</li>
+            </ul>
+
+            <p><strong>Добавление профилировщика в код:</strong></p>
+            <pre>
+import _ "net/http/pprof"
+
+func main() {
+    go func() {
+        log.Println(http.ListenAndServe("localhost:6060", nil))
+    }()
+    // ... остальной код
+}</pre>
+
+            <p><strong>Команды для анализа:</strong></p>
+            <pre>
+# Сбор CPU-профиля
+go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
+
+# Сбор памяти
+go tool pprof http://localhost:6060/debug/pprof/heap
+
+# Веб-интерфейс
+go tool pprof -http=:8080 cpu.pprof</pre>
+
+            <p><strong>Бенчмарки (написание тестов производительности):</strong></p>
+            <pre>
+// файл: math_test.go
+func BenchmarkAdd(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        Add(10, 20)  // N раз
+    }
+}
+
+// Запуск
+go test -bench=. -benchmem ./...</pre>
+
+            <p><strong>Как читать результаты бенчмарка:</strong></p>
+            <pre>
+BenchmarkAdd-8    100000000    12.3 ns/op    0 B/op    0 allocs/op
+       │              │            │           │          │
+  кол-во ядер   кол-во итераций  время   байт на опер. аллокаций</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 4 -->
+    <details>
+        <summary>`sync.Pool` — пул объектов</summary>
+        <div class="answer">
+            <p><strong><code>sync.Pool</code> — это временное хранилище объектов, чтобы переиспользовать их и снизить нагрузку на GC.</strong></p>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Объекты создаются и удаляются очень часто</li>
+                <li>Создание объектов дорогое (например, большие буферы)</li>
+                <li>Высокая нагрузка и нужно снизить аллокации</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+var bufPool = sync.Pool{
+    New: func() any {
+        return make([]byte, 1024)  // создаётся, когда пуст
+    },
+}
+
+func process() {
+    // Берём буфер из пула
+    buf := bufPool.Get().([]byte)
+    defer bufPool.Put(buf)  // возвращаем обратно
+    
+    // Используем buf...
+}</pre>
+
+            <p><strong>Важные моменты:</strong></p>
+            <ul>
+                <li>Объекты в пуле могут быть <strong>удалены</strong> GC в любой момент</li>
+                <li>Не храните важные данные в пуле — только временные</li>
+                <li>Не предполагайте, что объект сохранит состояние между использованиями</li>
+                <li>Используйте <code>defer</code> для возврата объекта, даже если паника</li>
+            </ul>
+
+            <p><strong>Когда НЕ использовать:</strong></p>
+            <ul>
+                <li>Для маленьких объектов (аллокация дешевле, чем работа с пулом)</li>
+                <li>Для объектов с состоянием (будут использованы повторно с непредсказуемым состоянием)</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 5 -->
+    <details>
+        <summary>Трейсинг — `go tool trace`</summary>
+        <div class="answer">
+            <p><strong>Трейсинг — это запись того, что происходило в программе во времени.</strong></p>
+
+            <p><strong>Что можно увидеть в трейсе:</strong></p>
+            <ul>
+                <li>Когда запускались и завершались горутины</li>
+                <li>Работу планировщика Go</li>
+                <li>Время выполнения GC</li>
+                <li>Блокировки на мьютексах и каналах</li>
+                <li>Взаимодействие с сетью и файловой системой</li>
+            </ul>
+
+            <p><strong>Как записать трейс:</strong></p>
+            <pre>
+import "runtime/trace"
+
+func main() {
+    // Создаём файл для трейса
+    f, err := os.Create("trace.out")
+    if err != nil {
+        panic(err)
+    }
+    defer f.Close()
+    
+    // Начинаем запись
+    err = trace.Start(f)
+    if err != nil {
+        panic(err)
+    }
+    defer trace.Stop()
+    
+    // ... ваш код
+}</pre>
+
+            <p><strong>Просмотр трейса:</strong></p>
+            <pre>
+go tool trace trace.out
+# Откроется браузер с интерактивным интерфейсом</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Загадочные падения производительности</li>
+                <li>Много горутин, которые не работают</li>
+                <li>Проблемы с планировщиком</li>
+                <li>Когда <code>pprof</code> не даёт ответа</li>
+            </ul>
+
+            <p><strong>Пример задачи для трейсинга:</strong></p>
+            <ul>
+                <li>Вы запустили 1000 горутин, но загрузка CPU низкая</li>
+                <li>Трейс покажет, что горутины блокируются на каналах или мьютексах</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 6 -->
+    <details>
+        <summary>Ручной вызов GC — когда нужно?</summary>
+        <div class="answer">
+            <p><strong>В большинстве случаев <strong>не нужно</strong> вызывать GC вручную. Go делает это автоматически.</strong></p>
+
+            <p><strong>Когда может понадобиться:</strong></p>
+            <ul>
+                <li><strong>Перед важным измерением производительности</strong> — чтобы GC не сбил замеры</li>
+                <li><strong>После большого объёма выделений</strong> — чтобы освободить память до следующей нагрузки</li>
+                <li><strong>В тестах</strong> — для детерминированного поведения</li>
+            </ul>
+
+            <p><strong>Как вызвать:</strong></p>
+            <pre>
+import "runtime"
+
+func main() {
+    // Принудительно запустить GC
+    runtime.GC()
+    
+    // Дождаться завершения GC
+    runtime.GC()
+}</pre>
+
+            <p><strong>Важные нюансы:</strong></p>
+            <ul>
+                <li>Вызов <code>runtime.GC()</code> <strong>блокирует</strong> выполнение программы</li>
+                <li>Может быть <strong>дорогим</strong> и замедлить программу</li>
+                <li>В продакшене <strong>почти никогда не используется</strong></li>
+                <li>Иногда полезен для тестов, чтобы изолировать влияние GC</li>
+            </ul>
+
+            <p><strong>Вместо ручного вызова:</strong></p>
+            <ul>
+                <li>Настройте <code>debug.SetGCPercent()</code> — измените частоту запуска</li>
+                <li>Снизьте количество аллокаций — используйте <code>sync.Pool</code></li>
+                <li>Оптимизируйте код, чтобы создавать меньше объектов</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 7 -->
+    <details>
+        <summary>Как снизить нагрузку на GC?</summary>
+        <div class="answer">
+            <p><strong>Главный совет: создавайте меньше объектов.</strong> Чем меньше аллокаций, тем реже запускается GC.</p>
+
+            <p><strong>Стратегии оптимизации:</strong></p>
+
+            <p><strong>1. Используйте <code>sync.Pool</code></strong> — переиспользуйте объекты вместо создания новых</p>
+            <pre>
+var pool = sync.Pool{New: func() any { return &MyStruct{} }}
+
+obj := pool.Get().(*MyStruct)
+// работаем
+pool.Put(obj)  // возвращаем</pre>
+
+            <p><strong>2. Избегайте временных объектов в циклах</strong></p>
+            <pre>
+// ПЛОХО — каждый раз создаётся новый слайс
+for i := 0; i < 1000; i++ {
+    s := make([]int, 100)
+    // работаем
+}
+
+// ХОРОШО — переиспользуем один слайс
+s := make([]int, 100)
+for i := 0; i < 1000; i++ {
+    // работаем с s
+}</pre>
+
+            <p><strong>3. Используйте слайсы с предварительной аллокацией</strong></p>
+            <pre>
+// ПЛОХО — много переаллокаций
+var s []int
+for i := 0; i < 1000; i++ {
+    s = append(s, i)
+}
+
+// ХОРОШО — выделяем сразу нужный размер
+s := make([]int, 0, 1000)
+for i := 0; i < 1000; i++ {
+    s = append(s, i)
+}</pre>
+
+            <p><strong>4. Избегайте конвертации <code>string</code> ↔ <code>[]byte</code></strong> — она создаёт копии</p>
+            <pre>
+// ПЛОХО — создаёт копию
+b := []byte(s)
+
+// ХОРОШО (но опасно!) — без копирования
+import "unsafe"
+b := unsafe.Slice(unsafe.StringData(s), len(s))</pre>
+
+            <p><strong>5. Используйте <code>fmt.Fprintf</code> вместо <code>fmt.Sprintf</code> + конкатенация</strong></p>
+            <pre>
+// ПЛОХО — создаёт промежуточные строки
+msg := fmt.Sprintf("User %d", id)
+
+// ХОРОШО — пишет сразу в буфер
+var buf bytes.Buffer
+fmt.Fprintf(&buf, "User %d", id)</pre>
+
+            <p><strong>6. Увеличьте процент GC, чтобы он запускался реже</strong></p>
+            <pre>
+debug.SetGCPercent(200)  // реже запускать GC</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 8 -->
+    <details>
+        <summary>Команда `go test -bench` — детально</summary>
+        <div class="answer">
+            <p><strong>Бенчмарки в Go позволяют измерить производительность функций.</strong></p>
+
+            <p><strong>Структура бенчмарка:</strong></p>
+            <ul>
+                <li>Файл должен заканчиваться на <code>_test.go</code></li>
+                <li>Функция начинается с <code>Benchmark</code></li>
+                <li>Принимает <code>*testing.B</code></li>
+                <li>Цикл <code>for i := 0; i &lt; b.N; i++</code> — <code>b.N</code> подбирается автоматически</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// math_test.go
+func BenchmarkAdd(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        Add(10, 20)
+    }
+}
+
+func BenchmarkAddParallel(b *testing.B) {
+    b.RunParallel(func(pb *testing.PB) {
+        for pb.Next() {
+            Add(10, 20)
+        }
+    })
+}</pre>
+
+            <p><strong>Команды:</strong></p>
+            <pre>
+# Запустить все бенчмарки
+go test -bench=.
+
+# Запустить конкретный
+go test -bench=BenchmarkAdd
+
+# С подсчётом аллокаций
+go test -bench=. -benchmem
+
+# Запустить N раз (для точности)
+go test -bench=. -count=5
+
+# Сравнение двух реализаций (benchstat)
+go test -bench=. -count=10 > old.txt
+# ... меняем код ...
+go test -bench=. -count=10 > new.txt
+benchstat old.txt new.txt</pre>
+
+            <p><strong>Что означают результаты:</strong></p>
+            <pre>
+BenchmarkAdd-8    100000000    12.3 ns/op    0 B/op    0 allocs/op
+      │              │           │             │          │
+  кол-во ядер   кол-во итераций  время    байт на опер. аллокаций</pre>
+
+            <p><strong>Полезные флаги:</strong></p>
+            <ul>
+                <li><code>-benchtime=5s</code> — увеличить время выполнения</li>
+                <li><code>-benchmem</code> — показать аллокации</li>
+                <li><code>-cpu=1,2,4,8</code> — протестировать с разным числом ядер</li>
+            </ul>
+        </div>
+    </details>
+</section>
+
+    <script src="script.js"></script>
+</body>
+</html>

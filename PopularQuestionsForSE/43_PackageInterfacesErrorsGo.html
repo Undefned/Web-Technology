@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go — Блоки 1-4 | Подробные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 3 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>📁 3. Пакеты. Интерфейсы. Ошибки</h2>
+
+    <!-- Вопрос 1 -->
+    <details>
+        <summary>Пакеты — правила видимости (экспорт)</summary>
+        <div class="answer">
+            <p><strong>Видимость в Go определяется простым правилом: </strong><br>
+            Имена с <strong>большой буквы</strong> — экспортируются (видны из других пакетов).<br>
+            Имена с <strong>маленькой буквы</strong> — приватные (видны только внутри пакета).</p>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+package mypackage
+
+// Экспортируемая (публичная) переменная
+var PublicVar = "видна всем"
+
+// Приватная переменная
+var privateVar = "видна только внутри пакета"
+
+// Экспортируемая функция
+func PublicFunc() string {
+    return "вызов из других пакетов"
+}
+
+// Приватная функция
+func privateFunc() string {
+    return "только внутри пакета"
+}
+
+// Экспортируемая структура
+type PublicStruct struct {
+    PublicField  string  // экспортируемое поле
+    privateField int     // приватное поле
+}
+
+// Приватная структура
+type privateStruct struct {
+    // ...
+}</pre>
+
+            <p><strong>Как использовать экспортированные имена из другого пакета:</strong></p>
+            <pre>
+package main
+
+import "mypackage"
+
+func main() {
+    // Доступно
+    mypackage.PublicFunc()
+    fmt.Println(mypackage.PublicVar)
+    
+    // НЕ доступно
+    // mypackage.privateFunc()    // ошибка
+    // fmt.Println(mypackage.privateVar)  // ошибка
+}</pre>
+
+            <p><strong>Почему это важно:</strong></p>
+            <ul>
+                <li>Экспорт — основа инкапсуляции в Go</li>
+                <li>Приватные имена можно менять без страха сломать внешний код</li>
+                <li>Публичные имена формируют API пакета</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 2 -->
+    <details>
+        <summary>Инициализация пакетов и `init()`</summary>
+        <div class="answer">
+            <p><strong>Порядок инициализации в Go очень важен для понимания.</strong></p>
+
+            <p><strong>Порядок выполнения:</strong></p>
+            <ol>
+                <li>Инициализируются <strong>пакеты</strong> (в порядке импорта, но без циклов)</li>
+                <li>Внутри пакета: сначала <strong>константы</strong>, потом <strong>переменные</strong> (с вычислением выражений)</li>
+                <li>Выполняются функции <strong><code>init()</code></strong> в порядке объявления</li>
+                <li>Выполняется <strong><code>main()</code></strong> (если пакет <code>main</code>)</li>
+            </ol>
+
+            <p><strong>Функция <code>init()</code>:</strong></p>
+            <ul>
+                <li>Может быть в любом пакете</li>
+                <li>Не принимает аргументов и ничего не возвращает</li>
+                <li>В пакете может быть <strong>несколько</strong> функций <code>init()</code></li>
+                <li>Выполняется <strong>автоматически</strong> при импорте пакета</li>
+                <li>Часто используется для настройки, регистрации драйверов</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+package database
+
+import "fmt"
+
+// Инициализация переменной
+var dbConnection string = initDB()
+
+func initDB() string {
+    fmt.Println("Инициализация базы данных...")
+    return "localhost:5432"
+}
+
+// Первая функция init
+func init() {
+    fmt.Println("Первый init: настройка логгера")
+}
+
+// Вторая функция init
+func init() {
+    fmt.Println("Второй init: проверка соединения")
+}
+
+func main() {
+    // Здесь уже всё инициализировано
+}
+
+// Вывод при запуске:
+// Инициализация базы данных...
+// Первый init: настройка логгера
+// Второй init: проверка соединения</pre>
+
+            <p><strong>Импорт ради <code>init()</code>:</strong></p>
+            <pre>
+import (
+    "database/sql"
+    _ "github.com/lib/pq"  // _ означает «не используем напрямую, но init() выполним»
+)</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 3 -->
+    <details>
+        <summary>Интерфейсы — неявная реализация</summary>
+        <div class="answer">
+            <p><strong>Интерфейс в Go — это набор методов.</strong> Любой тип, который реализует все эти методы, автоматически реализует интерфейс.</p>
+
+            <p><strong>Ключевое отличие от других языков:</strong></p>
+            <ul>
+                <li>В Go <strong>не нужно явно указывать</strong> <code>implements</code></li>
+                <li>Реализация интерфейса <strong>неявная</strong> — если методы совпадают, интерфейс считается реализованным</li>
+                <li>Это делает код более гибким и слабо связанным</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+// Определяем интерфейс
+type Speaker interface {
+    Speak() string
+}
+
+// Структура Dog (метод Speak совпадает → реализует Speaker)
+type Dog struct{ Name string }
+
+func (d Dog) Speak() string {
+    return "Гав-гав!"
+}
+
+// Структура Cat (тоже реализует Speaker)
+type Cat struct{ Name string }
+
+func (c Cat) Speak() string {
+    return "Мяу!"
+}
+
+// Функция работает с любым Speaker
+func MakeSound(s Speaker) {
+    fmt.Println(s.Speak())
+}
+
+func main() {
+    dog := Dog{Name: "Бобик"}
+    cat := Cat{Name: "Мурка"}
+    
+    MakeSound(dog)  // Гав-гав!
+    MakeSound(cat)  // Мяу!
+}</pre>
+
+            <p><strong>Почему это мощно:</strong></p>
+            <ul>
+                <li>Можно добавлять новые типы, реализующие интерфейс, <strong>не меняя</strong> существующий код</li>
+                <li>Интерфейсы можно определять <strong>после</strong> того, как тип уже написан</li>
+                <li>Отлично подходит для тестирования (легко подменять реализации)</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 4 -->
+    <details>
+        <summary>Пустой интерфейс `interface{}` (`any`)</summary>
+        <div class="answer">
+            <p><strong><code>interface{}</code></strong> (с Go 1.18 появился синоним <code>any</code>) — это интерфейс <strong>без методов</strong>.</p>
+
+            <p><strong>Что это значит:</strong></p>
+            <ul>
+                <li>Любой тип автоматически реализует пустой интерфейс</li>
+                <li>Это как <code>object</code> в C# или <code>Object</code> в Java</li>
+                <li>Может хранить <strong>любое</strong> значение любого типа</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+var anything any  // то же что interface{}
+
+anything = 42
+anything = "Hello"
+anything = []int{1, 2, 3}
+anything = Dog{Name: "Бобик"}</pre>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Когда функция может принимать <strong>абсолютно любые</strong> типы (<code>fmt.Println</code>)</li>
+                <li>Для структур данных, где тип не известен заранее</li>
+                <li>Для работы с JSON (неструктурированные данные)</li>
+            </ul>
+
+            <p><strong>Когда НЕ использовать:</strong></p>
+            <ul>
+                <li>Потеря безопасности типов (ошибки во время выполнения)</li>
+                <li>Ухудшение производительности (нужно приводить типы)</li>
+                <li>Когда можно использовать обобщения (generics) с Go 1.18+</li>
+            </ul>
+
+            <p><strong>Приведение типа (type assertion):</strong></p>
+            <pre>
+var val any = "Hello"
+
+// Без проверки (паника, если тип не совпадает)
+s := val.(string)
+fmt.Println(s)
+
+// С проверкой (безопасно)
+s, ok := val.(string)
+if ok {
+    fmt.Println("Строка:", s)
+} else {
+    fmt.Println("Это не строка")
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 5 -->
+    <details>
+        <summary>Приведение типов (Type Assertion) — `x.(T)` и `v, ok := x.(T)`</summary>
+        <div class="answer">
+            <p><strong>Type Assertion</strong> — это способ извлечь значение конкретного типа из интерфейса.</p>
+
+            <p><strong>Две формы:</strong></p>
+
+            <p><strong>1. Без проверки (опасно):</strong></p>
+            <pre>
+var i any = 42
+x := i.(int)  // если i содержит int — ок, иначе паника
+fmt.Println(x)</pre>
+
+            <p><strong>2. С проверкой (безопасно):</strong></p>
+            <pre>
+var i any = "Hello"
+x, ok := i.(string)
+if ok {
+    fmt.Println("Это строка:", x)
+} else {
+    fmt.Println("Это не строка")
+}</pre>
+
+            <p><strong>Когда использовать какую форму:</strong></p>
+            <ul>
+                <li><strong>Без проверки:</strong> когда вы <strong>абсолютно уверены</strong> в типе (например, после проверки <code>if</code>)</li>
+                <li><strong>С проверкой:</strong> всегда, когда есть хоть малейшая неопределённость</li>
+            </ul>
+
+            <p><strong>Пример с type switch:</strong></p>
+            <pre>
+func describe(v any) {
+    switch v := v.(type) {
+    case int:
+        fmt.Printf("Целое число: %d\n", v)
+    case string:
+        fmt.Printf("Строка: %s\n", v)
+    case bool:
+        fmt.Printf("Булево: %t\n", v)
+    default:
+        fmt.Printf("Неизвестный тип: %T\n", v)
+    }
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 6 -->
+    <details>
+        <summary>Ошибки (Errors) — почему нет исключений?</summary>
+        <div class="answer">
+            <p><strong>В Go нет исключений (try/catch/finally) в классическом понимании.</strong> Вместо этого используется <strong>явная обработка ошибок</strong> через возвращаемые значения.</p>
+
+            <p><strong>Почему так сделано:</strong></p>
+            <ul>
+                <li><strong>Явность:</strong> вы всегда видите, где может возникнуть ошибка</li>
+                <li><strong>Надёжность:</strong> ошибки не могут «улететь» на несколько уровней вверх незамеченными</li>
+                <li><strong>Простота:</strong> код легче читать и понимать</li>
+                <li><strong>Производительность:</strong> нет накладных расходов на стек исключений</li>
+            </ul>
+
+            <p><strong>Как это выглядит:</strong></p>
+            <pre>
+// Стандартный паттерн — возвращаем (result, error)
+func divide(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("деление на ноль")
+    }
+    return a / b, nil  // nil означает «ошибки нет»
+}
+
+func main() {
+    result, err := divide(10, 2)
+    if err != nil {
+        fmt.Println("Ошибка:", err)
+        return
+    }
+    fmt.Println("Результат:", result)
+}</pre>
+
+            <p><strong>Интерфейс <code>error</code>:</strong></p>
+            <pre>
+type error interface {
+    Error() string
+}</pre>
+            <p>Любой тип, у которого есть метод <code>Error() string</code>, может быть ошибкой.</p>
+
+            <p><strong>Создание ошибок:</strong></p>
+            <pre>
+// Простая ошибка
+err1 := errors.New("что-то пошло не так")
+
+// С форматированием
+err2 := fmt.Errorf("не удалось открыть файл %s: %w", filename, originalErr)
+
+// Кастомная ошибка
+type MyError struct {
+    Code    int
+    Message string
+}
+
+func (e MyError) Error() string {
+    return fmt.Sprintf("код %d: %s", e.Code, e.Message)
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 7 -->
+    <details>
+        <summary>Паттерн `if err != nil` — почему это нормально?</summary>
+        <div class="answer">
+            <p><strong><code>if err != nil</code> — это самый частый код в Go.</strong> Новички часто жалуются, что это «многословно», но у этого подхода есть причины.</p>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+func readConfig(filename string) error {
+    data, err := os.ReadFile(filename)
+    if err != nil {
+        return fmt.Errorf("не удалось прочитать файл: %w", err)
+    }
+    
+    config, err := parseConfig(data)
+    if err != nil {
+        return fmt.Errorf("не удалось распарсить конфиг: %w", err)
+    }
+    
+    err = validateConfig(config)
+    if err != nil {
+        return fmt.Errorf("конфиг невалидный: %w", err)
+    }
+    
+    return nil
+}</pre>
+
+            <p><strong>Почему это хорошо:</strong></p>
+            <ul>
+                <li><strong>Читаемость:</strong> сразу видно, где код может завершиться с ошибкой</li>
+                <li><strong>Контроль:</strong> на каждом шаге вы решаете, что делать с ошибкой</li>
+                <li><strong>Отладка:</strong> легко добавить логирование на любом шаге</li>
+                <li><strong>Обёртывание ошибок:</strong> можно добавить контекст (<code>%w</code>)</li>
+            </ul>
+
+            <p><strong>Сравнение с исключениями:</strong></p>
+            <pre>
+// В Java/C# — исключение может улететь далеко
+try {
+    readConfig();
+    startServer();
+} catch (Exception e) {
+    // Непонятно, где именно упало
+}
+
+// В Go — всё явно
+if err := readConfig(); err != nil {
+    log.Fatal("ошибка чтения конфига:", err)
+}
+if err := startServer(); err != nil {
+    log.Fatal("ошибка старта сервера:", err)
+}</pre>
+
+            <p><strong>Советы:</strong></p>
+            <ul>
+                <li>Не игнорируйте ошибки (не пишите <code>_, _ = ...</code>)</li>
+                <li>Всегда обрабатывайте ошибку или пробрасывайте её выше</li>
+                <li>Добавляйте контекст с помощью <code>fmt.Errorf("...: %w", err)</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 8 -->
+    <details>
+        <summary>`errors.Is` и `errors.As` — цепочки ошибок</summary>
+        <div class="answer">
+            <p><strong>Начиная с Go 1.13, появилась возможность обёртывать ошибки и проверять их.</strong></p>
+
+            <p><strong>Обёртывание ошибок (<code>%w</code>):</strong></p>
+            <pre>
+originalErr := errors.New("соединение потеряно")
+err := fmt.Errorf("не удалось отправить запрос: %w", originalErr)
+// Теперь err содержит originalErr внутри</pre>
+
+            <p><strong><code>errors.Is</code> — проверка на конкретную ошибку:</strong></p>
+            <pre>
+var ErrNotFound = errors.New("не найдено")
+
+func findUser(id int) error {
+    return fmt.Errorf("пользователь %d: %w", id, ErrNotFound)
+}
+
+err := findUser(42)
+if errors.Is(err, ErrNotFound) {
+    fmt.Println("Пользователь не найден")
+}</pre>
+
+            <p><strong><code>errors.As</code> — извлечение ошибки конкретного типа:</strong></p>
+            <pre>
+type MyError struct {
+    Code int
+    Msg  string
+}
+
+func (e MyError) Error() string {
+    return fmt.Sprintf("код %d: %s", e.Code, e.Msg)
+}
+
+func doSomething() error {
+    return MyError{Code: 500, Msg: "внутренняя ошибка"}
+}
+
+err := doSomething()
+var myErr MyError
+if errors.As(err, &myErr) {
+    fmt.Printf("Код ошибки: %d\n", myErr.Code)
+}</pre>
+
+            <p><strong>Разница <code>Is</code> vs <code>As</code>:</strong></p>
+            <ul>
+                <li><strong>Is:</strong> проверяет, есть ли в цепочке <strong>конкретная ошибка</strong> (по значению)</li>
+                <li><strong>As:</strong> извлекает ошибку <strong>конкретного типа</strong> (по типу)</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 9 -->
+    <details>
+        <summary>Panic / Recover — когда использовать?</summary>
+        <div class="answer">
+            <p><strong><code>panic</code></strong> — это состояние, когда программа не может продолжить работу и начинает «падать».</p>
+
+            <p><strong><code>recover</code></strong> — позволяет перехватить панику и восстановить управление.</p>
+
+            <p><strong>Когда возникает паника:</strong></p>
+            <ul>
+                <li>Обращение к <code>nil</code> указателю</li>
+                <li>Выход за границы массива/слайса</li>
+                <li>Явный вызов <code>panic("сообщение")</code></li>
+            </ul>
+
+            <p><strong>Пример с <code>recover</code>:</strong></p>
+            <pre>
+func safeCall() {
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("Восстановились после паники:", r)
+        }
+    }()
+    
+    // Какой-то код, который может вызвать панику
+    panic("что-то пошло не так")
+}
+
+func main() {
+    safeCall()
+    fmt.Println("Программа продолжает работу")
+}</pre>
+
+            <p><strong>Когда использовать <code>panic</code>:</strong></p>
+            <ul>
+                <li><strong>Почти никогда</strong> в обычном коде</li>
+                <li>Только когда программа не может продолжать работу (например, не удалось инициализировать критический компонент)</li>
+                <li>В тестах — для проверки поведения при ошибках</li>
+            </ul>
+
+            <p><strong>Когда использовать <code>recover</code>:</strong></p>
+            <ul>
+                <li>В HTTP-хендлерах — чтобы не уронить весь сервер из-за одной паники</li>
+                <li>В горутинах — чтобы одна упавшая горутина не убила всю программу</li>
+                <li>В библиотеках — чтобы перехватить панику и вернуть ошибку</li>
+            </ul>
+
+            <p><strong>Золотое правило:</strong><br>
+            Для <strong>ожидаемых ошибок</strong> используйте возврат <code>error</code>.<br>
+            Для <strong>неожиданных критических ситуаций</strong> — <code>panic</code>.</p>
+        </div>
+    </details>
+
+    <!-- Вопрос 10 -->
+    <details>
+        <summary>Встраивание (Embedding) vs Наследование</summary>
+        <div class="answer">
+            <p><strong>В Go нет наследования классов, как в ООП-языках.</strong> Вместо него используется <strong>композиция</strong> через <strong>встраивание (embedding)</strong>.</p>
+
+            <p><strong>Что такое встраивание:</strong></p>
+            <ul>
+                <li>Вы включаете одну структуру в другую <strong>без имени поля</strong></li>
+                <li>Поля и методы встроенной структуры «поднимаются» на уровень внешней</li>
+                <li>Это не наследование — это <strong>делегирование</strong></li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+type Animal struct {
+    Name string
+}
+
+func (a Animal) Speak() string {
+    return "..."
+}
+
+type Dog struct {
+    Animal      // встраивание (без имени)
+    Breed string
+}
+
+func (d Dog) Speak() string {
+    return "Гав-гав!"  // переопределение метода
+}
+
+func main() {
+    d := Dog{
+        Animal: Animal{Name: "Бобик"},
+        Breed:  "Овчарка",
+    }
+    
+    // Доступ к полям Animal напрямую
+    fmt.Println(d.Name)  // "Бобик"
+    fmt.Println(d.Speak())  // "Гав-гав!" (переопределённый)
+}</pre>
+
+            <p><strong>Разница с наследованием:</strong></p>
+            <table>
+                <tr><th>Наследование (Java/C#)</th><th>Встраивание (Go)</th></tr>
+                <tr><td>Отношение IS-A</td><td>Отношение HAS-A</td></tr>
+                <tr><td>Жёсткая связь</td><td>Гибкая композиция</td></tr>
+                <tr><td>Один родитель</td><td>Можно встроить несколько</td></tr>
+                <tr><td>Полиморфизм классов</td><td>Полиморфизм интерфейсов</td></tr>
+            </table>
+
+            <p><strong>Когда использовать встраивание:</strong></p>
+            <ul>
+                <li>Когда нужно переиспользовать методы и поля</li>
+                <li>Для реализации паттерна «декоратор»</li>
+                <li>Для создания простых иерархий без сложности наследования</li>
+            </ul>
+        </div>
+    </details>
+</section>
+    <script src="script.js"></script>
+</body>
+</html>

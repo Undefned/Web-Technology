@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go — Блоки 1-4 | Подробные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 4 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>⚡ 4. Конкурентность и Параллелизм</h2>
+
+    <!-- Вопрос 1 -->
+    <details>
+        <summary>Goroutine vs Thread — в чем разница?</summary>
+        <div class="answer">
+            <p><strong>Горутина (goroutine) и поток (thread) — это не одно и то же.</strong></p>
+
+            <p><strong>Сравнение:</strong></p>
+            <table>
+                <tr><th>Характеристика</th><th>Поток ОС (Thread)</th><th>Горутина (Goroutine)</th></tr>
+                <tr><td>Размер стека</td><td>~1 МБ (фиксированный)</td><td>~2 КБ (может расширяться)</td></tr>
+                <tr><td>Создание</td><td>Дорогое (системный вызов)</td><td>Дешёвое (рантайм Go)</td></tr>
+                <tr><td>Количество</td><td>Ограничено (обычно < 10000)</td><td>Миллионы!</td></tr>
+                <tr><td>Планировщик</td><td>ОС (прерывает)</td><td>Планировщик Go (не прерывает)</td></tr>
+                <tr><td>Переключение</td><td>Дорогое (переключение контекста)</td><td>Дешёвое (управляет рантайм)</td></tr>
+            </table>
+
+            <p><strong>Модель M:N:</strong></p>
+            <ul>
+                <li>Go использует модель <strong>M горутин на N потоков</strong></li>
+                <li>Планировщик Go распределяет горутины по потокам ОС</li>
+                <li>Обычно N = количество ядер процессора</li>
+                <li>Горутины могут «перемещаться» между потоками</li>
+            </ul>
+
+            <p><strong>Пример создания горутины:</strong></p>
+            <pre>
+func main() {
+    // Обычный вызов (синхронный)
+    doWork()
+    
+    // Горутина (асинхронный)
+    go doWork()
+    
+    // Ждём завершения (иначе программа может завершиться раньше)
+    time.Sleep(time.Second)
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 2 -->
+    <details>
+        <summary>`sync.WaitGroup` — ожидание горутин</summary>
+        <div class="answer">
+            <p><strong><code>sync.WaitGroup</code> — это семафор для ожидания завершения группы горутин.</strong></p>
+
+            <p><strong>Три метода:</strong></p>
+            <ul>
+                <li><code>Add(n)</code> — увеличивает счётчик на n (сколько горутин будем ждать)</li>
+                <li><code>Done()</code> — уменьшает счётчик на 1 (горутина завершилась)</li>
+                <li><code>Wait()</code> — блокируется, пока счётчик не станет 0</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+func main() {
+    var wg sync.WaitGroup
+    
+    // Запускаем 5 горутин
+    for i := 0; i < 5; i++ {
+        wg.Add(1)  // увеличиваем счётчик
+        go func(id int) {
+            defer wg.Done()  // уменьшаем счётчик при завершении
+            fmt.Printf("Горутина %d работает\n", id)
+            time.Sleep(time.Second)
+        }(i)
+    }
+    
+    wg.Wait()  // ждём все 5 горутин
+    fmt.Println("Все горутины завершились")
+}</pre>
+
+            <p><strong>Важные правила:</strong></p>
+            <ul>
+                <li><code>Add()</code> должен вызываться <strong>до</strong> запуска горутины</li>
+                <li><code>Done()</code> следует вызывать через <code>defer</code> — это гарантирует выполнение</li>
+                <li>Нельзя копировать <code>WaitGroup</code> (передавайте по указателю)</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 3 -->
+    <details>
+        <summary>`sync.Mutex` и `sync.RWMutex` — блокировки</summary>
+        <div class="answer">
+            <p><strong>Мьютексы (mutex) — это примитивы синхронизации для защиты общих данных от одновременного доступа.</strong></p>
+
+            <p><strong><code>sync.Mutex</code> — взаимное исключение:</strong></p>
+            <ul>
+                <li>Только одна горутина может владеть блокировкой в любой момент</li>
+                <li>Методы: <code>Lock()</code> и <code>Unlock()</code></li>
+                <li>Используйте <code>defer</code> для автоматической разблокировки</li>
+            </ul>
+
+            <p><strong>Пример с Mutex:</strong></p>
+            <pre>
+type Counter struct {
+    mu    sync.Mutex
+    value int
+}
+
+func (c *Counter) Inc() {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    c.value++
+}
+
+func (c *Counter) Value() int {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    return c.value
+}</pre>
+
+            <p><strong><code>sync.RWMutex</code> — блокировка с разделением:</strong></p>
+            <ul>
+                <li><strong>Много читателей</strong> могут одновременно читать</li>
+                <li><strong>Только один писатель</strong> может писать (и блокирует всех)</li>
+                <li>Методы: <code>RLock()</code> / <code>RUnlock()</code> для чтения, <code>Lock()</code> / <code>Unlock()</code> для записи</li>
+                <li>Используйте, когда чтений <strong>гораздо больше</strong>, чем записей</li>
+            </ul>
+
+            <p><strong>Пример с RWMutex:</strong></p>
+            <pre>
+type Cache struct {
+    mu    sync.RWMutex
+    data  map[string]string
+}
+
+func (c *Cache) Get(key string) string {
+    c.mu.RLock()
+    defer c.mu.RUnlock()
+    return c.data[key]
+}
+
+func (c *Cache) Set(key, value string) {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    c.data[key] = value
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 4 -->
+    <details>
+        <summary>`sync.Map` — когда использовать?</summary>
+        <div class="answer">
+            <p><strong><code>sync.Map</code> — это конкурентно-безопасная карта (хэш-таблица).</strong></p>
+
+            <p><strong>Когда НЕ использовать (в большинстве случаев):</strong></p>
+            <ul>
+                <li><strong>Обычный map + Mutex</strong> быстрее для большинства сценариев</li>
+                <li><code>sync.Map</code> оптимизирован для <strong>особых случаев</strong></li>
+                <li>Не используйте «на всякий случай» — это медленнее</li>
+            </ul>
+
+            <p><strong>Когда использовать <code>sync.Map</code>:</strong></p>
+            <ol>
+                <li><strong>Ключи читаются намного чаще, чем записываются</strong> (кэш)</li>
+                <li><strong>Ключи известны заранее</strong> и не меняются</li>
+                <li><strong>Ключи уникальные</strong> и их много</li>
+            </ol>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+var cache sync.Map
+
+// Запись
+cache.Store("key", "value")
+
+// Чтение
+val, ok := cache.Load("key")
+if ok {
+    fmt.Println(val)
+}
+
+// Удаление
+cache.Delete("key")
+
+// Итерация
+cache.Range(func(key, value any) bool {
+    fmt.Println(key, value)
+    return true  // продолжаем итерацию
+})</pre>
+
+            <p><strong>Золотое правило:</strong><br>
+            Если вы не уверены, что вам нужен <code>sync.Map</code>, используйте <strong>обычный map + sync.Mutex</strong>.</p>
+        </div>
+    </details>
+
+    <!-- Вопрос 5 -->
+    <details>
+        <summary>Каналы (Channels) — устройство, буферизация</summary>
+        <div class="answer">
+            <p><strong>Канал (channel) — это средство коммуникации между горутинами.</strong> Это как труба, по которой можно передавать данные.</p>
+
+            <p><strong>Создание канала:</strong></p>
+            <pre>
+// Небуферизированный (синхронный)
+ch1 := make(chan int)
+
+// Буферизированный (асинхронный, на 10 элементов)
+ch2 := make(chan string, 10)</pre>
+
+            <p><strong>Операции с каналом:</strong></p>
+            <pre>
+ch := make(chan int)
+
+// Отправка
+ch <- 42
+
+// Получение
+value := <-ch
+
+// Закрытие
+close(ch)
+
+// Проверка, закрыт ли канал
+value, ok := <-ch</pre>
+
+            <p><strong>Небуферизированный канал:</strong></p>
+            <ul>
+                <li>Отправляющая горутина <strong>блокируется</strong>, пока кто-то не прочитает</li>
+                <li>Читающая горутина <strong>блокируется</strong>, пока кто-то не отправит</li>
+                <li>Гарантирует синхронизацию</li>
+            </ul>
+
+            <p><strong>Буферизированный канал:</strong></p>
+            <ul>
+                <li>Отправка не блокируется, пока буфер не заполнится</li>
+                <li>Чтение не блокируется, пока буфер не опустеет</li>
+                <li>Не гарантирует синхронизацию</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+func main() {
+    // Небуферизированный
+    ch := make(chan string)
+    go func() {
+        ch <- "Hello"  // блокируется до чтения
+    }()
+    msg := <-ch  // блокируется до отправки
+    fmt.Println(msg)
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 6 -->
+    <details>
+        <summary>`for range` по каналу</summary>
+        <div class="answer">
+            <p><strong><code>for range</code> читает из канала до тех пор, пока он не будет закрыт.</strong></p>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+func main() {
+    ch := make(chan int)
+    
+    // Отправляем данные в канал
+    go func() {
+        for i := 0; i < 5; i++ {
+            ch <- i
+        }
+        close(ch)  // обязательно закрыть!
+    }()
+    
+    // Читаем до закрытия
+    for v := range ch {
+        fmt.Println(v)  // 0, 1, 2, 3, 4
+    }
+    fmt.Println("Канал закрыт")
+}</pre>
+
+            <p><strong>Важные моменты:</strong></p>
+            <ul>
+                <li>Если канал <strong>не закрыть</strong>, <code>range</code> будет ждать вечно (deadlock)</li>
+                <li>Если канал <strong>закрыт</strong>, итерация завершается</li>
+                <li>Если канал <strong>nil</strong>, <code>range</code> блокируется навсегда</li>
+            </ul>
+
+            <p><strong>Кто должен закрывать канал:</strong></p>
+            <ul>
+                <li>Тот, кто <strong>отправляет</strong> данные, должен и закрывать</li>
+                <li>Получатель <strong>не должен</strong> закрывать канал (можно вызвать панику)</li>
+                <li>Закрывать канал нужно только когда <strong>больше не будет отправки</strong></li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 7 -->
+    <details>
+        <summary>`select` — работа с несколькими каналами</summary>
+        <div class="answer">
+            <p><strong><code>select</code> позволяет ждать события на нескольких каналах одновременно.</strong></p>
+
+            <p><strong>Как работает:</strong></p>
+            <ul>
+                <li>Блокируется, пока один из каналов не станет готов</li>
+                <li>Если несколько готовы — выбирает случайный</li>
+                <li>Аналог <code>switch</code>, но для каналов</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+func main() {
+    ch1 := make(chan string)
+    ch2 := make(chan string)
+    
+    go func() {
+        time.Sleep(1 * time.Second)
+        ch1 <- "из канала 1"
+    }()
+    
+    go func() {
+        time.Sleep(2 * time.Second)
+        ch2 <- "из канала 2"
+    }()
+    
+    for i := 0; i < 2; i++ {
+        select {
+        case msg1 := <-ch1:
+            fmt.Println("Получено:", msg1)
+        case msg2 := <-ch2:
+            fmt.Println("Получено:", msg2)
+        }
+    }
+}</pre>
+
+            <p><strong><code>select</code> с <code>default</code> (неблокирующий):</strong></p>
+            <pre>
+select {
+case msg := <-ch:
+    fmt.Println(msg)
+default:
+    fmt.Println("Нет данных, продолжаем работу")
+}</pre>
+
+            <p><strong><code>select</code> с таймаутом:</strong></p>
+            <pre>
+select {
+case msg := <-ch:
+    fmt.Println(msg)
+case <-time.After(5 * time.Second):
+    fmt.Println("Таймаут! Ничего не пришло")
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 8 -->
+    <details>
+        <summary>Контекст (`context.Context`) — зачем нужен?</summary>
+        <div class="answer">
+            <p><strong>Контекст — это способ передать сигналы отмены и дедлайны между горутинами.</strong></p>
+
+            <p><strong>Зачем нужен:</strong></p>
+            <ul>
+                <li>Остановка долгих операций (запросы к БД, HTTP-запросы)</li>
+                <li>Передача дедлайнов (таймаутов)</li>
+                <li>Передача метаданных (например, ID запроса)</li>
+                <li>Каскадная отмена (если отменён родитель, отменяются все дети)</li>
+            </ul>
+
+            <p><strong>Создание контекста:</strong></p>
+            <pre>
+// Пустой контекст (корень)
+ctx := context.Background()
+
+// С отменой
+ctx, cancel := context.WithCancel(context.Background())
+defer cancel()  // важно вызвать!
+
+// С таймаутом
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+// С дедлайном
+ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour))
+defer cancel()
+
+// С метаданными
+ctx := context.WithValue(context.Background(), "userID", 123)</pre>
+
+            <p><strong>Пример с отменой:</strong></p>
+            <pre>
+func worker(ctx context.Context) {
+    for {
+        select {
+        case <-ctx.Done():
+            fmt.Println("Работа остановлена")
+            return
+        default:
+            fmt.Println("Работаем...")
+            time.Sleep(1 * time.Second)
+        }
+    }
+}
+
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+    go worker(ctx)
+    
+    time.Sleep(3 * time.Second)
+    cancel()  // останавливаем
+    time.Sleep(1 * time.Second)
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 9 -->
+    <details>
+        <summary>Fan-in / Fan-out паттерны</summary>
+        <div class="answer">
+            <p><strong>Это популярные паттерны работы с каналами и горутинами.</strong></p>
+
+            <p><strong>Fan-out (разветвление):</strong></p>
+            <ul>
+                <li>Одна горутина <strong>читает</strong> из одного канала</li>
+                <li>Несколько горутин <strong>обрабатывают</strong> данные параллельно</li>
+                <li>Результат отправляется в общий канал</li>
+            </ul>
+
+            <p><strong>Fan-in (схождение):</strong></p>
+            <ul>
+                <li>Несколько горутин <strong>пишут</strong> в общий канал</li>
+                <li>Одна горутина <strong>читает</strong> из общего канала</li>
+            </ul>
+
+            <p><strong>Пример Fan-out:</strong></p>
+            <pre>
+func main() {
+    jobs := make(chan int, 10)
+    results := make(chan int, 10)
+    
+    // Запускаем 3 воркера (fan-out)
+    for w := 0; w < 3; w++ {
+        go worker(jobs, results)
+    }
+    
+    // Отправляем задачи
+    for j := 0; j < 5; j++ {
+        jobs <- j
+    }
+    close(jobs)
+    
+    // Собираем результаты (fan-in)
+    for r := 0; r < 5; r++ {
+        fmt.Println(<-results)
+    }
+}
+
+func worker(jobs <-chan int, results chan<- int) {
+    for job := range jobs {
+        results <- job * 2  // обработка
+    }
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 10 -->
+    <details>
+        <summary>Worker Pool — реализация пула воркеров</summary>
+        <div class="answer">
+            <p><strong>Worker Pool — это ограниченное количество горутин, которые обрабатывают задачи из очереди.</strong></p>
+
+            <p><strong>Зачем:</strong></p>
+            <ul>
+                <li>Ограничение параллелизма (чтобы не убить систему)</li>
+                <li>Контроль над ресурсами</li>
+                <li>Эффективная обработка большого количества задач</li>
+            </ul>
+
+            <p><strong>Реализация:</strong></p>
+            <pre>
+type Task struct {
+    ID   int
+    Data string
+}
+
+func workerPool(numWorkers int, tasks <-chan Task) {
+    var wg sync.WaitGroup
+    
+    for i := 0; i < numWorkers; i++ {
+        wg.Add(1)
+        go func(id int) {
+            defer wg.Done()
+            for task := range tasks {
+                fmt.Printf("Worker %d обрабатывает задачу %d\n", id, task.ID)
+                time.Sleep(time.Millisecond * 500)
+            }
+        }(i)
+    }
+    
+    wg.Wait()
+}
+
+func main() {
+    tasks := make(chan Task, 100)
+    
+    // Заполняем задачами
+    for i := 0; i < 20; i++ {
+        tasks <- Task{ID: i, Data: "data"}
+    }
+    close(tasks)
+    
+    workerPool(3, tasks)  // 3 воркера
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 11 -->
+    <details>
+        <summary>Data Race — что это, как обнаружить?</summary>
+        <div class="answer">
+            <p><strong>Data Race (гонка данных) — это ситуация, когда несколько горутин одновременно обращаются к одной памяти, и как минимум одно обращение — запись.</strong></p>
+
+            <p><strong>Пример гонки:</strong></p>
+            <pre>
+var counter int
+
+func increment() {
+    counter++  // НЕ атомарно! (читать, увеличить, записать)
+}
+
+func main() {
+    for i := 0; i < 1000; i++ {
+        go increment()
+    }
+    time.Sleep(time.Second)
+    fmt.Println(counter)  // не 1000! (результат непредсказуем)
+}</pre>
+
+            <p><strong>Как обнаружить:</strong></p>
+            <ul>
+                <li>Запуск с флагом <code>-race</code>: <code>go run -race main.go</code></li>
+                <li>Тесты с <code>-race</code>: <code>go test -race ./...</code></li>
+                <li>Программа выдаст подробный отчёт о гонках</li>
+            </ul>
+
+            <p><strong>Как исправить:</strong></p>
+            <ol>
+                <li><strong>Мьютекс</strong> — синхронизация доступа</li>
+                <li><strong>Атомарные операции</strong> (<code>sync/atomic</code>)</li>
+                <li><strong>Каналы</strong> — для коммуникации вместо общих данных</li>
+                <li><strong>Однопоточный доступ</strong> — дизайн без общего состояния</li>
+            </ol>
+
+            <p><strong>Исправление:</strong></p>
+            <pre>
+var mu sync.Mutex
+var counter int
+
+func increment() {
+    mu.Lock()
+    counter++
+    mu.Unlock()
+}
+
+// Или через atomic
+var counter int64
+
+func increment() {
+    atomic.AddInt64(&counter, 1)
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 12 -->
+    <details>
+        <summary>Атомарные операции (`sync/atomic`)</summary>
+        <div class="answer">
+            <p><strong><code>sync/atomic</code> — пакет для атомарных операций без блокировок.</strong></p>
+
+            <p><strong>Когда использовать:</strong></p>
+            <ul>
+                <li>Счётчики (<code>increment</code>)</li>
+                <li>Флаги (<code>bool</code>)</li>
+                <li>Атомарная замена указателей</li>
+                <li>Когда производительность критична, а мьютексы слишком тяжелы</li>
+            </ul>
+
+            <p><strong>Примеры:</strong></p>
+            <pre>
+import "sync/atomic"
+
+var counter int64
+var flag int32
+var ptr unsafe.Pointer
+
+// Инкремент
+atomic.AddInt64(&counter, 1)
+
+// Чтение
+value := atomic.LoadInt64(&counter)
+
+// Установка флага
+atomic.StoreInt32(&flag, 1)
+
+// Сравнение и замена (CAS)
+atomic.CompareAndSwapInt32(&flag, 1, 0)
+
+// Атомарная замена указателя
+oldPtr := atomic.SwapPointer(&ptr, newPointer)</pre>
+
+            <p><strong>Почему атомарные операции быстрее мьютексов:</strong></p>
+            <ul>
+                <li>Не требуют переключения контекста</li>
+                <li>Обычно реализуются одной машинной инструкцией</li>
+                <li>Используют аппаратную поддержку процессора</li>
+            </ul>
+
+            <p><strong>Когда НЕ использовать:</strong></p>
+            <ul>
+                <li>Для сложных структур данных (используйте мьютекс)</li>
+                <li>Для операций, которые не встроены в пакет <code>atomic</code></li>
+                <li>Когда сложно читать код (мьютекс понятнее)</li>
+            </ul>
+        </div>
+    </details>
+</section>
+    <script src="script.js"></script>
+</body>
+</html>

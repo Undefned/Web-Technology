@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go — Блоки 1-4 | Подробные ответы</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 8 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>🏗️ 8. Типичные паттерны в Go и Go для микросервисов</h2>
+
+    <!-- Вопрос 1 -->
+    <details>
+        <summary>Функциональные опции (Functional Options) — паттерн</summary>
+        <div class="answer">
+            <p><strong>Functional Options — это паттерн для гибкой настройки объектов с множеством параметров.</strong></p>
+
+            <p><strong>Проблема:</strong></p>
+            <ul>
+                <li>У структуры много полей с настройками</li>
+                <li>Часть из них опциональна</li>
+                <li>Не хочется создавать десятки конструкторов</li>
+            </ul>
+
+            <p><strong>Решение — Functional Options:</strong></p>
+            <pre>
+type Server struct {
+    host    string
+    port    int
+    timeout time.Duration
+    maxConn int
+}
+
+// Тип опции — функция, которая меняет Server
+type Option func(*Server)
+
+// Опции-конструкторы
+func WithPort(port int) Option {
+    return func(s *Server) {
+        s.port = port
+    }
+}
+
+func WithTimeout(timeout time.Duration) Option {
+    return func(s *Server) {
+        s.timeout = timeout
+    }
+}
+
+func WithMaxConn(maxConn int) Option {
+    return func(s *Server) {
+        s.maxConn = maxConn
+    }
+}
+
+// Конструктор с опциями
+func NewServer(host string, opts ...Option) *Server {
+    // Значения по умолчанию
+    s := &Server{
+        host:    host,
+        port:    8080,
+        timeout: 30 * time.Second,
+        maxConn: 100,
+    }
+    
+    // Применяем опции
+    for _, opt := range opts {
+        opt(s)
+    }
+    return s
+}</pre>
+
+            <p><strong>Использование:</strong></p>
+            <pre>
+// С настройками по умолчанию
+s1 := NewServer("localhost")
+
+// С кастомными настройками
+s2 := NewServer("localhost",
+    WithPort(9090),
+    WithTimeout(10*time.Second),
+    WithMaxConn(200),
+)</pre>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Гибкость — можно передать любые опции</li>
+                <li>Читаемость — понятно, что настраивается</li>
+                <li>Расширяемость — легко добавить новые опции</li>
+                <li>Безопасность — не нужно передавать <code>nil</code></li>
+            </ul>
+
+            <p><strong>Где используется:</strong></p>
+            <ul>
+                <li>gRPC (<code>grpc.Dial</code> с опциями)</li>
+                <li>HTTP-серверы</li>
+                <li>Конфигурация клиентов</li>
+                <li>Любые объекты с настройками</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 2 -->
+    <details>
+        <summary>Веб-фреймворки — почему часто хватает `net/http`?</summary>
+        <div class="answer">
+            <p><strong>Стандартный <code>net/http</code> в Go настолько хорош, что многие проекты обходятся без фреймворков.</strong></p>
+
+            <p><strong>Что есть в <code>net/http</code>:</strong></p>
+            <ul>
+                <li>Роутинг (с Go 1.22 — улучшенный паттерн-матчинг)</li>
+                <li>Middleware (через обёртки)</li>
+                <li>Работа с сессиями/куками</li>
+                <li>Шаблонизация</li>
+                <li>Грамотный HTTP-клиент</li>
+            </ul>
+
+            <p><strong>Пример без фреймворка:</strong></p>
+            <pre>
+func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc("GET /users/{id}", handleUser)
+    mux.HandleFunc("POST /users", createUser)
+    
+    handler := loggingMiddleware(mux)
+    handler = authMiddleware(handler)
+    
+    http.ListenAndServe(":8080", handler)
+}</pre>
+
+            <p><strong>Когда нужен фреймворк:</strong></p>
+            <ul>
+                <li><strong>Gin</strong> — если нужна максимальная производительность</li>
+                <li><strong>Echo</strong> — если нужна производительность + удобный роутинг</li>
+                <li><strong>Fiber</strong> — если нужна производительность как у Express.js</li>
+                <li><strong>Beego/Revel</strong> — если нужен полноценный MVC-фреймворк</li>
+            </ul>
+
+            <p><strong>Сравнение производительности (условное):</strong></p>
+            <ul>
+                <li><code>net/http</code> — быстрый, но чуть медленнее специализированных</li>
+                <li><code>Gin</code> — быстрее <code>net/http</code> на ~20-30%</li>
+                <li><code>Fiber</code> — ещё быстрее, но использует <code>fasthttp</code></li>
+                <li>Для большинства проектов <code>net/http</code> достаточно</li>
+            </ul>
+
+            <p><strong>Совет:</strong> Начните с <code>net/http</code>. Если станет не хватать — мигрируйте на фреймворк.</p>
+        </div>
+    </details>
+
+    <!-- Вопрос 3 -->
+    <details>
+        <summary>Middleware — концепция и пример</summary>
+        <div class="answer">
+            <p><strong>Middleware (промежуточное ПО) — это функции, которые оборачивают обработчики и выполняются до или после них.</strong></p>
+
+            <p><strong>Типичные задачи:</strong></p>
+            <ul>
+                <li>Логирование</li>
+                <li>Аутентификация</li>
+                <li>Сжатие ответов</li>
+                <li>Ограничение скорости (rate limiting)</li>
+                <li>Восстановление после паники</li>
+                <li>Добавление заголовков</li>
+            </ul>
+
+            <p><strong>Пример middleware для логирования:</strong></p>
+            <pre>
+func loggingMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        
+        // Создаём обёртку для записи статуса
+        wrapped := &responseWriter{ResponseWriter: w}
+        
+        // Вызываем следующий обработчик
+        next.ServeHTTP(wrapped, r)
+        
+        // Логируем после
+        log.Printf("%s %s %d %v",
+            r.Method,
+            r.URL.Path,
+            wrapped.status,
+            time.Since(start),
+        )
+    })
+}
+
+// Обёртка для захвата статуса ответа
+type responseWriter struct {
+    http.ResponseWriter
+    status int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+    rw.status = code
+    rw.ResponseWriter.WriteHeader(code)
+}</pre>
+
+            <p><strong>Цепочка middleware:</strong></p>
+            <pre>
+func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc("/", mainHandler)
+    
+    // Оборачиваем в обратном порядке
+    handler := mux
+    handler = loggingMiddleware(handler)
+    handler = authMiddleware(handler)
+    handler = recoveryMiddleware(handler)
+    
+    http.ListenAndServe(":8080", handler)
+}</pre>
+
+            <p><strong>Короткая запись:</strong></p>
+            <pre>
+type Middleware func(http.Handler) http.Handler
+
+func Chain(h http.Handler, middlewares ...Middleware) http.Handler {
+    for _, m := range middlewares {
+        h = m(h)
+    }
+    return h
+}
+
+// Использование
+handler := Chain(mux, loggingMiddleware, authMiddleware, recoveryMiddleware)</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 4 -->
+    <details>
+        <summary>Базы данных — `database/sql` vs ORM</summary>
+        <div class="answer">
+            <p><strong>В Go есть два основных подхода к работе с БД: чистый SQL и ORM.</strong></p>
+
+            <p><strong><code>database/sql</code> — стандартный пакет для работы с SQL:</strong></p>
+            <pre>
+import "database/sql"
+import _ "github.com/lib/pq"  // драйвер PostgreSQL
+
+func main() {
+    db, err := sql.Open("postgres", "postgres://user:pass@localhost/db")
+    if err != nil {
+        panic(err)
+    }
+    defer db.Close()
+    
+    // Запрос
+    rows, err := db.Query("SELECT id, name FROM users WHERE age > $1", 18)
+    if err != nil {
+        // обработка
+    }
+    defer rows.Close()
+    
+    var users []User
+    for rows.Next() {
+        var u User
+        err := rows.Scan(&u.ID, &u.Name)
+        // ...
+    }
+}</pre>
+
+            <p><strong>ORM — GORM (самый популярный):</strong></p>
+            <pre>
+import "gorm.io/gorm"
+
+type User struct {
+    ID   uint
+    Name string
+    Age  int
+}
+
+func main() {
+    db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+    
+    // Автомиграция
+    db.AutoMigrate(&User{})
+    
+    // CRUD
+    db.Create(&User{Name: "Alice", Age: 30})
+    
+    var user User
+    db.First(&user, 1)  // по ID
+    
+    db.Where("age > ?", 18).Find(&users)
+}</pre>
+
+            <p><strong>Когда что использовать:</strong></p>
+            <table>
+                <tr><th>Подход</th><th>Плюсы</th><th>Минусы</th></tr>
+                <tr><td><code>database/sql</code></td>
+                    <td>Полный контроль, быстрее, понятный SQL</td>
+                    <td>Много кода, сложно с JOIN</td>
+                </tr>
+                <tr><td>ORM (GORM, ent)</td>
+                    <td>Меньше кода, автоматическая миграция, удобно</td>
+                    <td>Медленнее, сложные запросы сложно написать</td>
+                </tr>
+            </table>
+
+            <p><strong>Компромисс — Query Builder:</strong></p>
+            <ul>
+                <li><strong>sqlx</strong> — расширение database/sql (удобное сканирование)</li>
+                <li><strong>squirrel</strong> — построитель запросов</li>
+                <li><strong>sqlc</strong> — генерирует Go-код из SQL</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 5 -->
+    <details>
+        <summary>Почему Go хорош для микросервисов?</summary>
+        <div class="answer">
+            <p><strong>Go стал одним из главных языков для микросервисов. Причины:</strong></p>
+
+            <p><strong>1. Маленький бинарник</strong></p>
+            <ul>
+                <li>Собранная программа — один файл без зависимостей</li>
+                <li>Размер ~10-30 МБ (в зависимости от проекта)</li>
+                <li>Быстрое развёртывание</li>
+            </ul>
+
+            <p><strong>2. Быстрый старт</strong></p>
+            <ul>
+                <li>Нет виртуальной машины (как JVM или .NET Runtime)</li>
+                <li>Запускается за миллисекунды</li>
+                <li>Идеально для авто-скейлинга (Kubernetes)</li>
+            </ul>
+
+            <p><strong>3. Низкое потребление памяти</strong></p>
+            <ul>
+                <li>Горутины легковесны (2 КБ стек)</li>
+                <li>Можно запускать тысячи микросервисов на одном сервере</li>
+            </ul>
+
+            <p><strong>4. Встроенная конкурентность</strong></p>
+            <ul>
+                <li>Легко обрабатывать много одновременных запросов</li>
+                <li>Каналы и горутины упрощают асинхронную работу</li>
+            </ul>
+
+            <p><strong>5. Отличная стандартная библиотека</strong></p>
+            <ul>
+                <li>HTTP-сервер, gRPC, шифрование, JSON — всё уже есть</li>
+                <li>Минимум внешних зависимостей</li>
+            </ul>
+
+            <p><strong>6. Простота</strong></p>
+            <ul>
+                <li>Код легко читать и поддерживать</li>
+                <li>Строгий синтаксис и форматирование</li>
+                <li>Меньше магии → меньше багов</li>
+            </ul>
+
+            <p><strong>7. Кросскомпиляция</strong></p>
+            <ul>
+                <li>Одна команда: <code>GOOS=linux GOARCH=amd64 go build</code></li>
+                <li>Собираем под Linux с Windows/Mac</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 6 -->
+    <details>
+        <summary>gRPC в Go — `protobuf` и генерация кода</summary>
+        <div class="answer">
+            <p><strong>gRPC — это высокопроизводительный RPC-фреймворк от Google.</strong></p>
+
+            <p><strong>Преимущества перед REST:</strong></p>
+            <ul>
+                <li>Быстрее (бинарный протокол)</li>
+                <li>Строгая типизация (protobuf)</li>
+                <li>Поддержка стримов (потоковая передача)</li>
+                <li>Автоматическая генерация клиентов и серверов</li>
+            </ul>
+
+            <p><strong>Шаг 1: Определяем протокол (<code>.proto</code> файл)</strong></p>
+            <pre>
+// hello.proto
+syntax = "proto3";
+
+service Greeter {
+    rpc SayHello (HelloRequest) returns (HelloResponse);
+}
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloResponse {
+    string message = 1;
+}</pre>
+
+            <p><strong>Шаг 2: Генерируем код</strong></p>
+            <pre>
+protoc --go_out=. --go-grpc_out=. hello.proto</pre>
+
+            <p><strong>Шаг 3: Реализуем сервер</strong></p>
+            <pre>
+type server struct {
+    pb.UnimplementedGreeterServer
+}
+
+func (s *server) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
+    return &pb.HelloResponse{
+        Message: "Hello, " + req.Name,
+    }, nil
+}
+
+func main() {
+    lis, _ := net.Listen("tcp", ":50051")
+    s := grpc.NewServer()
+    pb.RegisterGreeterServer(s, &server{})
+    s.Serve(lis)
+}</pre>
+
+            <p><strong>Шаг 4: Клиент</strong></p>
+            <pre>
+conn, _ := grpc.Dial("localhost:50051", grpc.WithInsecure())
+defer conn.Close()
+
+client := pb.NewGreeterClient(conn)
+resp, _ := client.SayHello(context.Background(), &pb.HelloRequest{Name: "Alice"})
+fmt.Println(resp.Message)  // "Hello, Alice"</pre>
+
+            <p><strong>Стримы:</strong></p>
+            <pre>
+// Серверный стрим
+rpc GetUsers (Empty) returns (stream User);
+
+// Клиентский стрим
+rpc UploadData (stream Data) returns (Status);
+
+// Двунаправленный стрим
+rpc Chat (stream Message) returns (stream Message);</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 7 -->
+    <details>
+        <summary>Graceful Shutdown — корректное завершение сервера</summary>
+        <div class="answer">
+            <p><strong>Graceful Shutdown — это завершение сервера с ожиданием текущих запросов.</strong></p>
+
+            <p><strong>Зачем:</strong></p>
+            <ul>
+                <li>Не обрывать запросы, которые уже обрабатываются</li>
+                <li>Дать время на завершение операций</li>
+                <li>Не допустить ошибок у клиентов</li>
+            </ul>
+
+            <p><strong>Реализация:</strong></p>
+            <pre>
+func main() {
+    server := &http.Server{
+        Addr:    ":8080",
+        Handler: mux,
+    }
+    
+    // Канал для сигналов
+    stop := make(chan os.Signal, 1)
+    signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+    
+    // Запускаем сервер в горутине
+    go func() {
+        if err := server.ListenAndServe(); err != http.ErrServerClosed {
+            log.Fatal(err)
+        }
+    }()
+    
+    // Ждём сигнал
+    <-stop
+    log.Println("Получен сигнал остановки")
+    
+    // Даём время на завершение текущих запросов
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    
+    if err := server.Shutdown(ctx); err != nil {
+        log.Fatal("Ошибка при завершении:", err)
+    }
+    
+    log.Println("Сервер завершён корректно")
+}</pre>
+
+            <p><strong>Для gRPC:</strong></p>
+            <pre>
+func main() {
+    s := grpc.NewServer()
+    // ... регистрация
+    
+    go func() {
+        s.Serve(lis)
+    }()
+    
+    <-stop
+    s.GracefulStop()  // gRPC имеет встроенный GracefulStop
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 8 -->
+    <details>
+        <summary>Обработка сигналов — `os/signal`</summary>
+        <div class="answer">
+            <p><strong>Пакет <code>os/signal</code> позволяет реагировать на системные сигналы.</strong></p>
+
+            <p><strong>Основные сигналы:</strong></p>
+            <ul>
+                <li><code>SIGINT</code> — Ctrl+C</li>
+                <li><code>SIGTERM</code> — запрос на завершение (от Kubernetes)</li>
+                <li><code>SIGKILL</code> — принудительное убийство (нельзя перехватить)</li>
+                <li><code>SIGUSR1</code> — пользовательский сигнал</li>
+            </ul>
+
+            <p><strong>Пример:</strong></p>
+            <pre>
+func main() {
+    // Создаём канал для сигналов
+    sigChan := make(chan os.Signal, 1)
+    
+    // Подписываемся на сигналы
+    signal.Notify(sigChan, 
+        syscall.SIGINT,
+        syscall.SIGTERM,
+        syscall.SIGUSR1,
+    )
+    
+    go func() {
+        for sig := range sigChan {
+            switch sig {
+            case syscall.SIGINT, syscall.SIGTERM:
+                log.Println("Получен сигнал завершения:", sig)
+                // graceful shutdown
+                os.Exit(0)
+            case syscall.SIGUSR1:
+                log.Println("Получен SIGUSR1 — перезагружаем конфиг")
+                reloadConfig()
+            }
+        }
+    }()
+    
+    // ... работа программы
+}</pre>
+
+            <p><strong>Игнорирование сигналов:</strong></p>
+            <pre>
+signal.Ignore(syscall.SIGPIPE)  // игнорируем SIGPIPE</pre>
+
+            <p><strong>Важно:</strong></p>
+            <ul>
+                <li>Канал для сигналов должен быть <strong>буферизированным</strong></li>
+                <li>Не используйте <code>os.Exit</code> в горутинах — используйте каналы для оповещения <code>main</code></li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 9 -->
+    <details>
+        <summary>Чистая архитектура в Go — слои</summary>
+        <div class="answer">
+            <p><strong>Чистая архитектура (Clean Architecture) — способ организации кода с чёткими слоями.</strong></p>
+
+            <p><strong>Слои (от внешнего к внутреннему):</strong></p>
+            <ol>
+                <li><strong>Presentation (представление)</strong> — HTTP-хендлеры, gRPC, CLI</li>
+                <li><strong>Use Case (бизнес-логика)</strong> — сценарии использования приложения</li>
+                <li><strong>Domain (сущности)</strong> — бизнес-сущности, правила</li>
+                <li><strong>Infrastructure (инфраструктура)</strong> — БД, внешние API, кэш</li>
+            </ol>
+
+            <p><strong>Структура проекта:</strong></p>
+            <pre>
+myapp/
+├── cmd/
+│   └── server/
+│       └── main.go
+├── internal/
+│   ├── domain/          # бизнес-сущности
+│   │   ├── user.go
+│   │   └── order.go
+│   ├── usecase/         # бизнес-логика
+│   │   ├── user.go
+│   │   └── order.go
+│   ├── handler/         # HTTP-хендлеры
+│   │   └── user.go
+│   └── repository/      # работа с БД
+│       ├── user.go
+│       └── postgres/
+│           └── user.go
+└── pkg/                 # общие утилиты</pre>
+
+            <p><strong>Пример usecase:</strong></p>
+            <pre>
+type UserUseCase struct {
+    repo UserRepository
+}
+
+func (uc *UserUseCase) GetUser(id int) (*User, error) {
+    user, err := uc.repo.FindByID(id)
+    if err != nil {
+        return nil, err
+    }
+    // Бизнес-логика
+    if user.Age < 18 {
+        user.IsAdult = false
+    }
+    return user, nil
+}</pre>
+
+            <p><strong>Преимущества:</strong></p>
+            <ul>
+                <li>Бизнес-логика не зависит от фреймворков</li>
+                <li>Легко тестировать (можно подменить репозитории)</li>
+                <li>Легко менять инфраструктуру (БД, внешние сервисы)</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 10 -->
+    <details>
+        <summary>Context в HTTP — `r.Context()` и передача данных</summary>
+        <div class="answer">
+            <p><strong>В HTTP-запросах контекст используется для передачи данных и управления таймаутами.</strong></p>
+
+            <p><strong>Основные возможности:</strong></p>
+            <ul>
+                <li>Отмена запроса (клиент закрыл соединение)</li>
+                <li>Таймауты</li>
+                <li>Передача метаданных (ID пользователя, ID запроса)</li>
+            </ul>
+
+            <p><strong>Пример с таймаутом:</strong></p>
+            <pre>
+func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc("/api", apiHandler)
+    
+    // Таймаут для всех запросов
+    server := &http.Server{
+        Addr:         ":8080",
+        Handler:      mux,
+        ReadTimeout:  5 * time.Second,
+        WriteTimeout: 10 * time.Second,
+    }
+}</pre>
+
+            <p><strong>Передача данных через контекст:</strong></p>
+            <pre>
+// Ключ для контекста (тип — любой, но лучше использовать свой тип)
+type contextKey string
+
+const userIDKey contextKey = "userID"
+
+// Middleware — добавляем UserID в контекст
+func authMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // Получаем UserID из токена
+        userID := getUserIDFromToken(r.Header.Get("Authorization"))
+        
+        // Добавляем в контекст
+        ctx := context.WithValue(r.Context(), userIDKey, userID)
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
+}
+
+// Хендлер — читаем из контекста
+func apiHandler(w http.ResponseWriter, r *http.Request) {
+    userID, ok := r.Context().Value(userIDKey).(int)
+    if !ok {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
+    fmt.Fprintf(w, "User ID: %d", userID)
+}</pre>
+
+            <p><strong>Реакция на отмену запроса:</strong></p>
+            <pre>
+func longHandler(w http.ResponseWriter, r *http.Request) {
+    select {
+    case <-r.Context().Done():
+        // Клиент отключился или таймаут
+        log.Println("Запрос отменён")
+        return
+    case <-time.After(10 * time.Second):
+        // Долгая операция завершилась
+        w.Write([]byte("Done"))
+    }
+}</pre>
+
+            <p><strong>Таймауты для обработчиков:</strong></p>
+            <pre>
+func handlerWithTimeout(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+        defer cancel()
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
+}</pre>
+        </div>
+    </details>
+</section>
+
+    <script src="script.js"></script>
+</body>
+</html>
