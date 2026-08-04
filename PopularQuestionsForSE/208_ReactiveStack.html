@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 8 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>⚡ 8. Reactive Stack — Spring WebFlux (чего нет в C#)</h2>
+
+    <details>
+        <summary>Spring WebFlux vs Spring MVC — разница</summary>
+        <div class="answer">
+            <p><strong>Spring MVC — блокирующий (Servlet API). Spring WebFlux — реактивный (non-blocking).</strong></p>
+
+            <table>
+                <tr><th>Характеристика</th><th>Spring MVC</th><th>Spring WebFlux</th></tr>
+                <tr><td>Архитектура</td><td>Servlet API (блокирующий)</td><td>Reactive Streams (non-blocking)</td></tr>
+                <tr><td>Стек</td><td>Tomcat, Jetty</td><td>Netty, Undertow</td></tr>
+                <tr><td>Модель</td><td>Один поток на запрос</td><td>Событийно-ориентированная</td></tr>
+                <tr><td>Подходит для</td><td>CPU-bound, традиционные приложения</td><td>IO-bound, высоконагруженные системы</td></tr>
+            </table>
+
+            <pre>
+// Spring MVC — блокирующий контроллер
+@RestController
+public class UserController {
+    @GetMapping("/users")
+    public List&lt;User&gt; getUsers() {  // блокирует поток до окончания
+        return userService.findAll();  // синхронный вызов
+    }
+}
+
+// Spring WebFlux — реактивный контроллер
+@RestController
+public class UserController {
+    @GetMapping("/users")
+    public Flux&lt;User&gt; getUsers() {  // не блокирует поток
+        return userService.findAll();  // возвращает Flux (реактивный)
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Mono и Flux — что это?</summary>
+        <div class="answer">
+            <p><strong>Mono — 0 или 1 элемент. Flux — 0 или N элементов (поток).</strong></p>
+
+            <ul>
+                <li><strong>Mono&lt;T&gt;</strong> — аналог Optional или Promise (один результат)</li>
+                <li><strong>Flux&lt;T&gt;</strong> — аналог List или Stream (много результатов)</li>
+                <li>Оба из Project Reactor (реализация Reactive Streams)</li>
+            </ul>
+
+            <pre>
+@RestController
+public class ReactiveController {
+    
+    // Mono — один объект
+    @GetMapping("/user/{id}")
+    public Mono&lt;User&gt; getUser(@PathVariable Long id) {
+        return userService.findById(id);  // Mono&lt;User&gt;
+    }
+    
+    // Flux — поток объектов
+    @GetMapping("/users")
+    public Flux&lt;User&gt; getUsers() {
+        return userService.findAll();  // Flux&lt;User&gt;
+    }
+    
+    // Flux с SSE (Server-Sent Events)
+    @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux&lt;Event&gt; getEvents() {
+        return Flux.interval(Duration.ofSeconds(1))
+            .map(i -> new Event("Event " + i));
+    }
+}
+
+// Работа с Mono и Flux
+Mono&lt;User&gt; mono = Mono.just(new User("John"));
+Flux&lt;User&gt; flux = Flux.just(new User("John"), new User("Jane"));
+
+// Преобразование
+flux.map(User::getName)
+    .filter(name -> name.startsWith("J"))
+    .collectList()
+    .subscribe(names -> System.out.println(names));
+
+// Объединение
+Mono.zip(userMono, profileMono, (user, profile) -> new UserDto(user, profile));</pre>
+
+            <p><strong>В C# аналогов нет напрямую. Ближайшее — IAsyncEnumerable и Task.</strong></p>
+            <pre>
+// C# — асинхронные потоки
+public async IAsyncEnumerable&lt;User&gt; GetUsers() {
+    await foreach (var user in _db.Users.AsAsyncEnumerable()) {
+        yield return user;
+    }
+}
+
+// gRPC streaming — аналог Flux
+public override async Task GetUsers(Empty request, IServerStreamWriter&lt;User&gt; responseStream, ServerCallContext context) {
+    await foreach (var user in GetUsers()) {
+        await responseStream.WriteAsync(user);
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>WebClient vs RestTemplate — разница</summary>
+        <div class="answer">
+            <p><strong>RestTemplate — синхронный (блокирующий). WebClient — асинхронный (реактивный).</strong></p>
+
+            <pre>
+// RestTemplate (синхронный)
+RestTemplate restTemplate = new RestTemplate();
+User user = restTemplate.getForObject("http://api.example.com/users/1", User.class);
+
+// WebClient (реактивный)
+WebClient webClient = WebClient.create("http://api.example.com");
+
+// Блокирующий вызов (превращаем в синхронный)
+User user = webClient.get()
+    .uri("/users/1")
+    .retrieve()
+    .bodyToMono(User.class)
+    .block();  // блокирует!
+
+// Реактивный вызов (неблокирующий)
+Mono&lt;User&gt; userMono = webClient.get()
+    .uri("/users/1")
+    .retrieve()
+    .bodyToMono(User.class);
+
+userMono.subscribe(user -> System.out.println(user));
+
+// Цепочка реактивных вызовов
+Mono&lt;UserWithOrders&gt; result = webClient.get()
+    .uri("/users/1")
+    .retrieve()
+    .bodyToMono(User.class)
+    .flatMap(user -> webClient.get()
+        .uri("/users/" + user.getId() + "/orders")
+        .retrieve()
+        .bodyToFlux(Order.class)
+        .collectList()
+        .map(orders -> new UserWithOrders(user, orders))
+    );</pre>
+
+            <p><strong>В C# аналог — HttpClient (синхронный/асинхронный):</strong></p>
+            <pre>
+// HttpClient — асинхронный
+var response = await _httpClient.GetAsync("http://api.example.com/users/1");
+var user = await response.Content.ReadFromJsonAsync&lt;User&gt;();
+
+// С цепочкой
+var user = await _httpClient.GetFromJsonAsync&lt;User&gt;("http://api.example.com/users/1");
+var orders = await _httpClient.GetFromJsonAsync&lt;List&lt;Order&gt;&gt;($"http://api.example.com/users/{user.Id}/orders");</pre>
+        </div>
+    </details>
+
+</section>
+
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 6 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>🗄️ 6. Spring Data JPA vs EF Core</h2>
+
+    <details>
+        <summary>EntityManager vs DbContext — разница</summary>
+        <div class="answer">
+            <p><strong>EntityManager (JPA) и DbContext (EF) — это главные объекты для работы с БД.</strong></p>
+
+            <p><strong>EntityManager (Java):</strong></p>
+            <ul>
+                <li>Управляет жизненным циклом сущностей</li>
+                <li>Содержит Persistence Context (1st level cache)</li>
+                <li>Методы: <code>persist()</code>, <code>merge()</code>, <code>remove()</code>, <code>find()</code>, <code>createQuery()</code></li>
+                <li>Связан с транзакцией (<code>@Transactional</code>)</li>
+            </ul>
+
+            <pre>
+// Java — EntityManager
+@Service
+public class UserService {
+    @PersistenceContext
+    private EntityManager em;
+    
+    @Transactional
+    public User save(User user) {
+        em.persist(user);  // сохранить
+        return user;
+    }
+    
+    public User find(Long id) {
+        return em.find(User.class, id);  // найти по ID
+    }
+    
+    public List&lt;User&gt; findAll() {
+        return em.createQuery("SELECT u FROM User u", User.class)
+                 .getResultList();
+    }
+}</pre>
+
+            <p><strong>DbContext (C#):</strong></p>
+            <pre>
+public class AppDbContext : DbContext {
+    public DbSet&lt;User&gt; Users { get; set; }
+}
+
+public class UserService {
+    private readonly AppDbContext _db;
+    
+    public async Task&lt;User&gt; Save(User user) {
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+        return user;
+    }
+    
+    public async Task&lt;User&gt; Find(long id) {
+        return await _db.Users.FindAsync(id);
+    }
+    
+    public async Task&lt;List&lt;User&gt;&gt; FindAll() {
+        return await _db.Users.ToListAsync();
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Persistence Context (1st level cache) — что это?</summary>
+        <div class="answer">
+            <p><strong>Persistence Context — это кэш первого уровня, который хранит загруженные сущности в рамках одной сессии/транзакции.</strong></p>
+
+            <ul>
+                <li>Автоматически кэширует загруженные сущности</li>
+                <li>Повторные запросы того же ID — без запроса к БД</li>
+                <li>Отслеживает изменения (dirty checking)</li>
+                <li>Живёт в рамках одной транзакции</li>
+            </ul>
+
+            <pre>
+@Transactional
+public void example() {
+    // 1-й запрос — идёт в БД
+    User user1 = em.find(User.class, 1L);
+    
+    // 2-й запрос — берётся из кэша (БД не трогается)
+    User user2 = em.find(User.class, 1L);
+    
+    // user1 == user2 — один и тот же объект!
+    System.out.println(user1 == user2);  // true
+    
+    // Dirty checking — изменения сохранятся автоматически при коммите
+    user1.setName("New Name");
+    // ... конец транзакции — UPDATE в БД
+}</pre>
+
+            <p><strong>В EF Core аналог — ChangeTracker:</strong></p>
+            <pre>
+var user1 = await _db.Users.FindAsync(1);
+var user2 = await _db.Users.FindAsync(1);
+// user1 == user2 — один объект (отслеживается)
+
+user1.Name = "New Name";
+await _db.SaveChangesAsync();  // UPDATE</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>2nd level cache (Hibernate) — почему в EF нет?</summary>
+        <div class="answer">
+            <p><strong>2nd level cache (L2 cache) — кэш, общий для всех сессий/EntityManager.</strong></p>
+
+            <ul>
+                <li>Хранит данные между разными транзакциями</li>
+                <li>Настраивается отдельно (EHCache, Redis, Hazelcast)</li>
+                <li>Требует осторожности (инвалидация, согласованность)</li>
+                <li>В EF Core нет встроенного L2 cache</li>
+            </ul>
+
+            <pre>
+// Подключение Hibernate L2 cache (EHCache)
+&lt;dependency&gt;
+    &lt;groupId&gt;org.hibernate.orm&lt;/groupId&gt;
+    &lt;artifactId&gt;hibernate-jcache&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+// Настройка
+@Cacheable
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Entity
+public class User {
+    @Id
+    private Long id;
+    private String name;
+}
+
+// Использование — после первого запроса, данные будут в L2 cache
+User user1 = em.find(User.class, 1L);  // идёт в БД
+User user2 = em.find(User.class, 1L);  // из L2 cache (если сессия другая)</pre>
+
+            <p><strong>В C# — нет встроенного L2 cache. Решения:</strong></p>
+            <ul>
+                <li>Использовать <code>IMemoryCache</code> или <code>IDistributedCache</code> вручную</li>
+                <li>Второй уровень кэша EF Core — через сторонние библиотеки (EFCoreSecondLevelCacheInterceptor)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>@Query vs NativeQuery — разница</summary>
+        <div class="answer">
+            <p><strong>@Query — для JPQL (Java Persistence Query Language), NativeQuery — для чистого SQL.</strong></p>
+
+            <p><strong>JPQL (@Query):</strong></p>
+            <ul>
+                <li>Работает с сущностями, а не таблицами</li>
+                <li>Переносимый между БД</li>
+                <li>Использует имена классов и полей</li>
+            </ul>
+
+            <p><strong>NativeQuery (nativeQuery = true):</strong></p>
+            <ul>
+                <li>Чистый SQL для конкретной БД</li>
+                <li>Можно использовать специфичные функции (PostgreSQL, MySQL)</li>
+                <li>Быстрее, но не переносимый</li>
+            </ul>
+
+            <pre>
+@Repository
+public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
+    
+    // JPQL — работа с сущностями
+    @Query("SELECT u FROM User u WHERE u.age > :age")
+    List&lt;User&gt; findOlderThan(@Param("age") int age);
+    
+    // JPQL с JOIN
+    @Query("SELECT u FROM User u JOIN u.orders o WHERE o.total > :min")
+    List&lt;User&gt; findUsersWithLargeOrders(@Param("min") BigDecimal min);
+    
+    // Native SQL — для сложных запросов
+    @Query(value = "SELECT * FROM users WHERE age > ?1", nativeQuery = true)
+    List&lt;User&gt; findOlderThanNative(int age);
+    
+    // Native с спецификой PostgreSQL
+    @Query(value = "SELECT * FROM users WHERE data @&gt; '{\"city\":\"Moscow\"}'::jsonb", nativeQuery = true)
+    List&lt;User&gt; findByJson(String json);
+}</pre>
+
+            <p><strong>В EF Core аналоги:</strong></p>
+            <pre>
+// LINQ (аналог JPQL)
+var users = await _db.Users
+    .Where(u => u.Age > age)
+    .ToListAsync();
+
+// Raw SQL (аналог NativeQuery)
+var users = await _db.Users
+    .FromSqlRaw("SELECT * FROM users WHERE age > {0}", age)
+    .ToListAsync();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Pageable + Page — пагинация в Spring Data</summary>
+        <div class="answer">
+            <p><strong>Spring Data предоставляет удобную пагинацию через Pageable.</strong></p>
+
+            <pre>
+@Repository
+public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
+    Page&lt;User&gt; findByAgeGreaterThan(int age, Pageable pageable);
+}
+
+@Service
+public class UserService {
+    public Page&lt;User&gt; getUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+        return repository.findByAgeGreaterThan(18, pageable);
+    }
+}
+
+// Использование
+Page&lt;User&gt; page = userService.getUsers(0, 10);
+page.getContent();     // список пользователей
+page.getTotalElements(); // всего записей
+page.getTotalPages();   // всего страниц
+page.hasNext();         // есть ли следующая</pre>
+
+            <p><strong>В EF Core аналог:</strong></p>
+            <pre>
+var users = await _db.Users
+    .Where(u => u.Age > 18)
+    .OrderBy(u => u.Name)
+    .Skip(page * size)
+    .Take(size)
+    .ToListAsync();
+
+var total = await _db.Users.CountAsync(u => u.Age > 18);</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>@EntityGraph — решение проблемы N+1</summary>
+        <div class="answer">
+            <p><strong>@EntityGraph — загрузка связанных сущностей в одном запросе (аналог Include в EF).</strong></p>
+
+            <pre>
+@Entity
+public class User {
+    @Id
+    private Long id;
+    private String name;
+    
+    @OneToMany(mappedBy = "user")
+    private List&lt;Order&gt; orders;  // LAZY по умолчанию
+}
+
+@Repository
+public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
+    
+    // N+1 проблема: каждый user вызывает отдельный запрос для orders
+    
+    // Решение 1: @EntityGraph
+    @EntityGraph(attributePaths = {"orders"})
+    @Query("SELECT u FROM User u")
+    List&lt;User&gt; findAllWithOrders();
+    
+    // Решение 2: JOIN FETCH
+    @Query("SELECT u FROM User u JOIN FETCH u.orders")
+    List&lt;User&gt; findAllWithOrdersFetch();
+}
+
+// Или через аннотацию над методом JPA
+@Repository
+public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
+    @EntityGraph(attributePaths = {"orders", "orders.items"})
+    List&lt;User&gt; findByAgeGreaterThan(int age);
+}</pre>
+
+            <p><strong>В EF Core аналог — Include/ThenInclude:</strong></p>
+            <pre>
+var users = await _db.Users
+    .Include(u => u.Orders)
+    .ThenInclude(o => o.Items)
+    .Where(u => u.Age > 18)
+    .ToListAsync();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>@MappedSuperclass — как abstract base class в EF</summary>
+        <div class="answer">
+            <p><strong>@MappedSuperclass — базовый класс, чьи поля наследуются, но сам не является таблицей.</strong></p>
+
+            <pre>
+@MappedSuperclass
+public abstract class BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+    
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+}
+
+@Entity
+public class User extends BaseEntity {
+    private String name;
+    private String email;
+}
+
+@Entity
+public class Order extends BaseEntity {
+    private BigDecimal total;
+    private String status;
+}
+
+// Результат: таблицы users и orders имеют поля id, created_at, updated_at</pre>
+
+            <p><strong>В EF Core аналог — abstract base class:</strong></p>
+            <pre>
+public abstract class BaseEntity {
+    public int Id { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+public class User : BaseEntity {
+    public string Name { get; set; }
+    public string Email { get; set; }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>@Embeddable + @Embedded — как Owned Types в EF</summary>
+        <div class="answer">
+            <p><strong>@Embeddable — встраиваемый объект (Value Object), @Embedded — поле в сущности.</strong></p>
+
+            <pre>
+@Embeddable
+public class Address {
+    private String city;
+    private String street;
+    private String zipCode;
+    
+    // getters, setters
+}
+
+@Entity
+public class User {
+    @Id
+    private Long id;
+    private String name;
+    
+    @Embedded
+    private Address address;  // поля address_city, address_street, address_zipcode
+}
+
+// Использование
+User user = new User();
+user.setName("John");
+Address address = new Address();
+address.setCity("Moscow");
+address.setStreet("Lenina");
+user.setAddress(address);</pre>
+
+            <p><strong>В EF Core аналог — Owned Types:</strong></p>
+            <pre>
+public class Address {
+    public string City { get; set; }
+    public string Street { get; set; }
+    public string ZipCode { get; set; }
+}
+
+public class User {
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public Address Address { get; set; }
+}
+
+// Конфигурация
+builder.OwnsOne(u => u.Address);</pre>
+        </div>
+    </details>
+
+</section>
+
+
+<script src="script.js"></script>
+</body>
+</html>

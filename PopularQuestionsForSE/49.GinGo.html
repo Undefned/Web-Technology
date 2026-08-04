@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gin — Web-фреймворк для Go</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК GIN ============================== -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>🚀 Gin — Web-фреймворк для Go</h2>
+
+    <!-- Вопрос 1 -->
+    <details>
+        <summary>Что такое Gin и зачем он нужен?</summary>
+        <div class="answer">
+            <p><strong>Gin</strong> — это самый популярный веб-фреймворк для Go. Он написан на Go и использует <code>net/http</code> под капотом.</p>
+
+            <p><strong>Зачем нужен Gin:</strong></p>
+            <ul>
+                <li>Упрощает создание REST API</li>
+                <li>Даёт удобный роутинг (маршрутизацию)</li>
+                <li>Встроенные middleware (логирование, CORS, восстановление после паники)</li>
+                <li>Быстрый — один из самых быстрых фреймворков для Go</li>
+                <li>Поддержка JSON, XML, YAML</li>
+            </ul>
+
+            <p><strong>Минимальный пример:</strong></p>
+            <pre>
+package main
+
+import "github.com/gin-gonic/gin"
+
+func main() {
+    r := gin.Default()
+    
+    r.GET("/ping", func(c *gin.Context) {
+        c.JSON(200, gin.H{
+            "message": "pong",
+        })
+    })
+    
+    r.Run() // слушает на :8080
+}</pre>
+
+            <p><strong>Установка:</strong></p>
+            <pre>
+go get -u github.com/gin-gonic/gin</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 2 -->
+    <details>
+        <summary>Роутинг в Gin — основные методы</summary>
+        <div class="answer">
+            <p><strong>Gin поддерживает все стандартные HTTP-методы.</strong></p>
+
+            <pre>
+func main() {
+    r := gin.Default()
+    
+    // GET
+    r.GET("/users", getUsers)
+    r.GET("/users/:id", getUserByID)
+    
+    // POST
+    r.POST("/users", createUser)
+    
+    // PUT
+    r.PUT("/users/:id", updateUser)
+    
+    // PATCH
+    r.PATCH("/users/:id", patchUser)
+    
+    // DELETE
+    r.DELETE("/users/:id", deleteUser)
+    
+    // HEAD, OPTIONS
+    r.HEAD("/ping", headHandler)
+    r.OPTIONS("/users", optionsHandler)
+    
+    r.Run()
+}</pre>
+
+            <p><strong>Параметры в URL:</strong></p>
+            <pre>
+// /users/123 → id = "123"
+r.GET("/users/:id", func(c *gin.Context) {
+    id := c.Param("id")
+    c.String(200, "User ID: %s", id)
+})
+
+// /users/123/posts/456 → id = "123", postId = "456"
+r.GET("/users/:id/posts/:postId", func(c *gin.Context) {
+    id := c.Param("id")
+    postId := c.Param("postId")
+    c.String(200, "User %s, Post %s", id, postId)
+})
+
+// /users?page=2&limit=10 → page=2, limit=10
+r.GET("/users", func(c *gin.Context) {
+    page := c.DefaultQuery("page", "1")
+    limit := c.Query("limit")
+    c.String(200, "page=%s, limit=%s", page, limit)
+})</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 3 -->
+    <details>
+        <summary>Обработка JSON — приём и отправка</summary>
+        <div class="answer">
+            <p><strong>Gin имеет встроенную поддержку JSON.</strong></p>
+
+            <p><strong>Отправка JSON:</strong></p>
+            <pre>
+type User struct {
+    ID   int    `json:"id"`
+    Name string `json:"name"`
+    Age  int    `json:"age"`
+}
+
+r.GET("/user", func(c *gin.Context) {
+    user := User{ID: 1, Name: "Alice", Age: 30}
+    c.JSON(200, user)
+})
+
+// Ответ: {"id":1,"name":"Alice","age":30}</pre>
+
+            <p><strong>Приём JSON:</strong></p>
+            <pre>
+r.POST("/user", func(c *gin.Context) {
+    var user User
+    
+    // Привязываем JSON к структуре
+    if err := c.ShouldBindJSON(&user); err != nil {
+        c.JSON(400, gin.H{"error": err.Error()})
+        return
+    }
+    
+    // user.Name, user.Age — заполнены
+    c.JSON(201, user)
+})</pre>
+
+            <p><strong>gin.H — удобный способ создать JSON:</strong></p>
+            <pre>
+c.JSON(200, gin.H{
+    "status":  "ok",
+    "message": "Успешно",
+    "data":    user,
+})</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 4 -->
+    <details>
+        <summary>Middleware — встроенные и кастомные</summary>
+        <div class="answer">
+            <p><strong>Middleware в Gin — это функции, которые выполняются до или после обработчика.</strong></p>
+
+            <p><strong>Встроенные middleware:</strong></p>
+            <pre>
+func main() {
+    r := gin.New()
+    
+    // Восстановление после паники (обязательно!)
+    r.Use(gin.Recovery())
+    
+    // Логирование запросов
+    r.Use(gin.Logger())
+    
+    // CORS (сторонний)
+    r.Use(cors.Default())
+    
+    r.GET("/ping", func(c *gin.Context) {
+        c.String(200, "pong")
+    })
+    
+    r.Run()
+}</pre>
+
+            <p><strong>Кастомный middleware:</strong></p>
+            <pre>
+// Middleware для проверки токена
+func authMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        
+        if token == "" || token != "secret-token" {
+            c.AbortWithStatusJSON(401, gin.H{
+                "error": "Не авторизован",
+            })
+            return
+        }
+        
+        // Передаём дальше
+        c.Next()
+    }
+}
+
+// Использование
+func main() {
+    r := gin.Default()
+    
+    // Для всех маршрутов
+    r.Use(authMiddleware())
+    
+    // Только для конкретного маршрута
+    r.GET("/admin", authMiddleware(), adminHandler)
+}</pre>
+
+            <p><strong>Middleware для логирования времени:</strong></p>
+            <pre>
+func loggerMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        start := time.Now()
+        
+        // Передаём дальше
+        c.Next()
+        
+        // После выполнения
+        duration := time.Since(start)
+        log.Printf("%s %s — %v", c.Request.Method, c.Request.URL.Path, duration)
+    }
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 5 -->
+    <details>
+        <summary>Группы маршрутов (Route Groups)</summary>
+        <div class="answer">
+            <p><strong>Группы позволяют объединять маршруты с общими настройками.</strong></p>
+
+            <pre>
+func main() {
+    r := gin.Default()
+    
+    // Группа API v1
+    v1 := r.Group("/api/v1")
+    {
+        v1.GET("/users", getUsers)
+        v1.GET("/users/:id", getUser)
+        v1.POST("/users", createUser)
+    }
+    
+    // Группа с middleware
+    admin := r.Group("/admin")
+    admin.Use(authMiddleware())
+    {
+        admin.GET("/stats", getStats)
+        admin.POST("/settings", updateSettings)
+    }
+    
+    // Вложенные группы
+    api := r.Group("/api")
+    {
+        public := api.Group("/public")
+        {
+            public.GET("/ping", ping)
+        }
+        
+        private := api.Group("/private")
+        private.Use(authMiddleware())
+        {
+            private.GET("/profile", profile)
+        }
+    }
+    
+    r.Run()
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 6 -->
+    <details>
+        <summary>Валидация данных — binding и теги</summary>
+        <div class="answer">
+            <p><strong>Gin использует пакет <code>go-playground/validator</code> для валидации.</strong></p>
+
+            <p><strong>Теги валидации:</strong></p>
+            <pre>
+type User struct {
+    ID    int    `json:"id"`
+    Name  string `json:"name" binding:"required,min=2,max=50"`
+    Email string `json:"email" binding:"required,email"`
+    Age   int    `json:"age" binding:"gte=0,lte=150"`
+    Phone string `json:"phone" binding:"omitempty,phone"`
+}</pre>
+
+            <p><strong>Использование:</strong></p>
+            <pre>
+r.POST("/users", func(c *gin.Context) {
+    var user User
+    
+    if err := c.ShouldBindJSON(&user); err != nil {
+        c.JSON(400, gin.H{"error": err.Error()})
+        return
+    }
+    
+    // Если дошли сюда — данные валидны
+    c.JSON(201, user)
+})</pre>
+
+            <p><strong>Кастомная валидация:</strong></p>
+            <pre>
+func customValidator() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        var user User
+        c.ShouldBindJSON(&user)
+        
+        if user.Age < 18 && user.Name == "" {
+            c.JSON(400, gin.H{"error": "Для несовершеннолетних имя обязательно"})
+            c.Abort()
+            return
+        }
+        
+        c.Next()
+    }
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 7 -->
+    <details>
+        <summary>Обработка ошибок и статус-коды</summary>
+        <div class="answer">
+            <p><strong>Gin предоставляет удобные методы для отправки ошибок.</strong></p>
+
+            <pre>
+func getUserHandler(c *gin.Context) {
+    id := c.Param("id")
+    
+    user, err := getUserByID(id)
+    if err != nil {
+        // 404 Not Found
+        c.JSON(404, gin.H{
+            "error": "Пользователь не найден",
+        })
+        return
+    }
+    
+    c.JSON(200, user)
+}</pre>
+
+            <p><strong>Стандартные HTTP-коды:</strong></p>
+            <ul>
+                <li><code>c.JSON(200, data)</code> — OK</li>
+                <li><code>c.JSON(201, data)</code> — Created</li>
+                <li><code>c.JSON(400, gin.H{"error": "..."})</code> — Bad Request</li>
+                <li><code>c.JSON(401, gin.H{"error": "..."})</code> — Unauthorized</li>
+                <li><code>c.JSON(403, gin.H{"error": "..."})</code> — Forbidden</li>
+                <li><code>c.JSON(404, gin.H{"error": "..."})</code> — Not Found</li>
+                <li><code>c.JSON(500, gin.H{"error": "..."})</code> — Internal Server Error</li>
+            </ul>
+
+            <p><strong>Аборт (прерывание) с ошибкой:</strong></p>
+            <pre>
+func checkAccess(c *gin.Context) {
+    if !isAdmin(c) {
+        c.AbortWithStatusJSON(403, gin.H{
+            "error": "Доступ запрещён",
+        })
+        return
+    }
+    c.Next()
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 8 -->
+    <details>
+        <summary>Gin vs net/http vs Echo — сравнение</summary>
+        <div class="answer">
+            <table>
+                <tr><th>Характеристика</th><th>net/http</th><th>Gin</th><th>Echo</th></tr>
+                <tr>
+                    <td>Скорость</td>
+                    <td>Очень быстрый</td>
+                    <td>Быстрый</td>
+                    <td>Очень быстрый</td>
+                </tr>
+                <tr>
+                    <td>Простота</td>
+                    <td>Самая простая</td>
+                    <td>Средняя</td>
+                    <td>Средняя</td>
+                </tr>
+                <tr>
+                    <td>Роутинг</td>
+                    <td>Базовый (с 1.22 — хороший)</td>
+                    <td>Отличный</td>
+                    <td>Отличный</td>
+                </tr>
+                <tr>
+                    <td>Middleware</td>
+                    <td>Свои</td>
+                    <td>Много встроенных</td>
+                    <td>Много встроенных</td>
+                </tr>
+                <tr>
+                    <td>JSON</td>
+                    <td>encoding/json</td>
+                    <td>Встроенный + binding</td>
+                    <td>Встроенный + binding</td>
+                </tr>
+                <tr>
+                    <td>Популярность</td>
+                    <td>Стандарт</td>
+                    <td>🔥 Самый популярный</td>
+                    <td>Популярный</td>
+                </tr>
+            </table>
+
+            <p><strong>Когда что выбрать:</strong></p>
+            <ul>
+                <li><strong>net/http</strong> — для простых проектов, когда не нужен фреймворк</li>
+                <li><strong>Gin</strong> — для REST API, микросервисов (стандарт индустрии)</li>
+                <li><strong>Echo</strong> — когда нужна чуть большая производительность</li>
+                <li><strong>Fiber</strong> — когда нужна максимальная производительность (фаст-http)</li>
+            </ul>
+        </div>
+    </details>
+
+    <!-- Вопрос 9 -->
+    <details>
+        <summary>Работа с файлами — загрузка и отдача</summary>
+        <div class="answer">
+            <p><strong>Gin поддерживает загрузку и отправку файлов.</strong></p>
+
+            <p><strong>Загрузка файла:</strong></p>
+            <pre>
+r.POST("/upload", func(c *gin.Context) {
+    // Получаем файл из формы
+    file, err := c.FormFile("file")
+    if err != nil {
+        c.JSON(400, gin.H{"error": err.Error()})
+        return
+    }
+    
+    // Сохраняем на диск
+    err = c.SaveUploadedFile(file, "uploads/"+file.Filename)
+    if err != nil {
+        c.JSON(500, gin.H{"error": err.Error()})
+        return
+    }
+    
+    c.JSON(200, gin.H{
+        "message": "Файл загружен",
+        "filename": file.Filename,
+        "size": file.Size,
+    })
+})</pre>
+
+            <p><strong>Отдача файла:</strong></p>
+            <pre>
+r.GET("/file/:name", func(c *gin.Context) {
+    name := c.Param("name")
+    c.File("uploads/" + name)
+})
+
+// Отдача как вложение (скачивание)
+r.GET("/download/:name", func(c *gin.Context) {
+    name := c.Param("name")
+    c.FileAttachment("uploads/"+name, name)
+})</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 10 -->
+    <details>
+        <summary>Конфигурация сервера — порт, таймауты</summary>
+        <div class="answer">
+            <p><strong>Стандартный запуск:</strong></p>
+            <pre>
+r := gin.Default()
+r.Run()  // :8080
+r.Run(":3000")  // :3000</pre>
+
+            <p><strong>С настройками через <code>http.Server</code>:</strong></p>
+            <pre>
+func main() {
+    r := gin.Default()
+    
+    srv := &http.Server{
+        Addr:           ":8080",
+        Handler:        r,
+        ReadTimeout:    5 * time.Second,
+        WriteTimeout:   10 * time.Second,
+        MaxHeaderBytes: 1 << 20,  // 1 МБ
+    }
+    
+    if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+        log.Fatal(err)
+    }
+}</pre>
+
+            <p><strong>Graceful shutdown (корректное завершение):</strong></p>
+            <pre>
+func main() {
+    r := gin.Default()
+    
+    srv := &http.Server{
+        Addr:    ":8080",
+        Handler: r,
+    }
+    
+    go func() {
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatal(err)
+        }
+    }()
+    
+    // Ждём сигнал
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+    
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    
+    if err := srv.Shutdown(ctx); err != nil {
+        log.Fatal("Ошибка завершения:", err)
+    }
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 11 -->
+    <details>
+        <summary>Тестирование Gin-приложений</summary>
+        <div class="answer">
+            <p><strong>Gin имеет встроенную поддержку тестирования через <code>httptest</code>.</strong></p>
+
+            <pre>
+func TestPingHandler(t *testing.T) {
+    // Создаём тестовый роутер
+    r := gin.Default()
+    r.GET("/ping", func(c *gin.Context) {
+        c.JSON(200, gin.H{"message": "pong"})
+    })
+    
+    // Создаём запрос
+    req, err := http.NewRequest("GET", "/ping", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+    
+    // Записываем ответ
+    w := httptest.NewRecorder()
+    r.ServeHTTP(w, req)
+    
+    // Проверяем статус
+    if w.Code != http.StatusOK {
+        t.Errorf("Ожидался 200, получили %d", w.Code)
+    }
+    
+    // Проверяем JSON
+    var response map[string]string
+    err = json.Unmarshal(w.Body.Bytes(), &response)
+    if err != nil {
+        t.Fatal(err)
+    }
+    
+    if response["message"] != "pong" {
+        t.Errorf("Ожидалось 'pong', получили %s", response["message"])
+    }
+}</pre>
+
+            <p><strong>Для тестирования с middleware:</strong></p>
+            <pre>
+func TestAuthMiddleware(t *testing.T) {
+    r := gin.Default()
+    r.Use(authMiddleware())
+    r.GET("/protected", protectedHandler)
+    
+    req, _ := http.NewRequest("GET", "/protected", nil)
+    req.Header.Set("Authorization", "secret-token")
+    
+    w := httptest.NewRecorder()
+    r.ServeHTTP(w, req)
+    
+    if w.Code != http.StatusOK {
+        t.Errorf("Ожидался 200, получили %d", w.Code)
+    }
+}</pre>
+        </div>
+    </details>
+
+    <!-- Вопрос 12 -->
+    <details>
+        <summary>Gin + GORM — пример REST API</summary>
+        <div class="answer">
+            <p><strong>Gin часто используют вместе с GORM (ORM) для создания полноценных API.</strong></p>
+
+            <pre>
+package main
+
+import (
+    "github.com/gin-gonic/gin"
+    "gorm.io/driver/sqlite"
+    "gorm.io/gorm"
+)
+
+type User struct {
+    ID   uint   `json:"id"`
+    Name string `json:"name"`
+    Age  int    `json:"age"`
+}
+
+func main() {
+    // Подключаем БД
+    db, _ := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+    db.AutoMigrate(&User{})
+    
+    r := gin.Default()
+    
+    // CREATE
+    r.POST("/users", func(c *gin.Context) {
+        var user User
+        c.ShouldBindJSON(&user)
+        db.Create(&user)
+        c.JSON(201, user)
+    })
+    
+    // READ — все
+    r.GET("/users", func(c *gin.Context) {
+        var users []User
+        db.Find(&users)
+        c.JSON(200, users)
+    })
+    
+    // READ — один
+    r.GET("/users/:id", func(c *gin.Context) {
+        id := c.Param("id")
+        var user User
+        if err := db.First(&user, id).Error; err != nil {
+            c.JSON(404, gin.H{"error": "Не найден"})
+            return
+        }
+        c.JSON(200, user)
+    })
+    
+    // UPDATE
+    r.PUT("/users/:id", func(c *gin.Context) {
+        id := c.Param("id")
+        var user User
+        if err := db.First(&user, id).Error; err != nil {
+            c.JSON(404, gin.H{"error": "Не найден"})
+            return
+        }
+        c.ShouldBindJSON(&user)
+        db.Save(&user)
+        c.JSON(200, user)
+    })
+    
+    // DELETE
+    r.DELETE("/users/:id", func(c *gin.Context) {
+        id := c.Param("id")
+        db.Delete(&User{}, id)
+        c.JSON(204, nil)
+    })
+    
+    r.Run()
+}</pre>
+        </div>
+    </details>
+
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>

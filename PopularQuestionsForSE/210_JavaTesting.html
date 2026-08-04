@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 10 =============================== -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>🧪 10. Тестирование в Java — особенности</h2>
+
+    <details>
+        <summary>JUnit 5 vs TestNG — разница</summary>
+        <div class="answer">
+            <p><strong>JUnit 5 — стандарт для Java. TestNG — альтернатива (особенно в TestNG-проектах).</strong></p>
+
+            <table>
+                <tr><th>Характеристика</th><th>JUnit 5</th><th>TestNG</th></tr>
+                <tr><td>Аннотации</td><td>@Test, @BeforeEach, @AfterEach</td><td>@Test, @BeforeMethod, @AfterMethod</td></tr>
+                <tr><td>Группировка</td><td>@Tag</td><td>groups</td></tr>
+                <tr><td>Зависимости</td><td>@TestInstance</td><td>dependsOnMethods</td></tr>
+                <tr><td>Параметризация</td><td>@ParameterizedTest + @CsvSource</td><td>@DataProvider</td></tr>
+            </table>
+
+            <pre>
+// JUnit 5
+@Test
+void testAdd() {
+    assertEquals(5, calculator.add(2, 3));
+}
+
+@ParameterizedTest
+@CsvSource({"1,2,3", "4,5,9", "10,20,30"})
+void testAddParameterized(int a, int b, int expected) {
+    assertEquals(expected, calculator.add(a, b));
+}
+
+// TestNG
+@Test
+void testAdd() {
+    Assert.assertEquals(calculator.add(2, 3), 5);
+}
+
+@DataProvider(name = "addData")
+public Object[][] data() {
+    return new Object[][]{{1,2,3}, {4,5,9}, {10,20,30}};
+}
+
+@Test(dataProvider = "addData")
+void testAddParameterized(int a, int b, int expected) {
+    Assert.assertEquals(calculator.add(a, b), expected);
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Mockito vs PowerMock — разница</summary>
+        <div class="answer">
+            <p><strong>Mockito — стандартный мок-фреймворк. PowerMock — расширение для статических методов, конструкторов, private-методов.</strong></p>
+
+            <pre>
+// Mockito — обычное мокирование
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+    @Mock
+    private UserRepository repository;
+    
+    @InjectMocks
+    private UserService service;
+    
+    @Test
+    void testFindUser() {
+        when(repository.findById(1L)).thenReturn(Optional.of(new User("John")));
+        
+        User user = service.findUser(1L);
+        assertEquals("John", user.getName());
+    }
+}
+
+// Mockito + PowerMock (для статики)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({StaticService.class})
+class StaticTest {
+    @Test
+    void testStaticMethod() {
+        PowerMockito.mockStatic(StaticService.class);
+        when(StaticService.getData()).thenReturn("Mocked");
+        
+        assertEquals("Mocked", StaticService.getData());
+    }
+    
+    @Test
+    void testPrivateMethod() throws Exception {
+        UserService service = new UserService();
+        UserService spy = spy(service);
+        
+        doReturn("Mocked").when(spy, "privateMethod");
+        // ...
+    }
+}</pre>
+
+            <p><strong>В C# аналог — Moq + (для статики — ShimContext в MSTest или просто не использовать статику).</strong></p>
+        </div>
+    </details>
+
+    <details>
+        <summary>@DataJpaTest, @WebMvcTest, @SpringBootTest — разница</summary>
+        <div class="answer">
+            <p><strong>Аннотации для разных уровней интеграционного тестирования.</strong></p>
+
+            <ul>
+                <li><strong>@DataJpaTest</strong> — только JPA-слой (репозитории). In-memory БД.</li>
+                <li><strong>@WebMvcTest</strong> — только Web-слой (контроллеры). Mock-объекты.</li>
+                <li><strong>@SpringBootTest</strong> — полный контекст (всё приложение).</li>
+            </ul>
+
+            <pre>
+// @DataJpaTest — только репозитории
+@DataJpaTest
+class UserRepositoryTest {
+    @Autowired
+    private UserRepository repository;
+    
+    @Test
+    void testFindByEmail() {
+        User user = new User("john@mail.com");
+        repository.save(user);
+        
+        Optional&lt;User&gt; found = repository.findByEmail("john@mail.com");
+        assertTrue(found.isPresent());
+    }
+}
+
+// @WebMvcTest — только контроллеры (с моками)
+@WebMvcTest(UserController.class)
+class UserControllerTest {
+    @Autowired
+    private MockMvc mockMvc;
+    
+    @MockBean
+    private UserService service;
+    
+    @Test
+    void testGetUser() throws Exception {
+        when(service.findUser(1L)).thenReturn(new User("John"));
+        
+        mockMvc.perform(get("/users/1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("John"));
+    }
+}
+
+// @SpringBootTest — полный контекст
+@SpringBootTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class IntegrationTest {
+    @Autowired
+    private UserController controller;
+    
+    @Test
+    void testFullFlow() {
+        // работает с реальным контекстом
+    }
+}</pre>
+
+            <p><strong>В C# аналог — WebApplicationFactory + TestServer.</strong></p>
+        </div>
+    </details>
+
+    <details>
+        <summary>@Testcontainers — тестирование с реальной БД</summary>
+        <div class="answer">
+            <p><strong>Testcontainers — запуск Docker-контейнеров для тестов (БД, Redis, Kafka).</strong></p>
+
+            <pre>
+// Подключение
+&lt;dependency&gt;
+    &lt;groupId&gt;org.testcontainers&lt;/groupId&gt;
+    &lt;artifactId&gt;testcontainers&lt;/artifactId&gt;
+    &lt;version&gt;1.19.0&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;
+
+// PostgreSQL контейнер
+@Testcontainers
+@DataJpaTest
+class UserRepositoryTest {
+    @Container
+    static PostgreSQLContainer&lt;?&gt; postgres = new PostgreSQLContainer&lt;&gt;("postgres:15")
+        .withDatabaseName("testdb")
+        .withUsername("test")
+        .withPassword("test");
+    
+    @Test
+    void testWithRealDB() {
+        // Работает с реальным PostgreSQL в Docker
+    }
+}
+
+// Кастомный контейнер (Redis)
+@Container
+static GenericContainer&lt;?&gt; redis = new GenericContainer&lt;&gt;("redis:7")
+    .withExposedPorts(6379);
+
+// Kafka контейнер
+@Container
+static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:latest"));
+
+@Test
+void testWithKafka() {
+    String bootstrapServers = kafka.getBootstrapServers();
+    // используем в тесте
+}</pre>
+
+            <p><strong>В C# аналог — Testcontainers для .NET:</strong></p>
+            <pre>
+var dbContainer = new PostgreSqlBuilder()
+    .WithImage("postgres:15")
+    .WithDatabase("testdb")
+    .WithUsername("test")
+    .WithPassword("test")
+    .Build();</pre>
+        </div>
+    </details>
+
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>

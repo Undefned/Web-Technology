@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 7 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>🔐 7. Spring Security — отличия от ASP.NET Core</h2>
+
+    <details>
+        <summary>SecurityContextHolder — хранение аутентификации</summary>
+        <div class="answer">
+            <p><strong>SecurityContextHolder — хранит информацию о текущем пользователе.</strong></p>
+
+            <pre>
+// Получение текущего пользователя
+Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+String username = auth.getName();
+Collection&lt;? extends GrantedAuthority&gt; authorities = auth.getAuthorities();
+
+// Установка пользователя (например, в тестах)
+Authentication authentication = new UsernamePasswordAuthenticationToken(
+    "admin", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+);
+SecurityContextHolder.getContext().setAuthentication(authentication);
+
+// Чистка
+SecurityContextHolder.clearContext();</pre>
+
+            <p><strong>В C# аналог — HttpContext.User:</strong></p>
+            <pre>
+var user = HttpContext.User;
+var username = user.Identity?.Name;
+var roles = user.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
+
+// В сервисах
+var user = _httpContextAccessor.HttpContext?.User;</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>AuthenticationManager + AuthenticationProvider — архитектура</summary>
+        <div class="answer">
+            <p><strong>AuthenticationManager — интерфейс для аутентификации. AuthenticationProvider — конкретная реализация.</strong></p>
+
+            <pre>
+// AuthenticationManager
+public interface AuthenticationManager {
+    Authentication authenticate(Authentication authentication) throws AuthenticationException;
+}
+
+// Конфигурация
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        return new ProviderManager(
+            new DaoAuthenticationProvider(),
+            new JwtAuthenticationProvider(),
+            new OAuth2AuthenticationProvider()
+        );
+    }
+}
+
+// Кастомный AuthenticationProvider
+@Component
+public class CustomAuthProvider implements AuthenticationProvider {
+    @Override
+    public Authentication authenticate(Authentication auth) {
+        String username = auth.getName();
+        String password = auth.getCredentials().toString();
+        
+        if (username.equals("admin") && password.equals("secret")) {
+            return new UsernamePasswordAuthenticationToken(
+                username, null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+            );
+        }
+        throw new BadCredentialsException("Invalid credentials");
+    }
+    
+    @Override
+    public boolean supports(Class&lt;?&gt; authentication) {
+        return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
+    }
+}</pre>
+
+            <p><strong>В C# аналог — IAuthenticationHandler:</strong></p>
+            <pre>
+// Настройка аутентификации
+builder.Services.AddAuthentication(options => {
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options => {
+    options.TokenValidationParameters = new TokenValidationParameters {
+        ValidIssuer = "issuer",
+        ValidAudience = "audience",
+        IssuerSigningKey = new SymmetricSecurityKey(key)
+    };
+});</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>UserDetails + UserDetailsService — загрузка пользователя</summary>
+        <div class="answer">
+            <p><strong>UserDetails — интерфейс пользователя. UserDetailsService — загрузка из БД.</strong></p>
+
+            <pre>
+// UserDetails — информация о пользователе
+public class CustomUserDetails implements UserDetails {
+    private final User user;
+    
+    public CustomUserDetails(User user) {
+        this.user = user;
+    }
+    
+    @Override
+    public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
+        return user.getRoles().stream()
+            .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+            .collect(Collectors.toList());
+    }
+    
+    @Override
+    public String getPassword() { return user.getPassword(); }
+    @Override
+    public String getUsername() { return user.getEmail(); }
+    @Override
+    public boolean isAccountNonExpired() { return true; }
+    @Override
+    public boolean isAccountNonLocked() { return true; }
+    @Override
+    public boolean isCredentialsNonExpired() { return true; }
+    @Override
+    public boolean isEnabled() { return true; }
+}
+
+// UserDetailsService — загрузка из БД
+@Service
+public class CustomUserDetailsService implements UserDetailsService {
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return new CustomUserDetails(user);
+    }
+}</pre>
+
+            <p><strong>В C# аналог — ClaimsIdentity + UserStore:</strong></p>
+            <pre>
+// Создание Identity
+var claims = new List&lt;Claim&gt; {
+    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+    new Claim(ClaimTypes.Name, user.Email),
+    new Claim(ClaimTypes.Role, "Admin")
+};
+var identity = new ClaimsIdentity(claims, "Bearer");
+var principal = new ClaimsPrincipal(identity);
+
+// UserStore — для загрузки
+public class UserStore : IUserStore&lt;User&gt; {
+    public async Task&lt;User&gt; FindByIdAsync(string id) { ... }
+    public async Task&lt;User&gt; FindByNameAsync(string name) { ... }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>@PreAuthorize и @PostAuthorize — проверка прав</summary>
+        <div class="answer">
+            <p><strong>@PreAuthorize — проверка ДО выполнения метода. @PostAuthorize — ПОСЛЕ.</strong></p>
+
+            <pre>
+@RestController
+public class UserController {
+    
+    // Проверка ДО — есть ли роль ADMIN
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/users/{id}")
+    public void deleteUser(@PathVariable Long id) {
+        userService.delete(id);
+    }
+    
+    // Проверка ДО — владелец ресурса
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
+    @GetMapping("/users/{userId}/profile")
+    public Profile getProfile(@PathVariable Long userId) {
+        return userService.getProfile(userId);
+    }
+    
+    // Проверка ПОСЛЕ — проверяем результат
+    @PostAuthorize("returnObject.ownerId == authentication.principal.id")
+    @GetMapping("/documents/{id}")
+    public Document getDocument(@PathVariable Long id) {
+        return documentService.getDocument(id);
+    }
+    
+    // SpEL выражения
+    @PreAuthorize("hasRole('ADMIN') or authentication.name == 'system'")
+    @PreAuthorize("@securityService.canAccess(authentication, #id)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("isAuthenticated() and !isAnonymous()")
+}</pre>
+
+            <p><strong>В C# аналог — Policy-based authorization:</strong></p>
+            <pre>
+[Authorize(Roles = "ADMIN")]
+[Authorize(Policy = "CanAccessUser")]
+public class UserController : ControllerBase { }
+
+// Кастомный Handler
+public class CanAccessUserHandler : AuthorizationHandler&lt;CanAccessUserRequirement&gt; {
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, CanAccessUserRequirement requirement) {
+        // проверка
+        context.Succeed(requirement);
+        return Task.CompletedTask;
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Spring Security Filter Chain vs Middleware в C#</summary>
+        <div class="answer">
+            <p><strong>Spring Security — цепочка фильтров (Filter Chain). В C# — Middleware.</strong></p>
+
+            <p><strong>Порядок фильтров в Spring Security:</strong></p>
+            <ol>
+                <li>SecurityContextPersistenceFilter</li>
+                <li>UsernamePasswordAuthenticationFilter (для логина)</li>
+                <li>BasicAuthenticationFilter (для Basic Auth)</li>
+                <li>JwtAuthenticationFilter (кастомный)</li>
+                <li>AuthorizationFilter (проверка прав)</li>
+            </ol>
+
+            <pre>
+// Кастомный JWT фильтр
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    @Autowired
+    private JwtService jwtService;
+    
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            String username = jwtService.extractUsername(token);
+            
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails user = userDetailsService.loadUserByUsername(username);
+                if (jwtService.isTokenValid(token, user)) {
+                    Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            }
+        }
+        chain.doFilter(request, response);
+    }
+}
+
+// Регистрация
+@EnableWebSecurity
+public class SecurityConfig {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(customFilter, BasicAuthenticationFilter.class);
+        return http.build();
+    }
+}</pre>
+
+            <p><strong>В C# аналог — Middleware и Authorization:</strong></p>
+            <pre>
+app.UseAuthentication();  // аутентификация
+app.UseAuthorization();   // авторизация
+
+// Кастомный middleware для JWT
+app.Use(async (context, next) => {
+    var token = context.Request.Headers["Authorization"].ToString();
+    if (token.StartsWith("Bearer ")) {
+        // валидация и установка User
+        context.User = ...;
+    }
+    await next();
+});</pre>
+        </div>
+    </details>
+
+</section>
+
+
+<script src="script.js"></script>
+</body>
+</html>

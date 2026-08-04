@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 9 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>☁️ 9. Spring Cloud (микросервисы)</h2>
+
+    <details>
+        <summary>Spring Cloud Netflix — Eureka, Ribbon, Hystrix, Zuul</summary>
+        <div class="answer">
+            <p><strong>Набор компонентов для микросервисов (Netflix OSS).</strong></p>
+
+            <ul>
+                <li><strong>Eureka</strong> — Service Discovery (регистрация сервисов)</li>
+                <li><strong>Ribbon</strong> — клиентский Load Balancer</li>
+                <li><strong>Hystrix</strong> — Circuit Breaker</li>
+                <li><strong>Zuul</strong> — API Gateway (устарел, теперь Spring Cloud Gateway)</li>
+            </ul>
+
+            <pre>
+// Eureka Server
+@SpringBootApplication
+@EnableEurekaServer
+public class DiscoveryService {
+    public static void main(String[] args) {
+        SpringApplication.run(DiscoveryService.class, args);
+    }
+}
+
+// Eureka Client
+@SpringBootApplication
+@EnableDiscoveryClient
+public class UserService {
+    public static void main(String[] args) {
+        SpringApplication.run(UserService.class, args);
+    }
+}
+
+// Ribbon — балансировка на клиенте
+@Configuration
+public class RibbonConfig {
+    @Bean
+    @LoadBalanced
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+}
+
+@Service
+public class OrderService {
+    @Autowired
+    private RestTemplate restTemplate;
+    
+    public User getUser(Long id) {
+        // user-service — имя сервиса в Eureka
+        return restTemplate.getForObject("http://user-service/users/" + id, User.class);
+    }
+}
+
+// Hystrix — Circuit Breaker
+@Service
+public class OrderService {
+    @HystrixCommand(fallbackMethod = "getDefaultUser")
+    public User getUser(Long id) {
+        return restTemplate.getForObject("http://user-service/users/" + id, User.class);
+    }
+    
+    public User getDefaultUser(Long id) {
+        return new User(id, "Default User");
+    }
+}</pre>
+
+            <p><strong>В C# аналог — Service Discovery (Consul, Eureka) + Polly + Ocelot/YARP.</strong></p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Spring Cloud Config — централизованная конфигурация</summary>
+        <div class="answer">
+            <p><strong>Config Server — централизованное хранение конфигураций для всех сервисов.</strong></p>
+
+            <pre>
+// Config Server
+@SpringBootApplication
+@EnableConfigServer
+public class ConfigService {
+    public static void main(String[] args) {
+        SpringApplication.run(ConfigService.class, args);
+    }
+}
+
+// application.yml (Config Server)
+server:
+  port: 8888
+spring:
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/myorg/config-repo
+          default-label: main
+
+// Файл в Git-репозитории: user-service.yml
+user:
+  message: "Hello from Config Server"
+  feature:
+    enabled: true
+
+// User Service — получает конфигурацию
+@SpringBootApplication
+@EnableDiscoveryClient
+public class UserService {
+    public static void main(String[] args) {
+        SpringApplication.run(UserService.class, args);
+    }
+}
+
+// bootstrap.yml (User Service)
+spring:
+  cloud:
+    config:
+      uri: http://config-server:8888
+      name: user-service
+
+// Использование конфигурации
+@Component
+@ConfigurationProperties(prefix = "user")
+public class UserConfig {
+    private String message;
+    private Feature feature;
+    // getters/setters
+}
+
+@Service
+public class UserService {
+    @Autowired
+    private UserConfig config;
+    
+    public void printConfig() {
+        System.out.println(config.getMessage());  // "Hello from Config Server"
+    }
+}</pre>
+
+            <p><strong>В C# аналог — нет (можно использовать Consul KV, etcd, или самому сделать).</strong></p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Spring Cloud Bus — обновление конфигурации на лету</summary>
+        <div class="answer">
+            <p><strong>Spring Cloud Bus — обновление конфигурации всех сервисов без перезапуска.</strong></p>
+
+            <ul>
+                <li>Использует брокер сообщений (RabbitMQ, Kafka)</li>
+                <li>При изменении конфигурации в Git — отправляет событие</li>
+                <li>Все сервисы получают событие и обновляют конфигурацию</li>
+            </ul>
+
+            <pre>
+// Подключение
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-starter-bus-amqp&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+// В каждом сервисе
+@RefreshScope  // позволяет обновлять бины
+@Component
+@ConfigurationProperties(prefix = "user")
+public class UserConfig {
+    private String message;
+    // getters/setters
+}
+
+// Endpoint для обновления (отправляет событие в Bus)
+// POST /actuator/busrefresh
+// или для конкретного сервиса: POST /actuator/busrefresh/order-service</pre>
+
+            <p><strong>В C# аналог — нет (можно через Configuration Refresh + SignalR/Service Bus).</strong></p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Spring Cloud Sleuth — распределённая трассировка</summary>
+        <div class="answer">
+            <p><strong>Sleuth — добавляет trace ID и span ID во все логи и HTTP-заголовки.</strong></p>
+
+            <pre>
+// Подключение
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-starter-sleuth&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+// Использование — логи автоматически получают traceId/spanId
+log.info("User service called");  // [user-service, 2a3b4c5d, 6e7f8g9h, true]
+
+// Передача между сервисами
+// User Service → Order Service
+// Заголовки: X-B3-TraceId, X-B3-SpanId, X-B3-Sampled
+
+// Интеграция с Zipkin
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-cloud-sleuth-zipkin&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+// application.yml
+spring:
+  zipkin:
+    base-url: http://zipkin-server:9411</pre>
+
+            <p><strong>В C# аналог — OpenTelemetry + Jaeger/Zipkin.</strong></p>
+        </div>
+    </details>
+
+</section>
+
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java — Блоки 1-5</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 4 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>🚀 4. Spring Boot — отличия от ASP.NET Core</h2>
+
+    <details>
+        <summary>@SpringBootApplication — что внутри?</summary>
+        <div class="answer">
+            <p><strong>@SpringBootApplication = три аннотации в одной.</strong></p>
+
+            <pre>
+@SpringBootApplication
+public class MyApp {
+    public static void main(String[] args) {
+        SpringApplication.run(MyApp.class, args);
+    }
+}</pre>
+
+            <p><strong>Эквивалентно:</strong></p>
+            <pre>
+@Configuration               // XML-конфигурация через Java
+@EnableAutoConfiguration     // автоконфигурация по зависимостям
+@ComponentScan               // сканирование бинов в текущем пакете
+public class MyApp { }</pre>
+
+            <p><strong>В C# аналог:</strong></p>
+            <pre>
+// Program.cs в ASP.NET Core
+var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+
+// Нет одной аннотации — всё в коде</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Spring Boot Starter — что это?</summary>
+        <div class="answer">
+            <p><strong>Starter — это набор зависимостей для конкретной технологии.</strong></p>
+
+            <p><strong>Популярные стартеры:</strong></p>
+            <ul>
+                <li><code>spring-boot-starter-web</code> — REST API, Tomcat, Jackson</li>
+                <li><code>spring-boot-starter-data-jpa</code> — JPA + Hibernate</li>
+                <li><code>spring-boot-starter-security</code> — Spring Security</li>
+                <li><code>spring-boot-starter-test</code> — JUnit, Mockito</li>
+                <li><code>spring-boot-starter-validation</code> — валидация</li>
+                <li><code>spring-boot-starter-data-redis</code> — Redis</li>
+                <li><code>spring-boot-starter-amqp</code> — RabbitMQ</li>
+            </ul>
+
+            <pre>
+// pom.xml (Maven)
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+    &lt;version&gt;3.1.0&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+
+            <p><strong>В C# аналоги — пакеты NuGet:</strong></p>
+            <pre>
+dotnet add package Microsoft.EntityFrameworkCore
+dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Spring Boot Actuator — мониторинг</summary>
+        <div class="answer">
+            <p><strong>Actuator — предоставляет эндпоинты для мониторинга приложения.</strong></p>
+
+            <p><strong>Основные эндпоинты:</strong></p>
+            <ul>
+                <li><code>/actuator/health</code> — статус приложения (UP/DOWN)</li>
+                <li><code>/actuator/info</code> — информация о приложении</li>
+                <li><code>/actuator/metrics</code> — метрики (память, GC, запросы)</li>
+                <li><code>/actuator/loggers</code> — уровни логирования</li>
+                <li><code>/actuator/env</code> — переменные окружения</li>
+            </ul>
+
+            <pre>
+// Подключение (pom.xml)
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+// application.properties
+management.endpoints.web.exposure.include=health,info,metrics
+management.endpoint.health.show-details=always
+
+// Кастомный health check
+@Component
+public class CustomHealthIndicator implements HealthIndicator {
+    @Override
+    public Health health() {
+        if (isReady()) {
+            return Health.up().withDetail("status", "OK").build();
+        }
+        return Health.down().withDetail("status", "Не готов").build();
+    }
+}</pre>
+
+            <p><strong>В C# аналог — Health Checks:</strong></p>
+            <pre>
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck&lt;AppDbContext&gt;()
+    .AddUrlGroup(new Uri("https://api.example.com"), "External API");
+
+app.MapHealthChecks("/health");</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>@ConfigurationProperties — маппинг настроек</summary>
+        <div class="answer">
+            <p><strong>@ConfigurationProperties — привязывает свойства из application.properties к Java-объекту.</strong></p>
+
+            <pre>
+// application.properties
+app.name=MyApp
+app.version=1.0.0
+app.features.cache.enabled=true
+app.features.cache.ttl=300
+
+// Класс для маппинга
+@ConfigurationProperties(prefix = "app")
+@Component
+public class AppProperties {
+    private String name;
+    private String version;
+    private Features features = new Features();
+    
+    // getters/setters
+}
+
+public class Features {
+    private boolean enabled;
+    private int ttl;
+    // getters/setters
+}
+
+// Использование
+@Service
+public class MyService {
+    private final AppProperties props;
+    
+    public MyService(AppProperties props) {
+        this.props = props;
+    }
+}</pre>
+
+            <p><strong>В C# аналог — IOptions&lt;T&gt;:</strong></p>
+            <pre>
+// appsettings.json
+{
+    "App": {
+        "Name": "MyApp",
+        "Version": "1.0.0"
+    }
+}
+
+// Класс
+public class AppOptions {
+    public string Name { get; set; }
+    public string Version { get; set; }
+}
+
+// Регистрация и использование
+services.Configure&lt;AppOptions&gt;(Configuration.GetSection("App"));
+var options = serviceProvider.GetService&lt;IOptions&lt;AppOptions&gt;&gt;().Value;</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Spring Boot DevTools — горячая перезагрузка</summary>
+        <div class="answer">
+            <p><strong>DevTools — ускоряет разработку:</strong></p>
+            <ul>
+                <li>Автоматическая перезагрузка при изменении кода</li>
+                <li>LiveReload — обновление браузера</li>
+                <li>Кэширование отключено в dev-режиме</li>
+                <li>Включается только в dev-профиле</li>
+            </ul>
+
+            <pre>
+// Подключение
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-devtools&lt;/artifactId&gt;
+    &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;optional&gt;true&lt;/optional&gt;
+&lt;/dependency&gt;
+
+// application.properties
+spring.devtools.restart.enabled=true
+spring.devtools.livereload.enabled=true
+
+// Исключить изменения от перезагрузки
+spring.devtools.restart.exclude=static/**,public/**</pre>
+
+            <p><strong>В C# аналог — Hot Reload (встроен в VS и dotnet watch):</strong></p>
+            <pre>
+dotnet watch run   # автоматическая перезагрузка</pre>
+        </div>
+    </details>
+
+</section>
+<script src="script.js"></script>
+</body>
+</html>

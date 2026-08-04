@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java — Блоки 1-5</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 2 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>📦 2. Сборка и запуск — Maven, Gradle, JAR</h2>
+
+    <details>
+        <summary>javac vs java — компиляция и запуск</summary>
+        <div class="answer">
+            <p><strong>javac — компилятор Java, java — виртуальная машина для запуска.</strong></p>
+
+            <pre>
+# Компиляция
+javac MyProgram.java          # создаёт MyProgram.class
+
+# Запуск
+java MyProgram                # выполняет MyProgram
+
+# С указанием classpath
+javac -cp lib/*.jar MyProgram.java
+java -cp .:lib/*.jar MyProgram</pre>
+
+            <p><strong>В C# аналоги:</strong></p>
+            <pre>
+# Компиляция
+csc MyProgram.cs              # создаёт MyProgram.exe
+
+# Запуск
+dotnet run                    # через .NET CLI
+./MyProgram.exe               # напрямую (Windows)</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>JAR vs WAR vs EAR — разница?</summary>
+        <div class="answer">
+            <p><strong>Три типа Java-архивов для разных целей.</strong></p>
+
+            <p><strong>JAR (Java ARchive):</strong></p>
+            <ul>
+                <li>Обычный архив с .class файлами</li>
+                <li>Для библиотек, утилит, консольных приложений</li>
+                <li>Содержит MANIFEST.MF (метаданные)</li>
+            </ul>
+
+            <p><strong>WAR (Web Application Archive):</strong></p>
+            <ul>
+                <li>Для веб-приложений (Servlet, JSP)</li>
+                <li>Содержит WEB-INF/ с web.xml и lib/</li>
+                <li>Разворачивается в Tomcat, Jetty, JBoss</li>
+            </ul>
+
+            <p><strong>EAR (Enterprise Application Archive):</strong></p>
+            <ul>
+                <li>Для корпоративных приложений (Java EE)</li>
+                <li>Содержит несколько WAR + EJB-JAR</li>
+                <li>Разворачивается в GlassFish, WildFly, WebLogic</li>
+            </ul>
+
+            <p><strong>В C# аналоги:</strong></p>
+            <ul>
+                <li>JAR → .dll / .exe</li>
+                <li>WAR → .dll + wwwroot/ в ASP.NET Core</li>
+                <li>EAR → нет аналога (все в одном .dll или микросервисы)</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Maven vs Gradle — сравнение</summary>
+        <div class="answer">
+            <p><strong>Maven и Gradle — инструменты сборки для Java.</strong></p>
+
+            <p><strong>Maven:</strong></p>
+            <ul>
+                <li>XML-конфигурация (<code>pom.xml</code>)</li>
+                <li>Декларативный подход</li>
+                <li>Строгая структура проекта</li>
+                <li>Медленнее Gradle</li>
+            </ul>
+
+            <p><strong>Gradle:</strong></p>
+            <ul>
+                <li>Groovy/Kotlin DSL (<code>build.gradle</code>)</li>
+                <li>Программный подход (можно писать логику)</li>
+                <li>Быстрее (инкрементальная сборка, кэширование)</li>
+                <li>Используется в Android</li>
+            </ul>
+
+            <p><strong>В C# аналог — MSBuild + .csproj:</strong></p>
+            <ul>
+                <li><code>.csproj</code> — XML (как Maven)</li>
+                <li><code>dotnet build</code> — через CLI</li>
+                <li>NuGet — для зависимостей</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>pom.xml vs build.gradle — структура</summary>
+        <div class="answer">
+            <p><strong>pom.xml (Maven):</strong></p>
+            <pre>
+&lt;project&gt;
+    &lt;groupId&gt;com.example&lt;/groupId&gt;
+    &lt;artifactId&gt;my-app&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+    
+    &lt;properties&gt;
+        &lt;java.version&gt;17&lt;/java.version&gt;
+    &lt;/properties&gt;
+    
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+            &lt;version&gt;3.1.0&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/project&gt;</pre>
+
+            <p><strong>build.gradle (Gradle):</strong></p>
+            <pre>
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.1.0'
+}
+
+group = 'com.example'
+version = '1.0.0'
+sourceCompatibility = '17'
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}</pre>
+
+            <p><strong>В C# аналог — .csproj:</strong></p>
+            <pre>
+&lt;Project Sdk="Microsoft.NET.Sdk.Web"&gt;
+    &lt;PropertyGroup&gt;
+        &lt;TargetFramework&gt;net8.0&lt;/TargetFramework&gt;
+        &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;/PropertyGroup&gt;
+    
+    &lt;ItemGroup&gt;
+        &lt;PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" /&gt;
+    &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Maven lifecycle — clean, compile, test, package, install, deploy</summary>
+        <div class="answer">
+            <p><strong>Maven имеет стандартный жизненный цикл сборки.</strong></p>
+
+            <ul>
+                <li><strong>clean</strong> — удаляет папку target/ (очистка)</li>
+                <li><strong>compile</strong> — компилирует исходники в target/classes/</li>
+                <li><strong>test</strong> — запускает тесты (JUnit)</li>
+                <li><strong>package</strong> — создаёт JAR/WAR в target/</li>
+                <li><strong>install</strong> — копирует JAR в локальный репозиторий (~/.m2)</li>
+                <li><strong>deploy</strong> — загружает JAR в удалённый репозиторий (Nexus, Artifactory)</li>
+            </ul>
+
+            <pre>
+# Команды Maven
+mvn clean           # очистка
+mvn compile         # компиляция
+mvn test            # тесты
+mvn package         # сборка JAR
+mvn install         # установка в локальный репозиторий
+mvn deploy          # деплой в удалённый репозиторий
+
+# Комбинации
+mvn clean install   # очистка + установка
+mvn clean package   # очистка + сборка</pre>
+
+            <p><strong>В C# аналоги:</strong></p>
+            <pre>
+dotnet clean        # очистка (bin/obj)
+dotnet build        # компиляция
+dotnet test         # тесты
+dotnet publish      # сборка для деплоя
+dotnet pack         # создание NuGet-пакета</pre>
+        </div>
+    </details>
+
+</section>
+<script src="script.js"></script>
+</body>
+</html>

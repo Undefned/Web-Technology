@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java — Блоки 1-5</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 1 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>☕ 1. Java Core — отличия от C#</h2>
+
+    <details>
+        <summary>JVM vs CLR — в чем разница?</summary>
+        <div class="answer">
+            <p><strong>JVM (Java Virtual Machine)</strong> — виртуальная машина для Java. <strong>CLR (Common Language Runtime)</strong> — для .NET.</p>
+
+            <p><strong>Основные отличия:</strong></p>
+            <ul>
+                <li><strong>Языки:</strong> JVM — только Java (и совместимые), CLR — C#, F#, VB.NET</li>
+                <li><strong>Байт-код:</strong> Java → .class (байт-код JVM), C# → .dll/.exe (IL)</li>
+                <li><strong>Сборка мусора:</strong> JVM — G1, ZGC, Shenandoah; CLR — поколения (Gen 0,1,2)</li>
+                <li><strong>JIT-компиляция:</strong> JVM — C1 (быстрый) и C2 (оптимизирующий); CLR — RyuJIT</li>
+                <li><strong>Платформы:</strong> JVM — кроссплатформенная; CLR — исторически Windows, сейчас .NET Core кроссплатформенный</li>
+            </ul>
+
+            <pre>
+// В Java
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, JVM!");
+    }
+}
+
+// Компиляция: javac Main.java → Main.class
+// Запуск: java Main</pre>
+
+            <pre>
+// В C#
+public class Main {
+    public static void Main(string[] args) {
+        Console.WriteLine("Hello, CLR!");
+    }
+}
+
+// Компиляция: csc Main.cs → Main.exe
+// Запуск: dotnet run</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Примитивы (int, long) vs ссылочные (Integer) — разница?</summary>
+        <div class="answer">
+            <p><strong>В Java есть два вида типов: примитивы и ссылочные (обёртки).</strong></p>
+
+            <p><strong>Примитивы (int, long, double, boolean, char, byte, short, float):</strong></p>
+            <ul>
+                <li>Хранятся в стеке</li>
+                <li>Не могут быть null</li>
+                <li>Значение по умолчанию: 0, false, '\u0000'</li>
+                <li>Быстрее, меньше памяти</li>
+            </ul>
+
+            <p><strong>Обёртки (Integer, Long, Double, Boolean, Character, Byte, Short, Float):</strong></p>
+            <ul>
+                <li>Хранятся в куче</li>
+                <li>Могут быть null</li>
+                <li>Имеют методы (toString, parseInt, compareTo)</li>
+                <li>Медленнее, больше памяти</li>
+            </ul>
+
+            <pre>
+// Java
+int primitive = 42;        // прямое значение
+Integer wrapper = 42;      // автобоксинг (int → Integer)
+Integer nullable = null;   // можно null
+
+// Автоупаковка (boxing) и распаковка (unboxing)
+Integer boxed = 100;       // автоматическая упаковка
+int unboxed = boxed;       // автоматическая распаковка
+
+// Примитивы в коллекциях — только обёртки
+List&lt;Integer&gt; list = new ArrayList&lt;&gt;();  // нельзя List&lt;int&gt;</pre>
+
+            <pre>
+// C# — всё через object (value types + reference types)
+int value = 42;        // значимый тип
+int? nullable = null;  // можно null через Nullable&lt;T&gt;
+object boxed = value;  // boxing
+int unboxed = (int)boxed;  // unboxing
+
+// C# нет отдельной обёртки для int — int уже часть Unified Type System</pre>
+
+            <p><strong>Ключевое отличие от C#:</strong></p>
+            <ul>
+                <li>В Java примитивы и обёртки — это <strong>разные типы</strong> (int != Integer)</li>
+                <li>В C# int и object — это одно и то же (value type → object через boxing)</li>
+                <li>Java использует <strong>автобоксинг/анбоксинг</strong> (с Java 5), но это дорого</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Checked vs Unchecked исключения — разница?</summary>
+        <div class="answer">
+            <p><strong>В Java исключения делятся на checked и unchecked. В C# все исключения unchecked.</strong></p>
+
+            <p><strong>Checked исключения (проверяемые):</strong></p>
+            <ul>
+                <li>Наследуются от <code>Exception</code> (кроме <code>RuntimeException</code>)</li>
+                <li>Компилятор <strong>требует</strong> их обрабатывать (try-catch или throws)</li>
+                <li>Примеры: <code>IOException</code>, <code>SQLException</code>, <code>FileNotFoundException</code></li>
+            </ul>
+
+            <p><strong>Unchecked исключения (непроверяемые):</strong></p>
+            <ul>
+                <li>Наследуются от <code>RuntimeException</code></li>
+                <li>Компилятор <strong>не требует</strong> их обрабатывать</li>
+                <li>Примеры: <code>NullPointerException</code>, <code>ArrayIndexOutOfBoundsException</code>, <code>ArithmeticException</code></li>
+            </ul>
+
+            <pre>
+// Java — checked exception
+public void readFile(String path) throws IOException {  // обязаны объявить
+    FileInputStream file = new FileInputStream(path);
+    // ...
+}
+
+// Использование — обязательно try-catch
+try {
+    readFile("test.txt");
+} catch (IOException e) {
+    e.printStackTrace();
+}
+
+// Java — unchecked exception (не нужно обрабатывать)
+public void divide(int a, int b) {
+    if (b == 0) {
+        throw new ArithmeticException("Деление на ноль");
+    }
+    return a / b;
+}</pre>
+
+            <pre>
+// C# — все исключения unchecked
+public void ReadFile(string path) {
+    var file = File.OpenRead(path);  // может бросить, но не обязаны объявлять
+}
+
+// Можем обработать, но не обязаны
+try {
+    ReadFile("test.txt");
+} catch (IOException e) {
+    // обработка
+}</pre>
+
+            <p><strong>Почему в Java так сделали:</strong></p>
+            <ul>
+                <li>Checked exceptions — для <strong>ожидаемых</strong> ошибок (файл не найден, сеть недоступна)</li>
+                <li>Unchecked — для <strong>ошибок программиста</strong> (NPE, выход за границы)</li>
+                <li>В C# решили, что checked exceptions — это <strong>overhead</strong> и убрали</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>Модификаторы доступа в Java — отличие от C#</summary>
+        <div class="answer">
+            <p><strong>В Java есть 4 модификатора доступа. В C# — 6.</strong></p>
+
+            <table>
+                <tr><th>Java</th><th>C#</th><th>Описание</th></tr>
+                <tr><td><code>public</code></td><td><code>public</code></td><td>Везде</td></tr>
+                <tr><td><code>protected</code></td><td><code>protected</code></td><td>В классе + наследниках</td></tr>
+                <tr><td><code>default</code> (package-private)</td><td><code>internal</code></td><td>Внутри пакета / сборки</td></tr>
+                <tr><td><code>private</code></td><td><code>private</code></td><td>Только внутри класса</td></tr>
+                <tr><td>—</td><td><code>protected internal</code></td><td>Внутри сборки ИЛИ наследники</td></tr>
+                <tr><td>—</td><td><code>private protected</code></td><td>Внутри сборки И наследники</td></tr>
+            </table>
+
+            <p><strong>Особенности default (package-private):</strong></p>
+            <ul>
+                <li>Нет ключевого слова — просто не пишем модификатор</li>
+                <li>Доступно только внутри пакета</li>
+                <li>В C# аналог — <code>internal</code> (внутри сборки)</li>
+            </ul>
+
+            <pre>
+// Java
+package com.example;
+
+public class MyClass {
+    public int publicField = 1;       // везде
+    protected int protectedField = 2; // класс + наследники
+    int defaultField = 3;             // внутри пакета (package-private)
+    private int privateField = 4;     // только внутри класса
+}</pre>
+
+            <pre>
+// C#
+public class MyClass {
+    public int publicField = 1;        // везде
+    protected int protectedField = 2;  // класс + наследники
+    internal int internalField = 3;    // внутри сборки
+    private int privateField = 4;      // только внутри класса
+    protected internal int piField;    // сборка ИЛИ наследники
+    private protected int ppField;     // сборка И наследники
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Final vs finally vs finalize — разница?</summary>
+        <div class="answer">
+            <p><strong>Три похожих слова, но совершенно разные вещи.</strong></p>
+
+            <p><strong>1. final — ключевое слово:</strong></p>
+            <ul>
+                <li><strong>Переменная:</strong> нельзя изменить (как <code>readonly</code> в C#)</li>
+                <li><strong>Метод:</strong> нельзя переопределить (как <code>sealed</code> в C#)</li>
+                <li><strong>Класс:</strong> нельзя наследовать (как <code>sealed</code> в C#)</li>
+            </ul>
+
+            <p><strong>2. finally — блок в try-catch:</strong></p>
+            <ul>
+                <li>Выполняется всегда (даже при исключении)</li>
+                <li>Как в C#</li>
+            </ul>
+
+            <p><strong>3. finalize — метод для освобождения ресурсов:</strong></p>
+            <ul>
+                <li>Вызывается сборщиком мусора (GC) перед удалением</li>
+                <li>В C# аналог — <code>~ClassName()</code> (финализатор/деструктор)</li>
+                <li>В Java 9+ deprecated — используют <code>Cleaner</code></li>
+            </ul>
+
+            <pre>
+// Java
+class Example {
+    private final int CONSTANT = 42;  // final переменная — нельзя изменить
+    
+    public final void method() { }    // final метод — нельзя переопределить
+    
+    @Override
+    protected void finalize() throws Throwable {  // вызовется перед удалением
+        // освобождение ресурсов
+        super.finalize();
+    }
+}
+
+final class FinalClass { }  // final класс — нельзя наследовать</pre>
+
+            <pre>
+// C# аналоги
+class Example {
+    private const int CONSTANT = 42;  // const (или readonly)
+    
+    public sealed void Method() { }   // sealed метод
+    
+    ~Example() { }  // финализатор (finalize)
+}
+
+sealed class SealedClass { }  // sealed класс</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>static nested class vs inner class — разница?</summary>
+        <div class="answer">
+            <p><strong>В Java вложенные классы бывают двух типов: static и non-static (inner).</strong></p>
+
+            <p><strong>Static Nested Class:</strong></p>
+            <ul>
+                <li>Не имеет доступа к нестатическим полям внешнего класса</li>
+                <li>Может создаваться без экземпляра внешнего класса</li>
+                <li>Как обычный класс, но внутри другого</li>
+            </ul>
+
+            <p><strong>Inner Class (Non-static):</strong></p>
+            <ul>
+                <li>Имеет доступ ко всем полям внешнего класса</li>
+                <li>Всегда связан с экземпляром внешнего класса</li>
+                <li>Не может существовать без внешнего объекта</li>
+            </ul>
+
+            <pre>
+public class Outer {
+    private String name = "Outer";
+    
+    // Static nested class
+    public static class StaticNested {
+        public void print() {
+            // Не имеет доступа к name (нестатическое поле)
+        }
+    }
+    
+    // Inner class (non-static)
+    public class Inner {
+        public void print() {
+            System.out.println(name);  // есть доступ к полю внешнего класса
+        }
+    }
+}
+
+// Использование
+Outer.StaticNested nested = new Outer.StaticNested();  // без внешнего объекта
+
+Outer outer = new Outer();
+Outer.Inner inner = outer.new Inner();  // с внешним объектом</pre>
+
+            <p><strong>В C# — только nested классы (все static, если объявлены static):</strong></p>
+            <pre>
+public class Outer {
+    private string name = "Outer";
+    
+    public class Nested {  // всегда имеет доступ к полям внешнего
+        public void Print(Outer outer) {
+            Console.WriteLine(outer.name);  // нужен экземпляр
+        }
+    }
+    
+    public static class StaticNested {  // static nested
+        // Не имеет доступа к нестатическим полям
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Enum в Java vs C# — разница?</summary>
+        <div class="answer">
+            <p><strong>В Java enum — это полноценный класс. В C# enum — это структура (значимый тип).</strong></p>
+
+            <p><strong>Java Enum:</strong></p>
+            <ul>
+                <li>Наследуется от <code>java.lang.Enum</code></li>
+                <li>Может иметь поля, методы, конструкторы</li>
+                <li>Может реализовывать интерфейсы</li>
+                <li>Каждый элемент — это статический объект своего класса</li>
+            </ul>
+
+            <pre>
+// Java
+public enum Status {
+    PENDING(0, "Ожидает"),
+    APPROVED(1, "Одобрено"),
+    REJECTED(2, "Отклонено");
+    
+    private int code;
+    private String description;
+    
+    Status(int code, String description) {
+        this.code = code;
+        this.description = description;
+    }
+    
+    public int getCode() { return code; }
+    public String getDescription() { return description; }
+}
+
+// Использование
+Status status = Status.APPROVED;
+System.out.println(status.getDescription());  // "Одобрено"</pre>
+
+            <p><strong>C# Enum:</strong></p>
+            <ul>
+                <li>Наследуется от <code>System.Enum</code> (значимый тип)</li>
+                <li>Не может иметь методов и полей (только значения)</li>
+                <li>Для расширения — extension methods</li>
+            </ul>
+
+            <pre>
+// C#
+public enum Status {
+    Pending = 0,
+    Approved = 1,
+    Rejected = 2
+}
+
+// Расширение для enum
+public static class StatusExtensions {
+    public static string GetDescription(this Status status) {
+        switch (status) {
+            case Status.Pending: return "Ожидает";
+            case Status.Approved: return "Одобрено";
+            case Status.Rejected: return "Отклонено";
+            default: return "Неизвестно";
+        }
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Аннотации (Annotations) vs Атрибуты (Attributes) — разница?</summary>
+        <div class="answer">
+            <p><strong>Аннотации в Java и атрибуты в C# — метаданные для кода.</strong></p>
+
+            <p><strong>Java Annotations:</strong></p>
+            <ul>
+                <li>Создаются через <code>@interface</code></li>
+                <li>Могут иметь элементы (атрибуты)</li>
+                <li>Ретеншн: SOURCE (только код), CLASS (в байт-коде), RUNTIME (доступно в рантайме через Reflection)</li>
+                <li>Обрабатываются через Reflection или Annotation Processors</li>
+            </ul>
+
+            <pre>
+// Java
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Loggable {
+    String value() default "INFO";
+    boolean enabled() default true;
+}
+
+// Использование
+@Loggable(value = "DEBUG", enabled = true)
+public void process() { }
+
+// Чтение через Reflection
+Method method = MyClass.class.getMethod("process");
+Loggable loggable = method.getAnnotation(Loggable.class);
+if (loggable != null) {
+    System.out.println(loggable.value());  // "DEBUG"
+}</pre>
+
+            <p><strong>C# Attributes:</strong></p>
+            <ul>
+                <li>Создаются через <code>class</code> с наследованием от <code>Attribute</code></li>
+                <li>Имеют свойства (positional + named параметры)</li>
+                <li>Ретеншн: <code>AttributeTargets</code> — к чему можно применить</li>
+                <li>Обрабатываются через Reflection</li>
+            </ul>
+
+            <pre>
+// C#
+[AttributeUsage(AttributeTargets.Method)]
+public class LoggableAttribute : Attribute {
+    public string Value { get; set; } = "INFO";
+    public bool Enabled { get; set; } = true;
+}
+
+// Использование
+[Loggable(Value = "DEBUG", Enabled = true)]
+public void Process() { }
+
+// Чтение через Reflection
+var method = typeof(MyClass).GetMethod("Process");
+var attr = method.GetCustomAttribute&lt;LoggableAttribute&gt;();
+if (attr != null) {
+    Console.WriteLine(attr.Value);  // "DEBUG"
+}</pre>
+        </div>
+    </details>
+
+</section>
+<script src="script.js"></script>
+</body>
+</html>

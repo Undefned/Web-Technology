@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java — Блоки 1-5</title>
+    <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+
+<a href="questions.html" class="back-link">← Все блоки</a>
+
+<!-- ============================================================ -->
+<!-- ===================== БЛОК 3 ================================ -->
+<!-- ============================================================ -->
+<section class="section">
+    <h2>📁 3. Spring Core — DI, IoC, Bean Lifecycle</h2>
+
+    <details>
+        <summary>BeanFactory vs ApplicationContext — разница</summary>
+        <div class="answer">
+            <p><strong>Оба — контейнеры для управления бинами, но ApplicationContext — более мощный.</strong></p>
+
+            <p><strong>BeanFactory:</strong></p>
+            <ul>
+                <li>Базовый контейнер</li>
+                <li>Ленивая инициализация (bean создаётся при первом запросе)</li>
+                <li>Меньше функциональности</li>
+            </ul>
+
+            <p><strong>ApplicationContext:</strong></p>
+            <ul>
+                <li>Расширяет BeanFactory</li>
+                <li>Eager инициализация (все singleton бины создаются при старте)</li>
+                <li>Поддержка событий (ApplicationEvent)</li>
+                <li>Поддержка интернационализации (i18n)</li>
+                <li>Поддержка AOP</li>
+            </ul>
+
+            <pre>
+// BeanFactory (редко используется)
+BeanFactory factory = new XmlBeanFactory(new ClassPathResource("beans.xml"));
+MyBean bean = (MyBean) factory.getBean("myBean");
+
+// ApplicationContext (стандарт)
+ApplicationContext ctx = new ClassPathXmlApplicationContext("beans.xml");
+MyBean bean = ctx.getBean(MyBean.class);
+
+// Spring Boot — ещё удобнее
+@SpringBootApplication
+public class App {
+    public static void main(String[] args) {
+        ApplicationContext ctx = SpringApplication.run(App.class, args);
+    }
+}</pre>
+
+            <p><strong>В C# аналог — IServiceProvider:</strong></p>
+            <pre>
+var services = new ServiceCollection();
+services.AddSingleton&lt;MyService&gt;();
+var provider = services.BuildServiceProvider();
+
+var service = provider.GetService&lt;MyService&gt;();</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>Bean Lifecycle — init-method, destroy-method, @PostConstruct, @PreDestroy</summary>
+        <div class="answer">
+            <p><strong>Жизненный цикл бина в Spring.</strong></p>
+
+            <p><strong>Порядок:</strong></p>
+            <ol>
+                <li>Создание экземпляра (конструктор)</li>
+                <li>Внедрение зависимостей (setter-ы)</li>
+                <li>@PostConstruct → init-method → InitializingBean.afterPropertiesSet()</li>
+                <li>Бин готов к использованию</li>
+                <li>При закрытии контекста: @PreDestroy → destroy-method → DisposableBean.destroy()</li>
+            </ol>
+
+            <pre>
+@Component
+public class MyBean {
+    public MyBean() {
+        System.out.println("1. Конструктор");
+    }
+    
+    @PostConstruct
+    public void init() {
+        System.out.println("2. @PostConstruct");
+    }
+    
+    @PreDestroy
+    public void destroy() {
+        System.out.println("5. @PreDestroy");
+    }
+}
+
+// XML-вариант
+&lt;bean id="myBean" class="MyBean"
+      init-method="initMethod"
+      destroy-method="destroyMethod"/&gt;</pre>
+
+            <p><strong>В C# аналоги:</strong></p>
+            <ul>
+                <li>@PostConstruct → IHostedService.StartAsync()</li>
+                <li>@PreDestroy → IHostedService.StopAsync() / IDisposable</li>
+            </ul>
+        </div>
+    </details>
+
+    <details>
+        <summary>@Qualifier vs @Primary — разница</summary>
+        <div class="answer">
+            <p><strong>Когда несколько бинов одного типа, нужно указать, какой использовать.</strong></p>
+
+            <p><strong>@Primary:</strong></p>
+            <ul>
+                <li>Указывает, какой бин использовать <strong>по умолчанию</strong></li>
+                <li>Если есть несколько бинов — будет выбран primary</li>
+            </ul>
+
+            <p><strong>@Qualifier:</strong></p>
+            <ul>
+                <li>Указывает <strong>конкретный</strong> бин по имени</li>
+                <li>Приоритет выше, чем @Primary</li>
+            </ul>
+
+            <pre>
+// Определяем два бина
+@Component
+public class FastPayment implements PaymentService { }
+
+@Component
+@Primary  // выбран по умолчанию
+public class DefaultPayment implements PaymentService { }
+
+// Использование
+@Service
+public class OrderService {
+    private final PaymentService payment;
+    
+    @Autowired
+    public OrderService(@Qualifier("fastPayment") PaymentService payment) {
+        this.payment = payment;  // конкретно FastPayment
+    }
+}
+
+// Без @Qualifier — будет DefaultPayment (из-за @Primary)</pre>
+
+            <p><strong>В C# аналоги:</strong></p>
+            <pre>
+// В C# нет прямого аналога, но можно через ключи
+services.AddScoped&lt;IPaymentService, FastPaymentService&gt;("fast");
+services.AddScoped&lt;IPaymentService, DefaultPaymentService&gt;();
+
+// Использование через ключ
+var service = provider.GetKeyedService&lt;IPaymentService&gt;("fast");</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>@Lazy — зачем нужен?</summary>
+        <div class="answer">
+            <p><strong>@Lazy откладывает создание бина до первого запроса.</strong></p>
+
+            <ul>
+                <li>По умолчанию все singleton бины создаются при старте (eager)</li>
+                <li>@Lazy — создаётся при первом обращении</li>
+                <li>Уменьшает время старта приложения</li>
+                <li>Помогает избежать циклических зависимостей</li>
+            </ul>
+
+            <pre>
+// Бин создаётся при первом вызове
+@Component
+@Lazy
+public class HeavyService {
+    public HeavyService() {
+        System.out.println("Создание HeavyService (только при первом запросе)");
+    }
+}
+
+// При внедрении тоже можно использовать @Lazy
+@Service
+public class OrderService {
+    private final HeavyService heavy;
+    
+    @Autowired
+    public OrderService(@Lazy HeavyService heavy) {
+        this.heavy = heavy;  // прокси вместо реального бина
+    }
+}</pre>
+
+            <p><strong>В C# аналог:</strong></p>
+            <pre>
+// C# — можно через Lazy&lt;T&gt; или IServiceProvider
+services.AddScoped&lt;HeavyService&gt;();
+
+public class OrderService {
+    private readonly Lazy&lt;HeavyService&gt; _heavy;
+    
+    public OrderService(Lazy&lt;HeavyService&gt; heavy) {
+        _heavy = heavy;  // создастся при первом обращении
+    }
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>@Profile — переключение конфигураций</summary>
+        <div class="answer">
+            <p><strong>@Profile активирует бин только для определённых профилей (окружений).</strong></p>
+
+            <pre>
+// Бин только для dev-профиля
+@Component
+@Profile("dev")
+public class DevDataSource { }
+
+// Бин только для prod-профиля
+@Component
+@Profile("prod")
+public class ProdDataSource { }
+
+// Для нескольких профилей
+@Component
+@Profile({"dev", "staging"})
+public class StagingService { }</pre>
+
+            <p><strong>Активация профилей:</strong></p>
+            <pre>
+# application.properties
+spring.profiles.active=dev
+
+# Или через JVM-аргумент
+-Dspring.profiles.active=prod
+
+# В тестах
+@ActiveProfiles("test")</pre>
+
+            <p><strong>В C# аналог:</strong></p>
+            <pre>
+// В C# — через IHostEnvironment.EnvironmentName
+if (env.IsDevelopment()) {
+    services.AddScoped&lt;IDataSource, DevDataSource&gt;();
+} else if (env.IsProduction()) {
+    services.AddScoped&lt;IDataSource, ProdDataSource&gt;();
+}</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>@Conditional — условная регистрация бинов</summary>
+        <div class="answer">
+            <p><strong>@Conditional — регистрирует бин только при выполнении условия.</strong></p>
+
+            <p><strong>Встроенные условия:</strong></p>
+            <ul>
+                <li><code>@ConditionalOnClass</code> — если есть класс в classpath</li>
+                <li><code>@ConditionalOnMissingClass</code> — если нет класса</li>
+                <li><code>@ConditionalOnProperty</code> — если есть свойство</li>
+                <li><code>@ConditionalOnWebApplication</code> — если веб-приложение</li>
+                <li><code>@ConditionalOnBean</code> — если есть бин</li>
+            </ul>
+
+            <pre>
+// Бин только если есть свойство "cache.enabled=true"
+@Component
+@ConditionalOnProperty(name = "cache.enabled", havingValue = "true")
+public class RedisCache { }
+
+// Бин только если есть класс DriverManager (для БД)
+@ConditionalOnClass(DriverManager.class)
+@Component
+public class DatabaseInitializer { }</pre>
+
+            <p><strong>Кастомное условие:</strong></p>
+            <pre>
+public class WindowsCondition implements Condition {
+    @Override
+    public boolean matches(ConditionContext ctx, AnnotatedTypeMetadata meta) {
+        return System.getProperty("os.name").toLowerCase().contains("win");
+    }
+}
+
+@Component
+@Conditional(WindowsCondition.class)
+public class WindowsService { }</pre>
+        </div>
+    </details>
+
+    <details>
+        <summary>SpEL (Spring Expression Language) — что это?</summary>
+        <div class="answer">
+            <p><strong>SpEL — язык выражений для динамической конфигурации.</strong></p>
+
+            <p><strong>Где используется:</strong></p>
+            <ul>
+                <li>@Value аннотации</li>
+                <li>@ConditionalOnExpression</li>
+                <li>XML-конфигурация</li>
+            </ul>
+
+            <pre>
+// Внедрение значений
+@Value("#{systemProperties['user.name']}")
+private String username;
+
+@Value("#{2 + 3}")
+private int sum;  // 5
+
+@Value("#{T(Math).random()}")
+private double random;
+
+@Value("#{systemProperties['java.home']}")
+private String javaHome;
+
+// Вызов методов
+@Value("#{myBean.doSomething()}")
+private String result;
+
+// Условные выражения
+@ConditionalOnExpression("#{systemProperties['os.name'].contains('Windows')}")</pre>
+
+            <p><strong>В C# аналогов нет — используется конфигурация через код.</strong></p>
+        </div>
+    </details>
+
+</section>
+<script src="script.js"></script>
+</body>
+</html>
